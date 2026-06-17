@@ -29,7 +29,7 @@ async function requireFdOrOwner(): Promise<{ funeralHomeId: string } | { error: 
 
 export async function customizeTemplate(
   serviceType: ServiceType,
-): Promise<{ error?: string }> {
+): Promise<{ data?: TaskTemplate[]; error?: string }> {
   const auth = await requireFdOrOwner()
   if ('error' in auth) return { error: auth.error }
   const { funeralHomeId } = auth
@@ -45,9 +45,9 @@ export async function customizeTemplate(
     .order('sort_order', { ascending: true })
 
   if (fetchErr) return { error: fetchErr.message }
-  if (!systemTemplates?.length) return { error: 'No system defaults found.' }
+  if (!systemTemplates?.length) return { error: 'No system defaults found for this service type.' }
 
-  // Insert copies as custom templates
+  // Insert copies as custom templates and return the created rows
   const rows = systemTemplates.map(t => ({
     funeral_home_id:   funeralHomeId,
     service_type:      t.service_type,
@@ -58,11 +58,16 @@ export async function customizeTemplate(
     sort_order:        t.sort_order,
   }))
 
-  const { error: insertErr } = await serviceRole.from('task_templates').insert(rows)
+  const { data: inserted, error: insertErr } = await serviceRole
+    .from('task_templates')
+    .insert(rows)
+    .select('*')
+
   if (insertErr) return { error: insertErr.message }
+  if (!inserted?.length) return { error: 'Insert succeeded but returned no rows.' }
 
   revalidatePath('/settings/templates')
-  return {}
+  return { data: inserted }
 }
 
 // ── Delete all custom templates for a service type (reset to defaults) ───────

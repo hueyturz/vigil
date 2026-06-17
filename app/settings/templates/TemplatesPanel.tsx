@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { TASK_CATEGORIES } from '@/components/tasks/AddTaskModal'
 import {
   customizeTemplate,
@@ -25,6 +26,7 @@ interface TemplatesPanelProps {
 }
 
 export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }: TemplatesPanelProps) {
+  const router = useRouter()
   const [activeTab,    setActiveTab]    = useState<ServiceType>('full-burial')
   const [custom,       setCustom]       = useState<TaskTemplate[]>(initCustom)
   const [editTarget,   setEditTarget]   = useState<TaskTemplate | null>(null)
@@ -63,16 +65,20 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   }
 
   async function handleCustomize() {
-    await run(() => customizeTemplate(activeTab), () => {
-      const copies = systemForTab.map(t => ({ ...t, funeral_home_id: 'custom' }))
-      setCustom(prev => [...prev, ...copies])
-    })
+    await run(
+      () => customizeTemplate(activeTab),
+      (data) => {
+        if (data) setCustom(prev => [...prev, ...data])
+        router.refresh()
+      },
+    )
   }
 
   async function handleReset() {
     await run(() => resetToDefaults(activeTab), () => {
       setCustom(prev => prev.filter(t => t.service_type !== activeTab))
       setConfirmReset(false)
+      router.refresh()
     })
   }
 
