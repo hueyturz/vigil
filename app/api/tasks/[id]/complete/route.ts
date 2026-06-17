@@ -134,7 +134,7 @@ export async function POST(
       const emailResult = await sendEmail({ to: recipientEmail, subject, html })
       console.log('[complete] sendEmail result:', emailResult)
 
-      const { error: logErr } = await serviceRole.from('email_log').insert({
+      const emailLogPayload = {
         funeral_home_id: profile.funeral_home_id,
         service_id:      task.service_id,
         task_id:         task.id,
@@ -143,8 +143,10 @@ export async function POST(
         subject,
         status:          emailResult.success ? 'sent' : 'failed',
         error_message:   emailResult.error ?? null,
-      })
-      if (logErr) console.log('[complete] email_log insert error:', logErr.message)
+      }
+      console.log('[complete] email_log payload:', emailLogPayload)
+      const { error: logErr } = await serviceRole.from('email_log').insert(emailLogPayload)
+      if (logErr) console.log('[complete] email_log insert error:', logErr.message, logErr.details, logErr.hint)
     } else {
       console.log('[complete] no recipient email found — skipping email send')
     }
