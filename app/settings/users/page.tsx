@@ -1,0 +1,57 @@
+import { redirect } from 'next/navigation'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { AppShell } from '@/components/layout/AppShell'
+import { UsersPanel } from './UsersPanel'
+import type { Role } from '@/lib/types'
+
+export default async function UsersPage() {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('id, full_name, role, funeral_home_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) redirect('/login')
+  if (profile.role !== 'owner') redirect('/dashboard')
+
+  // Fetch all profiles for this funeral home
+  const { data: profiles } = await serviceRole
+    .from('profiles')
+    .select('id, full_name, role, phone, is_active')
+    .eq('funeral_home_id', profile.funeral_home_id)
+    .order('created_at', { ascending: true })
+
+  // Fetch auth emails for each profile via admin API
+  // listUsers returns all users; we filter to our set by id
+  const { data: { users: authUsers } } = await serviceRole.auth.admin.listUsers({
+    perPage: 1000,
+  })
+
+  const emailByUserId: Record<string, string> = {}
+  for (const au of authUsers) {
+    emailByUserId[au.id] = au.email ?? ''
+  }
+
+  const rows = (profiles ?? []).map(p => ({
+    id:        p.id,
+    full_name: p.full_name,
+    role:      p.role as Role,
+    phone:     p.phone as string | null,
+    is_active: p.is_active as boolean,
+    email:     emailByUserId[p.id] ?? null,
+  }))
+
+  return (
+    <AppShell profile={profile}>
+      <div className="px-8 py-8 max-w-5xl mx-auto">
+        <UsersPanel users={rows} currentUserId={user.id} />
+      </div>
+    </AppShell>
+  )
+}
