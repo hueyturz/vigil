@@ -36,7 +36,11 @@ export async function updateSession(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const { pathname } = request.nextUrl
-  const isPublicPath = pathname === '/login' || pathname === '/onboarding'
+  // /auth/* must be reachable without a session so the code-exchange can run
+  const isPublicPath =
+    pathname === '/login' ||
+    pathname === '/onboarding' ||
+    pathname.startsWith('/auth/')
 
   if (!session && !isPublicPath) {
     const url = request.nextUrl.clone()

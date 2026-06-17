@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [error,   setError]   = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -35,11 +33,11 @@ export default function LoginPage() {
       .eq('id', data.user!.id)
       .single()
 
-    if (profile?.role === 'staff') {
-      router.push('/my-tasks')
-    } else {
-      router.push('/dashboard')
-    }
+    // Full-page navigation ensures session cookies are flushed before the
+    // middleware reads them — router.push (client-side nav) can race with
+    // cookie commits on Vercel and land the user back on /login.
+    const destination = profile?.role === 'staff' ? '/my-tasks' : '/dashboard'
+    window.location.href = destination
   }
 
   return (
