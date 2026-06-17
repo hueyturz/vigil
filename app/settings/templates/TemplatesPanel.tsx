@@ -224,11 +224,18 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
               <div
                 key={tpl.id}
                 className="rounded-lg border p-4 space-y-3"
-                style={{ backgroundColor: '#FAFAFA', borderColor: '#CBD5E1' }}
+                style={{ backgroundColor: '#FAFAFA', borderColor: '#0D6E68' }}
               >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#0D6E68' }}>Editing task</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setEditingId(null)} className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-gray-50" style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
+                    <button type="button" onClick={() => handleSaveEdit(tpl.id)} disabled={busy} className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Title">
-                    <input type="text" value={editValues.title ?? ''} onChange={e => setEditValues(v => ({ ...v, title: e.target.value }))} style={inputStyle} />
+                    <input type="text" value={editValues.title ?? ''} onChange={e => setEditValues(v => ({ ...v, title: e.target.value }))} style={inputStyle} autoFocus />
                   </Field>
                   <Field label="Category">
                     <select value={editValues.category ?? ''} onChange={e => setEditValues(v => ({ ...v, category: e.target.value }))} style={inputStyle}>
@@ -242,9 +249,9 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                     <input type="number" min={0} max={60} value={editValues.due_days_before ?? 1} onChange={e => setEditValues(v => ({ ...v, due_days_before: Number(e.target.value) }))} style={inputStyle} />
                   </Field>
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <button type="button" onClick={() => setEditingId(null)} className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-gray-50" style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
-                  <button type="button" onClick={() => handleSaveEdit(tpl.id)} disabled={busy} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save'}</button>
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => handleSaveEdit(tpl.id)} disabled={busy} className="flex-1 rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
+                  <button type="button" onClick={() => setEditingId(null)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
                 </div>
               </div>
             )
