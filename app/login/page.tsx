@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [error,   setError]   = useState<string | null>(null)
@@ -17,27 +16,25 @@ export default function LoginPage() {
     const email    = formData.get('email')    as string
     const password = formData.get('password') as string
 
-    const supabase = createClient()
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    // Sign in via API route — the server sets session cookies directly in the
+    // HTTP response, so they're guaranteed to be present on the next navigation.
+    const res = await fetch('/api/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    })
 
-    if (signInError) {
-      setError(signInError.message)
+    const json = await res.json()
+
+    if (!res.ok) {
+      setError(json.error ?? 'Sign in failed.')
       setLoading(false)
       return
     }
 
-    // Determine redirect based on role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user!.id)
-      .single()
-
-    // Full-page navigation ensures session cookies are flushed before the
-    // middleware reads them — router.push (client-side nav) can race with
-    // cookie commits on Vercel and land the user back on /login.
-    const destination = profile?.role === 'staff' ? '/my-tasks' : '/dashboard'
-    window.location.href = destination
+    // Cookies are now set in the browser by the server response.
+    // Full-page navigation so the middleware sees them on the very first request.
+    window.location.href = json.destination
   }
 
   return (
