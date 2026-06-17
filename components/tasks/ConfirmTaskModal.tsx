@@ -95,17 +95,17 @@ export function ConfirmTaskModal({ task, open, onClose, onSuccess }: ConfirmTask
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center md:p-4"
       style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
       <div
-        className="w-full max-w-md rounded-2xl shadow-xl"
+        className="w-full h-full md:h-auto md:max-w-md md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-5 border-b"
+          className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
           style={{ borderColor: '#E2E8F0' }}
         >
           <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>
@@ -121,7 +121,7 @@ export function ConfirmTaskModal({ task, open, onClose, onSuccess }: ConfirmTask
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {/* Task title (read-only) */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#94A3B8' }}>

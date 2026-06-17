@@ -31,7 +31,7 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
 
   return (
     <aside
-      className="flex h-screen w-[220px] flex-shrink-0 flex-col"
+      className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col"
       style={{ backgroundColor: '#0F172A' }}
     >
       {/* Logo */}

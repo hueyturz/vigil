@@ -10,15 +10,15 @@ import type { TaskWithProfile } from '@/lib/types'
 export default async function MyTasksPage() {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
 
   const db = createServiceRoleClient()
 
   const { data: profile } = await db
     .from('profiles')
     .select('id, full_name, role, funeral_home_id')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) redirect('/login')
@@ -37,7 +37,7 @@ export default async function MyTasksPage() {
         assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name)
       )
     `)
-    .eq('assigned_staff_id', user.id)
+    .eq('assigned_staff_id', session.user.id)
     .eq('status', 'active')
     .order('service_date', { ascending: true })
 
@@ -52,7 +52,7 @@ export default async function MyTasksPage() {
 
   return (
     <AppShell profile={profile}>
-      <div className="px-8 py-8 max-w-3xl mx-auto">
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-3xl mx-auto">
         {/* Page header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>My Tasks</h1>

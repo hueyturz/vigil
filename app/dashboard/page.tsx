@@ -10,8 +10,10 @@ import type { ServiceWithTasks } from '@/lib/types'
 export default async function DashboardPage() {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
+
+  const userId = session.user.id
 
   // Use service role for data fetches to avoid RLS session-context issues on the server
   const db = createServiceRoleClient()
@@ -19,7 +21,7 @@ export default async function DashboardPage() {
   const { data: profile } = await db
     .from('profiles')
     .select('id, full_name, role, funeral_home_id')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single()
 
   if (!profile) redirect('/login')
@@ -48,7 +50,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell profile={profile} redAlert={needsAttentionCount > 0}>
-      <div className="px-8 py-8 max-w-7xl mx-auto">
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-7xl mx-auto">
         <DashboardHeader />
 
         <div className="mb-8">

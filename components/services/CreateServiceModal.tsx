@@ -131,20 +131,20 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
   const taskCount = TASK_COUNTS[serviceType]
 
   return (
-    /* Backdrop */
+    /* Backdrop — full-screen on mobile, centered dialog on md+ */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center md:p-4"
       style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
       {/* Panel */}
       <div
-        className="w-full max-w-lg rounded-2xl shadow-xl"
+        className="w-full h-full md:h-auto md:max-w-lg md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-5 border-b"
+          className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
           style={{ borderColor: '#E2E8F0' }}
         >
           <h2 className="text-lg font-semibold" style={{ color: '#0F172A' }}>
@@ -160,8 +160,8 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        {/* Form — scrollable on mobile */}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <ModalField label="Family Name" required error={fieldErrors.family_name}>
             <input
               type="text"

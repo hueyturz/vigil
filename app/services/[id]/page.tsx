@@ -23,15 +23,15 @@ export default async function ServiceDetailPage({
 }) {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
 
   const db = createServiceRoleClient()
 
   const { data: profile } = await db
     .from('profiles')
     .select('id, full_name, role, funeral_home_id')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) redirect('/login')
@@ -70,7 +70,7 @@ export default async function ServiceDetailPage({
 
   return (
     <AppShell profile={profile}>
-      <div className="px-8 py-8 max-w-4xl mx-auto">
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
 
         {/* Back link */}
         <Link
@@ -86,7 +86,7 @@ export default async function ServiceDetailPage({
           className="rounded-xl border p-6 mb-6"
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
               <p
                 className="text-xs font-semibold uppercase tracking-wide mb-1"
@@ -110,7 +110,7 @@ export default async function ServiceDetailPage({
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex flex-col items-end gap-2">
+            <div className="flex-shrink-0 flex flex-row sm:flex-col sm:items-end items-center gap-2">
               <Badge status={status} />
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed

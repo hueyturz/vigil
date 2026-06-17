@@ -48,7 +48,19 @@ export function TaskRow({ task: initialTask, serviceDate, onTaskComplete }: Task
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+          {/* Title row — inline button on md+, hidden on mobile */}
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+            {!complete && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="hidden md:block flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: overdue ? '#EF4444' : '#0D6E68' }}
+              >
+                Mark Complete
+              </button>
+            )}
+          </div>
 
           {complete ? (
             <div className="mt-1 space-y-1">
@@ -90,18 +102,18 @@ export function TaskRow({ task: initialTask, serviceDate, onTaskComplete }: Task
               </p>
             </div>
           )}
-        </div>
 
-        {/* Mark Complete button */}
-        {!complete && (
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: overdue ? '#EF4444' : '#0D6E68' }}
-          >
-            Mark Complete
-          </button>
-        )}
+          {/* Mark Complete button below content on mobile only */}
+          {!complete && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="mt-2 md:hidden w-full rounded-lg py-2 text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ backgroundColor: overdue ? '#EF4444' : '#0D6E68' }}
+            >
+              Mark Complete
+            </button>
+          )}
+        </div>
       </div>
 
       <ConfirmTaskModal

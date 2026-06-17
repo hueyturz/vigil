@@ -22,10 +22,7 @@ export function ServiceGrid({ services, onNewService }: ServiceGridProps) {
   }
 
   return (
-    <div
-      className="grid gap-4"
-      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
-    >
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {services.map(service => (
         <ServiceCard key={service.id} service={service} />
       ))}

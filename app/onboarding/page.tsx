@@ -78,7 +78,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F7F8FA' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: '#F7F8FA' }}>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
         </div>
 
         <div
-          className="rounded-xl shadow-sm border p-8"
+          className="rounded-xl shadow-sm border p-6 sm:p-8"
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
         >
           {step === 1 ? (

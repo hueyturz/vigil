@@ -8,13 +8,13 @@ export default async function UsersPage() {
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('id, full_name, role, funeral_home_id')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) redirect('/login')
@@ -49,8 +49,8 @@ export default async function UsersPage() {
 
   return (
     <AppShell profile={profile}>
-      <div className="px-8 py-8 max-w-5xl mx-auto">
-        <UsersPanel users={rows} currentUserId={user.id} />
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-5xl mx-auto">
+        <UsersPanel users={rows} currentUserId={session.user.id} />
       </div>
     </AppShell>
   )

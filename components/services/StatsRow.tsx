@@ -6,7 +6,7 @@ interface StatsRowProps {
 
 export function StatsRow({ activeCount, needsAttentionCount, overdueTaskCount }: StatsRowProps) {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <StatCard label="Active Services"    value={activeCount}          />
       <StatCard label="Needs Attention"    value={needsAttentionCount}  accent="#EF4444" />
       <StatCard label="Overdue Tasks"      value={overdueTaskCount}     accent="#EF4444" />
