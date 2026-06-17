@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { buildSmsMessage, sendSMS } from '@/lib/utils/sms'
+import { buildSmsMessage } from '@/lib/utils/sms'
+import { sendEmail } from '@/lib/utils/email'
+import { taskConfirmedEmail } from '@/lib/utils/email-templates'
+import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
 
 const CompleteTaskSchema = z.object({
   confirmation_value: z.string().min(10, 'Confirmation detail must be at least 10 characters.'),
@@ -44,17 +47,17 @@ export async function POST(
 
   const { confirmation_value } = parsed.data
 
-  // Fetch the task via service role (anon client hits RLS and returns nothing server-side)
+  // Fetch the task
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('*, services(family_name, service_date)')
+    .select('*, services(id, family_name, service_date, location)')
     .eq('id', params.id)
     .eq('funeral_home_id', profile.funeral_home_id)
     .single()
 
   if (!task) return NextResponse.json({ error: 'Task not found.' }, { status: 404 })
 
-  // Update the task via service role to bypass RLS
+  // Mark task complete
   const { data: updatedTask, error: updateError } = await serviceRole
     .from('tasks')
     .update({
@@ -71,7 +74,7 @@ export async function POST(
     return NextResponse.json({ error: updateError?.message ?? 'Update failed.' }, { status: 500 })
   }
 
-  // Get an FD or owner for this funeral home to notify
+  // Get FD/owner to notify
   const { data: recipient } = await serviceRole
     .from('profiles')
     .select('id, full_name, phone')
@@ -81,27 +84,57 @@ export async function POST(
     .limit(1)
     .single()
 
-  if (recipient) {
-    const service = task.services as { family_name: string; service_date: string } | null
-    const message = buildSmsMessage({
+  const service = task.services as {
+    id: string; family_name: string; service_date: string; location: string
+  } | null
+
+  if (recipient && service) {
+    // SMS log (Twilio stub — status stays 'pending' until wired)
+    const smsMessage = buildSmsMessage({
       completedByName:   profile.full_name,
       taskTitle:         task.title,
-      familyName:        service?.family_name ?? '',
-      serviceDate:       service?.service_date ?? '',
+      familyName:        service.family_name,
+      serviceDate:       service.service_date,
       confirmationValue: confirmation_value,
     })
 
-    // Log the SMS — Twilio send is stubbed in v1
     await serviceRole.from('sms_log').insert({
       funeral_home_id: profile.funeral_home_id,
       service_id:      task.service_id,
       task_id:         task.id,
       recipient_id:    recipient.id,
-      message,
+      message:         smsMessage,
       status:          'pending',
     })
 
-    // await sendSMS(recipient.phone, message)  — Twilio stub
+    // Email notification — get recipient email from auth.users
+    const { data: { user: recipientUser } } = await serviceRole.auth.admin.getUserById(recipient.id)
+    const recipientEmail = recipientUser?.email
+
+    if (recipientEmail) {
+      const { subject, html } = taskConfirmedEmail({
+        taskTitle:         task.title,
+        familyName:        service.family_name,
+        serviceDate:       formatDate(service.service_date),
+        serviceId:         service.id,
+        confirmedByName:   profile.full_name,
+        confirmedAt:       formatDateTime(new Date().toISOString()),
+        confirmationValue: confirmation_value,
+      })
+
+      const emailResult = await sendEmail({ to: recipientEmail, subject, html })
+
+      await serviceRole.from('email_log').insert({
+        funeral_home_id: profile.funeral_home_id,
+        service_id:      task.service_id,
+        task_id:         task.id,
+        recipient_id:    recipient.id,
+        recipient_email: recipientEmail,
+        subject,
+        status:          emailResult.success ? 'sent' : 'failed',
+        error_message:   emailResult.error ?? null,
+      })
+    }
   }
 
   return NextResponse.json({ task: updatedTask })
