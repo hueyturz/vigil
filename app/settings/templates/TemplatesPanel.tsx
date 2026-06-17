@@ -20,6 +20,8 @@ const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
   { value: 'military',    label: 'Military Honors' },
 ]
 
+type PanelState = 'default' | 'editing' | 'custom'
+
 interface TemplatesPanelProps {
   customTemplates: TaskTemplate[]
   systemTemplates: TaskTemplate[]
@@ -27,6 +29,7 @@ interface TemplatesPanelProps {
 
 export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }: TemplatesPanelProps) {
   const router = useRouter()
+
   const [activeTab,    setActiveTab]    = useState<ServiceType>('full-burial')
   const [custom,       setCustom]       = useState<TaskTemplate[]>(initCustom)
   const [editTarget,   setEditTarget]   = useState<TaskTemplate | null>(null)
@@ -38,6 +41,9 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   const [error,        setError]        = useState<string | null>(null)
   const [saved,        setSaved]        = useState(false)
 
+  // Per-tab editing state — tracks which tabs are in "editing" mode
+  const [editingTabs, setEditingTabs] = useState<Set<ServiceType>>(new Set())
+
   const customForTab = custom
     .filter(t => t.service_type === activeTab)
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -46,8 +52,28 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     .filter(t => t.service_type === activeTab)
     .sort((a, b) => a.sort_order - b.sort_order)
 
-  const isCustomized = customForTab.length > 0
-  const displayTemplates = isCustomized ? customForTab : systemForTab
+  const hasCustom   = customForTab.length > 0
+  const isEditing   = editingTabs.has(activeTab)
+
+  // State 1 = default, State 2 = editing, State 3 = custom read-only
+  const panelState: PanelState = !hasCustom ? 'default' : isEditing ? 'editing' : 'custom'
+  const displayTemplates = hasCustom ? customForTab : systemForTab
+
+  function enterEditing() {
+    setEditingTabs(prev => new Set(prev).add(activeTab))
+    setConfirmReset(false)
+    setConfirmDel(null)
+    setAddOpen(false)
+    setError(null)
+  }
+
+  function exitEditing() {
+    setEditingTabs(prev => { const next = new Set(prev); next.delete(activeTab); return next })
+    setConfirmReset(false)
+    setConfirmDel(null)
+    setAddOpen(false)
+    setError(null)
+  }
 
   function flashSaved() {
     setSaved(true)
@@ -69,6 +95,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
       () => customizeTemplate(activeTab),
       (data) => {
         if (data) setCustom(prev => [...prev, ...data])
+        enterEditing()
         router.refresh()
       },
     )
@@ -78,6 +105,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     await run(() => resetToDefaults(activeTab), () => {
       setCustom(prev => prev.filter(t => t.service_type !== activeTab))
       setConfirmReset(false)
+      exitEditing()
       router.refresh()
     })
   }
@@ -107,7 +135,9 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
       }),
       () => {
         setCustom(prev => prev.map(t =>
-          t.id === templateId ? { ...t, ...values, title: values.title.trim(), confirmation_hint: values.confirmation_hint.trim() } : t
+          t.id === templateId
+            ? { ...t, ...values, title: values.title.trim(), confirmation_hint: values.confirmation_hint.trim() }
+            : t
         ))
         setEditTarget(null)
       },
@@ -139,8 +169,17 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     )
   }
 
+  function handleTabChange(tab: ServiceType) {
+    setActiveTab(tab)
+    setConfirmReset(false)
+    setConfirmDel(null)
+    setAddOpen(false)
+    setError(null)
+  }
+
   return (
     <div>
+      {/* Page header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Task Templates</h1>
@@ -164,7 +203,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
           <button
             key={st.value}
             type="button"
-            onClick={() => { setActiveTab(st.value); setConfirmReset(false); setConfirmDel(null); setAddOpen(false); setError(null) }}
+            onClick={() => handleTabChange(st.value)}
             className="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition"
             style={{
               borderBottomColor: activeTab === st.value ? '#0D6E68' : 'transparent',
@@ -185,8 +224,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         </div>
       )}
 
-      {/* System default banner */}
-      {!isCustomized && (
+      {/* ── STATE 1: DEFAULT ─────────────────────────────────────────────────── */}
+      {panelState === 'default' && (
         <div
           className="mb-6 rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}
@@ -211,10 +250,51 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         </div>
       )}
 
+      {/* ── STATE 2: EDITING header bar ──────────────────────────────────────── */}
+      {panelState === 'editing' && (
+        <div
+          className="mb-6 rounded-xl border p-4 flex items-center justify-between gap-3"
+          style={{ backgroundColor: '#F0FDF9', borderColor: '#99F6E4' }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#0D6E68' }} />
+            <p className="text-sm font-semibold" style={{ color: '#0D6E68' }}>Editing Template</p>
+            <p className="text-xs hidden sm:block" style={{ color: '#0F766E' }}>
+              Changes save automatically.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={exitEditing}
+            className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            style={{ backgroundColor: '#0D6E68' }}
+          >
+            Done Editing
+          </button>
+        </div>
+      )}
+
+      {/* ── STATE 3: CUSTOM READ-ONLY header ─────────────────────────────────── */}
+      {panelState === 'custom' && (
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <p className="text-sm" style={{ color: '#475569' }}>
+            Custom template · {customForTab.length} task{customForTab.length !== 1 ? 's' : ''}
+          </p>
+          <button
+            type="button"
+            onClick={enterEditing}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold transition hover:bg-gray-50"
+            style={{ borderColor: '#CBD5E1', color: '#0F172A' }}
+          >
+            Edit Template
+          </button>
+        </div>
+      )}
+
       {/* Template rows */}
       <div className="space-y-2 mb-4">
         {displayTemplates.map((tpl, idx) => {
-          if (confirmDel === tpl.id) {
+          if (panelState === 'editing' && confirmDel === tpl.id) {
             return (
               <div
                 key={tpl.id}
@@ -238,7 +318,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
               className="flex items-center gap-3 rounded-lg border px-4 py-3"
               style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
             >
-              {isCustomized && (
+              {/* Reorder arrows — editing only */}
+              {panelState === 'editing' && (
                 <div className="flex flex-col gap-0.5 flex-shrink-0">
                   <button
                     type="button"
@@ -270,7 +351,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 </p>
               </div>
 
-              {isCustomized && (
+              {/* Edit/delete — editing only */}
+              {panelState === 'editing' && (
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
@@ -297,8 +379,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         })}
       </div>
 
-      {/* Add task (custom only) */}
-      {isCustomized && !addOpen && (
+      {/* Add task — editing only */}
+      {panelState === 'editing' && !addOpen && (
         <button
           type="button"
           onClick={() => setAddOpen(true)}
@@ -310,7 +392,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         </button>
       )}
 
-      {isCustomized && addOpen && (
+      {panelState === 'editing' && addOpen && (
         <form
           onSubmit={handleAdd}
           className="mb-6 rounded-xl border p-4 space-y-3"
@@ -340,13 +422,13 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         </form>
       )}
 
-      {/* Reset to defaults (custom only) */}
-      {isCustomized && !confirmReset && (
+      {/* Reset to defaults — editing or custom read-only */}
+      {(panelState === 'editing' || panelState === 'custom') && !confirmReset && (
         <div className="border-t pt-6" style={{ borderColor: '#E2E8F0' }}>
           <button
             type="button"
             onClick={() => setConfirmReset(true)}
-            className="text-sm font-medium hover:underline"
+            className={`text-sm font-medium hover:underline ${panelState === 'custom' ? 'opacity-60' : ''}`}
             style={{ color: '#EF4444' }}
           >
             Reset to system defaults
@@ -354,7 +436,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         </div>
       )}
 
-      {isCustomized && confirmReset && (
+      {(panelState === 'editing' || panelState === 'custom') && confirmReset && (
         <div className="border-t pt-6" style={{ borderColor: '#E2E8F0' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#991B1B' }}>
             This will delete your custom template for {SERVICE_TYPES.find(s => s.value === activeTab)?.label} and restore the system defaults. Continue?
@@ -399,10 +481,10 @@ function EditTemplateModal({
   onSave: (values: EditValues) => void
   onClose: () => void
 }) {
-  const [title,   setTitle]   = useState(template.title)
-  const [cat,     setCat]     = useState(template.category)
-  const [hint,    setHint]    = useState(template.confirmation_hint)
-  const [days,    setDays]    = useState(template.due_days_before)
+  const [title, setTitle] = useState(template.title)
+  const [cat,   setCat]   = useState(template.category)
+  const [hint,  setHint]  = useState(template.confirmation_hint)
+  const [days,  setDays]  = useState(template.due_days_before)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -420,7 +502,6 @@ function EditTemplateModal({
         className="w-full h-full md:h-auto md:max-w-md md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
         style={{ backgroundColor: '#FFFFFF' }}
       >
-        {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
           style={{ borderColor: '#E2E8F0' }}
@@ -435,21 +516,13 @@ function EditTemplateModal({
           >×</button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
                 Task title <span style={{ color: '#EF4444' }}>*</span>
               </label>
-              <input
-                type="text"
-                required
-                autoFocus
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                style={inputStyle}
-              />
+              <input type="text" required autoFocus value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} />
             </div>
 
             <div>
@@ -465,35 +538,18 @@ function EditTemplateModal({
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
                 Confirmation hint <span style={{ color: '#EF4444' }}>*</span>
               </label>
-              <input
-                type="text"
-                required
-                value={hint}
-                onChange={e => setHint(e.target.value)}
-                style={inputStyle}
-              />
-              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>
-                Shown to staff when they confirm this task.
-              </p>
+              <input type="text" required value={hint} onChange={e => setHint(e.target.value)} style={inputStyle} />
+              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Shown to staff when they confirm this task.</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
                 Due (days before service) <span style={{ color: '#EF4444' }}>*</span>
               </label>
-              <input
-                type="number"
-                required
-                min={0}
-                max={60}
-                value={days}
-                onChange={e => setDays(Number(e.target.value))}
-                style={inputStyle}
-              />
+              <input type="number" required min={0} max={60} value={days} onChange={e => setDays(Number(e.target.value))} style={inputStyle} />
             </div>
           </div>
 
-          {/* Footer — always visible, never scrolls away */}
           <div
             className="flex gap-3 px-6 py-4 border-t flex-shrink-0"
             style={{ borderColor: '#E2E8F0' }}
@@ -521,7 +577,7 @@ function EditTemplateModal({
   )
 }
 
-// ── Small helpers ─────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function Field({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) {
   return (
