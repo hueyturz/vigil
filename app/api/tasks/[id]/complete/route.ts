@@ -15,13 +15,13 @@ export async function POST(
   const serviceRole = createServiceRoleClient()
 
   // Auth check
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('id, full_name, funeral_home_id, role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) return NextResponse.json({ error: 'Profile not found.' }, { status: 401 })
@@ -60,7 +60,7 @@ export async function POST(
     .update({
       status:             'complete',
       confirmation_value,
-      completed_by_id:    user.id,
+      completed_by_id:    session.user.id,
       completed_at:       new Date().toISOString(),
     })
     .eq('id', params.id)

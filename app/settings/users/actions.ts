@@ -18,13 +18,13 @@ export async function inviteUser(formData: FormData): Promise<{ error?: string }
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('funeral_home_id, role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
@@ -67,17 +67,17 @@ export async function updateUserRole(
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('funeral_home_id, role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
-  if (targetUserId === user.id) return { error: 'You cannot change your own role.' }
+  if (targetUserId === session.user.id) return { error: 'You cannot change your own role.' }
 
   // Confirm target belongs to same funeral home
   const { data: target } = await serviceRole
@@ -109,17 +109,17 @@ export async function setUserActive(
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('funeral_home_id, role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
-  if (targetUserId === user.id) return { error: 'You cannot deactivate yourself.' }
+  if (targetUserId === session.user.id) return { error: 'You cannot deactivate yourself.' }
 
   const { data: target } = await serviceRole
     .from('profiles')
