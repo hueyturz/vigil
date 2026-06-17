@@ -84,9 +84,13 @@ export async function POST(
     .limit(1)
     .single()
 
+  console.log('[complete] recipient profile:', recipient ? { id: recipient.id, name: recipient.full_name } : null)
+
   const service = task.services as {
     id: string; family_name: string; service_date: string; location: string
   } | null
+
+  console.log('[complete] service:', service ? { id: service.id, family: service.family_name } : null)
 
   if (recipient && service) {
     // SMS log (Twilio stub — status stays 'pending' until wired)
@@ -108,10 +112,15 @@ export async function POST(
     })
 
     // Email notification — get recipient email from auth.users
-    const { data: { user: recipientUser } } = await serviceRole.auth.admin.getUserById(recipient.id)
-    const recipientEmail = recipientUser?.email
+    console.log('[complete] fetching auth user for recipient id:', recipient.id)
+    const { data: authData, error: authErr } = await serviceRole.auth.admin.getUserById(recipient.id)
+    console.log('[complete] getUserById result:', { email: authData?.user?.email ?? null, error: authErr?.message ?? null })
+
+    const recipientEmail = authData?.user?.email
 
     if (recipientEmail) {
+      console.log('[complete] sending email to:', recipientEmail)
+
       const { subject, html } = taskConfirmedEmail({
         taskTitle:         task.title,
         familyName:        service.family_name,
@@ -123,8 +132,9 @@ export async function POST(
       })
 
       const emailResult = await sendEmail({ to: recipientEmail, subject, html })
+      console.log('[complete] sendEmail result:', emailResult)
 
-      await serviceRole.from('email_log').insert({
+      const { error: logErr } = await serviceRole.from('email_log').insert({
         funeral_home_id: profile.funeral_home_id,
         service_id:      task.service_id,
         task_id:         task.id,
@@ -134,7 +144,12 @@ export async function POST(
         status:          emailResult.success ? 'sent' : 'failed',
         error_message:   emailResult.error ?? null,
       })
+      if (logErr) console.log('[complete] email_log insert error:', logErr.message)
+    } else {
+      console.log('[complete] no recipient email found — skipping email send')
     }
+  } else {
+    console.log('[complete] skipping notifications — recipient:', !!recipient, 'service:', !!service)
   }
 
   return NextResponse.json({ task: updatedTask })
