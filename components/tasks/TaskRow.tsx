@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
 import { isTaskOverdue } from '@/lib/utils/service-status'
@@ -25,15 +25,29 @@ export function TaskRow({
   const [task,        setTask]        = useState<TaskWithProfile>(initialTask)
   const [modalOpen,   setModalOpen]   = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [menuOpen,    setMenuOpen]    = useState(false)
   const [editMode,    setEditMode]    = useState(false)
   const [editTitle,   setEditTitle]   = useState(task.title)
   const [editHint,    setEditHint]    = useState(task.confirmation_hint)
   const [confirmDel,  setConfirmDel]  = useState(false)
   const [saving,      setSaving]      = useState(false)
   const [deleting,    setDeleting]    = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const overdue  = isTaskOverdue(task, serviceDate)
   const complete = task.status === 'complete'
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [menuOpen])
 
   function handleSuccess(updatedTask: TaskWithProfile) {
     setTask(updatedTask)
@@ -74,6 +88,7 @@ export function TaskRow({
           <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Task title</label>
           <input
             type="text"
+            autoFocus
             value={editTitle}
             onChange={e => setEditTitle(e.target.value)}
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
@@ -169,35 +184,51 @@ export function TaskRow({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          {/* Title row with action buttons */}
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {/* Edit / Delete — only for not-started tasks, hidden on mobile when Mark Complete visible */}
+
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Three-dot menu — not-started tasks only */}
               {!complete && (
-                <>
+                <div className="relative" ref={menuRef}>
                   <button
                     type="button"
-                    onClick={() => { setEditMode(true); setEditTitle(task.title); setEditHint(task.confirmation_hint) }}
-                    className="p-1 rounded hover:opacity-60 transition"
+                    onClick={() => setMenuOpen(o => !o)}
+                    className="flex items-center justify-center w-7 h-7 rounded-md transition hover:opacity-60"
                     style={{ color: '#94A3B8' }}
-                    title="Edit task"
-                    aria-label="Edit task"
+                    aria-label="Task options"
                   >
-                    <PencilIcon />
+                    <DotsIcon />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDel(true)}
-                    className="p-1 rounded hover:opacity-60 transition"
-                    style={{ color: '#94A3B8' }}
-                    title="Delete task"
-                    aria-label="Delete task"
-                  >
-                    <TrashIcon />
-                  </button>
-                </>
+
+                  {menuOpen && (
+                    <div
+                      className="absolute right-0 top-full mt-1 z-20 rounded-lg border shadow-lg py-1 min-w-[140px]"
+                      style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setMenuOpen(false); setEditMode(true); setEditTitle(task.title); setEditHint(task.confirmation_hint) }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left transition hover:bg-gray-50"
+                        style={{ color: '#0F172A' }}
+                      >
+                        <PencilIcon />
+                        Edit task
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMenuOpen(false); setConfirmDel(true) }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left transition hover:bg-red-50"
+                        style={{ color: '#EF4444' }}
+                      >
+                        <TrashIcon />
+                        Delete task
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
+
               {/* Mark Complete — inline on md+ */}
               {!complete && (
                 <button
@@ -278,7 +309,7 @@ export function TaskRow({
   )
 }
 
-// ── Inline SVG icons ──────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
 function CheckCircleIcon({ color }: { color: string }) {
   return (
@@ -307,9 +338,19 @@ function CircleIcon({ color }: { color: string }) {
   )
 }
 
+function DotsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="19" cy="12" r="1.5" />
+    </svg>
+  )
+}
+
 function PencilIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
@@ -318,7 +359,7 @@ function PencilIcon() {
 
 function TrashIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
       <path d="M10 11v6" />
