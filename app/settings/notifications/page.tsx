@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { AppShell } from '@/components/layout/AppShell'
 import { NotificationsPanel } from './NotificationsPanel'
 import type { NotificationPreferences } from '@/lib/types'
 
@@ -27,6 +28,14 @@ export default async function NotificationsPage() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) redirect('/login')
 
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('id, full_name, role, funeral_home_id')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile) redirect('/login')
+
   const { data: prefs } = await serviceRole
     .from('notification_preferences')
     .select('*')
@@ -47,8 +56,10 @@ export default async function NotificationsPage() {
     : DEFAULTS
 
   return (
-    <div className="p-4 md:p-8">
-      <NotificationsPanel initial={initial} />
-    </div>
+    <AppShell profile={profile}>
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-2xl mx-auto">
+        <NotificationsPanel initial={initial} />
+      </div>
+    </AppShell>
   )
 }

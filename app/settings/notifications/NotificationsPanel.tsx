@@ -12,17 +12,6 @@ type Prefs = Pick<
   | 'overdue_email' | 'overdue_sms'
 >
 
-const DEFAULTS: Prefs = {
-  critical_email:      true,
-  critical_sms:        false,
-  standard_email:      true,
-  standard_sms:        false,
-  informational_email: false,
-  informational_sms:   false,
-  overdue_email:       true,
-  overdue_sms:         false,
-}
-
 const ROWS: {
   label: string
   dot: string
@@ -57,33 +46,48 @@ export function NotificationsPanel({ initial }: { initial: Prefs }) {
   }
 
   return (
-    <div className="max-w-xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Notification Preferences</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
+    <div>
+      {/* Page header — matches other settings pages */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Notifications</h1>
+        <p className="text-sm mt-1" style={{ color: '#64748B' }}>
           Choose when Vigil sends you email and SMS alerts.
         </p>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#E2E8F0' }}>
-        {/* Header */}
-        <div className="grid grid-cols-3 px-4 py-2.5 border-b"
-             style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>Type</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#475569' }}>Email</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#475569' }}>SMS</span>
+      {/* Card */}
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12 }}
+      >
+        {/* Table header */}
+        <div
+          className="grid grid-cols-3 px-5 py-3 border-b"
+          style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}
+        >
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#64748B' }}>
+            Notification type
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#64748B' }}>
+            Email
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#64748B' }}>
+            SMS
+          </span>
         </div>
 
+        {/* Rows */}
         {ROWS.map((row, i) => (
           <div
             key={row.label}
-            className={`grid grid-cols-3 items-center px-4 py-3.5 ${i < ROWS.length - 1 ? 'border-b' : ''}`}
-            style={{ borderColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}
+            className={`grid grid-cols-3 items-center px-5 py-4${i < ROWS.length - 1 ? ' border-b' : ''}`}
+            style={{ borderColor: '#E2E8F0' }}
           >
-            <div className="flex items-center gap-2">
-              <span className="flex-shrink-0 rounded-full"
-                    style={{ width: 8, height: 8, backgroundColor: row.dot, display: 'inline-block' }} />
+            <div className="flex items-center gap-2.5">
+              <span
+                className="flex-shrink-0 rounded-full"
+                style={{ width: 8, height: 8, backgroundColor: row.dot, display: 'inline-block' }}
+              />
               <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{row.label}</span>
             </div>
             <div className="flex justify-center">
@@ -101,13 +105,17 @@ export function NotificationsPanel({ initial }: { initial: Prefs }) {
         SMS notifications will activate once your phone number is verified.
       </p>
 
+      {/* Error */}
       {error && (
-        <div className="mt-4 rounded-lg border px-4 py-3 text-sm"
-             style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+        <div
+          className="mt-4 rounded-lg border px-4 py-3 text-sm"
+          style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+        >
           {error}
         </div>
       )}
 
+      {/* Save */}
       <div className="mt-6 flex items-center gap-3">
         <button
           type="button"
@@ -133,7 +141,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200"
+      className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none"
       style={{ backgroundColor: checked ? '#0D6E68' : '#CBD5E1' }}
     >
       <span
