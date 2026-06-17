@@ -13,6 +13,8 @@ CREATE TABLE email_log (
 
 ALTER TABLE email_log ENABLE ROW LEVEL SECURITY;
 
+GRANT ALL ON email_log TO authenticated, service_role;
+
 CREATE POLICY "email_log_select"
   ON email_log FOR SELECT
   USING (
