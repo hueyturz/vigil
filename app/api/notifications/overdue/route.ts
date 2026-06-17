@@ -41,11 +41,11 @@ export async function GET(request: NextRequest) {
   const sent: string[]   = []
   const failed: string[] = []
 
+  type ServiceRow = { id: string; family_name: string; service_date: string; location: string; status: string }
+
   for (const task of tasks ?? []) {
-    const service = task.services as {
-      id: string; family_name: string; service_date: string;
-      location: string; status: string
-    } | null
+    const raw = task.services as unknown
+    const service: ServiceRow | null = Array.isArray(raw) ? (raw[0] ?? null) : (raw as ServiceRow | null)
 
     if (!service) continue
 
