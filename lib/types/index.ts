@@ -1,4 +1,5 @@
 export type Role = 'owner' | 'fd' | 'staff'
+export type Priority = 'critical' | 'standard' | 'informational'
 export type ServiceType = 'full-burial' | 'graveside' | 'cremation' | 'military'
 export type ServiceStatus = 'active' | 'completed' | 'archived'
 export type TaskStatus = 'not-started' | 'complete'
@@ -49,6 +50,7 @@ export interface Task {
   sort_order: number
   assigned_to_id: string | null
   status: TaskStatus
+  priority: Priority
   confirmation_value: string | null
   completed_by_id: string | null
   completed_at: string | null
@@ -64,6 +66,23 @@ export interface TaskTemplate {
   confirmation_hint: string
   due_days_before: number
   sort_order: number
+  priority: Priority
+}
+
+export interface NotificationPreferences {
+  id: string
+  user_id: string
+  funeral_home_id: string
+  critical_email: boolean
+  critical_sms: boolean
+  standard_email: boolean
+  standard_sms: boolean
+  informational_email: boolean
+  informational_sms: boolean
+  overdue_email: boolean
+  overdue_sms: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface SmsLog {

@@ -5,7 +5,7 @@ import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
 import { isTaskOverdue } from '@/lib/utils/service-status'
 import { deleteServiceTask, updateServiceTask } from '@/app/services/task-actions'
-import type { TaskWithProfile } from '@/lib/types'
+import type { Priority, TaskWithProfile } from '@/lib/types'
 
 interface TaskRowProps {
   task: TaskWithProfile
@@ -185,7 +185,10 @@ export function TaskRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <PriorityDot priority={task.priority} />
+              <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+            </div>
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {/* Three-dot menu — not-started tasks only */}
@@ -306,6 +309,24 @@ export function TaskRow({
         onSuccess={handleSuccess}
       />
     </>
+  )
+}
+
+// ── Priority dot ──────────────────────────────────────────────────────────────
+
+const PRIORITY_COLORS: Record<Priority, string> = {
+  critical:      '#EF4444',
+  standard:      '#F59E0B',
+  informational: '#94A3B8',
+}
+
+function PriorityDot({ priority }: { priority: Priority }) {
+  return (
+    <span
+      className="inline-block flex-shrink-0 rounded-full"
+      style={{ width: 8, height: 8, backgroundColor: PRIORITY_COLORS[priority] ?? '#94A3B8' }}
+      title={priority}
+    />
   )
 }
 

@@ -66,6 +66,16 @@ export async function GET(request: NextRequest) {
 
     if (!recipient) continue
 
+    // Check recipient's overdue_email preference
+    const { data: recipientPrefs } = await serviceRole
+      .from('notification_preferences')
+      .select('overdue_email')
+      .eq('user_id', recipient.id)
+      .maybeSingle()
+
+    const emailEnabled = recipientPrefs ? recipientPrefs.overdue_email : true
+    if (!emailEnabled) continue
+
     const { data: { user: recipientUser } } = await serviceRole.auth.admin.getUserById(recipient.id)
     const recipientEmail = recipientUser?.email
     if (!recipientEmail) continue

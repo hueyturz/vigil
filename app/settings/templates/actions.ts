@@ -102,6 +102,7 @@ export async function addTemplate(
     category: string
     confirmation_hint: string
     due_days_before: number
+    priority: string
   },
 ): Promise<{ data?: TaskTemplate; error?: string }> {
   const auth = await requireFdOrOwner()
@@ -130,6 +131,7 @@ export async function addTemplate(
       category:          input.category,
       confirmation_hint: input.confirmation_hint,
       due_days_before:   input.due_days_before,
+      priority:          input.priority,
       sort_order:        nextOrder,
     })
     .select('*')
@@ -150,6 +152,7 @@ export async function updateTemplate(
     category: string
     confirmation_hint: string
     due_days_before: number
+    priority: string
   },
 ): Promise<{ error?: string }> {
   const auth = await requireFdOrOwner()
