@@ -109,3 +109,58 @@ export interface TaskWithProfile extends Task {
   completed_by: Pick<Profile, 'id' | 'full_name'> | null
   assigned_to: Pick<Profile, 'id' | 'full_name'> | null
 }
+
+// ── Intake / Meeting Recording ────────────────────────────────────────────────
+
+export type IntakeStatus = 'recording' | 'transcribing' | 'extracting' | 'complete' | 'failed'
+
+export interface ExtractionCaseMetadata {
+  decedent_name:   string | null
+  service_date_raw: string | null
+  venue_name:      string | null
+  cemetery_name:   string | null
+}
+
+export interface ExtractionTaskConfirmation {
+  task_title:         string
+  confirmation_value: string
+  confidence_score:   number
+  anxiety_flag:       boolean
+}
+
+export interface ExtractionNewTask {
+  title:             string
+  category:          string
+  confirmation_hint: string
+  due_days_before:   number
+  priority:          Priority
+  extracted_detail:  string
+  confidence_score:  number
+  anxiety_flag:      boolean
+}
+
+export interface ExtractionServiceNote {
+  note:            string
+  confidence_score: number
+}
+
+export interface ExtractionData {
+  case_metadata:       ExtractionCaseMetadata
+  task_confirmations:  ExtractionTaskConfirmation[]
+  new_tasks:           ExtractionNewTask[]
+  service_notes:       ExtractionServiceNote[]
+}
+
+export interface IntakeSession {
+  id:                         string
+  service_id:                 string
+  funeral_home_id:            string
+  created_by_id:              string
+  recording_duration_seconds: number | null
+  transcript:                 string | null
+  raw_extraction:             ExtractionData | null
+  status:                     IntakeStatus
+  error_message:              string | null
+  created_at:                 string
+  updated_at:                 string
+}

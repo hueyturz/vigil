@@ -5,9 +5,11 @@ import { AppShell } from '@/components/layout/AppShell'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { TaskList } from '@/components/tasks/TaskList'
+import { MeetingRecorder } from '@/components/intake/MeetingRecorder'
+import { PastMeetings } from '@/components/intake/PastMeetings'
 import { computeServiceStatus } from '@/lib/utils/service-status'
 import { formatDate } from '@/lib/utils/date-helpers'
-import type { TaskWithProfile } from '@/lib/types'
+import type { IntakeSession, TaskWithProfile } from '@/lib/types'
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
   'full-burial': 'Full Burial',
@@ -63,10 +65,20 @@ export default async function ServiceDetailPage({
     assigned_to:  t.assigned_to  ?? null,
   }))
 
+  // Fetch intake sessions for this service
+  const { data: intakeRaw } = await db
+    .from('intake_sessions')
+    .select('*')
+    .eq('service_id', params.id)
+    .order('created_at', { ascending: false })
+
+  const intakeSessions: IntakeSession[] = (intakeRaw ?? []) as IntakeSession[]
+
   const status      = computeServiceStatus(tasks, service.service_date)
   const completed   = tasks.filter(t => t.status === 'complete').length
   const total       = tasks.length
   const progressPct = total > 0 ? (completed / total) * 100 : 0
+  const canRecord   = profile.role === 'owner' || profile.role === 'fd'
 
   return (
     <AppShell profile={profile}>
@@ -115,6 +127,11 @@ export default async function ServiceDetailPage({
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
               </p>
+              {canRecord && (
+                <div className="mt-1">
+                  <MeetingRecorder serviceId={params.id} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -131,6 +148,13 @@ export default async function ServiceDetailPage({
           <p className="text-sm text-center py-12" style={{ color: '#94A3B8' }}>
             No tasks found for this service.
           </p>
+        )}
+
+        {/* Past Meetings */}
+        {intakeSessions.length > 0 && (
+          <div className="mt-10">
+            <PastMeetings sessions={intakeSessions} />
+          </div>
         )}
       </div>
     </AppShell>
