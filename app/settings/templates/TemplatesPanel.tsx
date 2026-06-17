@@ -27,8 +27,7 @@ interface TemplatesPanelProps {
 export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }: TemplatesPanelProps) {
   const [activeTab,    setActiveTab]    = useState<ServiceType>('full-burial')
   const [custom,       setCustom]       = useState<TaskTemplate[]>(initCustom)
-  const [editingId,    setEditingId]    = useState<string | null>(null)
-  const [editValues,   setEditValues]   = useState<Partial<TaskTemplate>>({})
+  const [editTarget,   setEditTarget]   = useState<TaskTemplate | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDel,   setConfirmDel]   = useState<string | null>(null)
   const [addOpen,      setAddOpen]      = useState(false)
@@ -56,7 +55,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     onSuccess?.(result.data)
   }
 
-  // ── Customize ────────────────────────────────────────────────────────────────
   async function handleCustomize() {
     await run(() => customizeTemplate(activeTab), () => {
       const copies = systemForTab.map(t => ({ ...t, funeral_home_id: 'custom' }))
@@ -64,7 +62,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     })
   }
 
-  // ── Reset to defaults ────────────────────────────────────────────────────────
   async function handleReset() {
     await run(() => resetToDefaults(activeTab), () => {
       setCustom(prev => prev.filter(t => t.service_type !== activeTab))
@@ -72,7 +69,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     })
   }
 
-  // ── Reorder ──────────────────────────────────────────────────────────────────
   async function handleReorder(templateId: string, direction: 'up' | 'down') {
     await run(() => reorderTemplate(templateId, activeTab, direction), () => {
       setCustom(prev => {
@@ -88,28 +84,23 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     })
   }
 
-  // ── Save edit ────────────────────────────────────────────────────────────────
-  async function handleSaveEdit(templateId: string) {
-    if (!editValues.title?.trim() || !editValues.confirmation_hint?.trim()) return
+  async function handleSaveEdit(templateId: string, values: EditValues) {
     await run(
       () => updateTemplate(templateId, {
-        title:             editValues.title!.trim(),
-        category:          editValues.category ?? TASK_CATEGORIES[0],
-        confirmation_hint: editValues.confirmation_hint!.trim(),
-        due_days_before:   editValues.due_days_before ?? 1,
+        title:             values.title.trim(),
+        category:          values.category,
+        confirmation_hint: values.confirmation_hint.trim(),
+        due_days_before:   values.due_days_before,
       }),
       () => {
         setCustom(prev => prev.map(t =>
-          t.id === templateId
-            ? { ...t, ...editValues, title: editValues.title!.trim(), confirmation_hint: editValues.confirmation_hint!.trim() }
-            : t
+          t.id === templateId ? { ...t, ...values, title: values.title.trim(), confirmation_hint: values.confirmation_hint.trim() } : t
         ))
-        setEditingId(null)
+        setEditTarget(null)
       },
     )
   }
 
-  // ── Delete ───────────────────────────────────────────────────────────────────
   async function handleDelete(templateId: string) {
     await run(() => deleteTemplate(templateId), () => {
       setCustom(prev => prev.filter(t => t.id !== templateId))
@@ -117,7 +108,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     })
   }
 
-  // ── Add ──────────────────────────────────────────────────────────────────────
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     if (!addValues.title.trim() || !addValues.confirmation_hint.trim()) return
@@ -151,7 +141,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
           <button
             key={st.value}
             type="button"
-            onClick={() => { setActiveTab(st.value); setEditingId(null); setConfirmReset(false); setConfirmDel(null); setAddOpen(false); setError(null) }}
+            onClick={() => { setActiveTab(st.value); setConfirmReset(false); setConfirmDel(null); setAddOpen(false); setError(null) }}
             className="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition"
             style={{
               borderBottomColor: activeTab === st.value ? '#0D6E68' : 'transparent',
@@ -219,51 +209,12 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
             )
           }
 
-          if (editingId === tpl.id) {
-            return (
-              <div
-                key={tpl.id}
-                className="rounded-lg border p-4 space-y-3"
-                style={{ backgroundColor: '#FAFAFA', borderColor: '#0D6E68' }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#0D6E68' }}>Editing task</p>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditingId(null)} className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-gray-50" style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
-                    <button type="button" onClick={() => handleSaveEdit(tpl.id)} disabled={busy} className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-60" style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label="Title">
-                    <input type="text" value={editValues.title ?? ''} onChange={e => setEditValues(v => ({ ...v, title: e.target.value }))} style={inputStyle} autoFocus />
-                  </Field>
-                  <Field label="Category">
-                    <select value={editValues.category ?? ''} onChange={e => setEditValues(v => ({ ...v, category: e.target.value }))} style={inputStyle}>
-                      {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Confirmation hint" className="sm:col-span-2">
-                    <input type="text" value={editValues.confirmation_hint ?? ''} onChange={e => setEditValues(v => ({ ...v, confirmation_hint: e.target.value }))} style={inputStyle} />
-                  </Field>
-                  <Field label="Days before service">
-                    <input type="number" min={0} max={60} value={editValues.due_days_before ?? 1} onChange={e => setEditValues(v => ({ ...v, due_days_before: Number(e.target.value) }))} style={inputStyle} />
-                  </Field>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <button type="button" onClick={() => handleSaveEdit(tpl.id)} disabled={busy} className="flex-1 rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
-                  <button type="button" onClick={() => setEditingId(null)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50" style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
-                </div>
-              </div>
-            )
-          }
-
           return (
             <div
               key={tpl.id}
               className="flex items-center gap-3 rounded-lg border px-4 py-3"
               style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
             >
-              {/* Sort order / drag handle — up/down arrows (custom only) */}
               {isCustomized && (
                 <div className="flex flex-col gap-0.5 flex-shrink-0">
                   <button
@@ -289,7 +240,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 </div>
               )}
 
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{tpl.title}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
@@ -297,12 +247,11 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 </p>
               </div>
 
-              {/* Actions (custom only) */}
               {isCustomized && (
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
-                    onClick={() => { setEditingId(tpl.id); setEditValues({ title: tpl.title, category: tpl.category, confirmation_hint: tpl.confirmation_hint, due_days_before: tpl.due_days_before }) }}
+                    onClick={() => setEditTarget(tpl)}
                     className="p-1.5 rounded hover:opacity-60 transition"
                     style={{ color: '#94A3B8' }}
                     aria-label="Edit"
@@ -383,10 +332,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
       )}
 
       {isCustomized && confirmReset && (
-        <div
-          className="border-t pt-6"
-          style={{ borderColor: '#E2E8F0' }}
-        >
+        <div className="border-t pt-6" style={{ borderColor: '#E2E8F0' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#991B1B' }}>
             This will delete your custom template for {SERVICE_TYPES.find(s => s.value === activeTab)?.label} and restore the system defaults. Continue?
           </p>
@@ -396,6 +342,158 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
           </div>
         </div>
       )}
+
+      {/* Edit template modal */}
+      {editTarget && (
+        <EditTemplateModal
+          template={editTarget}
+          busy={busy}
+          onSave={(values) => handleSaveEdit(editTarget.id, values)}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Edit modal ────────────────────────────────────────────────────────────────
+
+interface EditValues {
+  title: string
+  category: string
+  confirmation_hint: string
+  due_days_before: number
+}
+
+function EditTemplateModal({
+  template,
+  busy,
+  onSave,
+  onClose,
+}: {
+  template: TaskTemplate
+  busy: boolean
+  onSave: (values: EditValues) => void
+  onClose: () => void
+}) {
+  const [title,   setTitle]   = useState(template.title)
+  const [cat,     setCat]     = useState(template.category)
+  const [hint,    setHint]    = useState(template.confirmation_hint)
+  const [days,    setDays]    = useState(template.due_days_before)
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!title.trim() || !hint.trim()) return
+    onSave({ title, category: cat, confirmation_hint: hint, due_days_before: days })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center md:p-4"
+      style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full h-full md:h-auto md:max-w-md md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
+        style={{ backgroundColor: '#FFFFFF' }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
+          style={{ borderColor: '#E2E8F0' }}
+        >
+          <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Edit Task</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xl leading-none hover:opacity-60 transition"
+            style={{ color: '#94A3B8' }}
+            aria-label="Close"
+          >×</button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
+                Task title <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                required
+                autoFocus
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
+                Category <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <select value={cat} onChange={e => setCat(e.target.value)} style={inputStyle}>
+                {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
+                Confirmation hint <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={hint}
+                onChange={e => setHint(e.target.value)}
+                style={inputStyle}
+              />
+              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>
+                Shown to staff when they confirm this task.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
+                Due (days before service) <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="number"
+                required
+                min={0}
+                max={60}
+                value={days}
+                onChange={e => setDays(Number(e.target.value))}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Footer — always visible, never scrolls away */}
+          <div
+            className="flex gap-3 px-6 py-4 border-t flex-shrink-0"
+            style={{ borderColor: '#E2E8F0' }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50"
+              style={{ borderColor: '#E2E8F0', color: '#475569' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !title.trim() || !hint.trim()}
+              className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#0D6E68' }}
+            >
+              {busy ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
@@ -417,7 +515,7 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   borderRadius: 8,
   border: '1px solid #E2E8F0',
-  padding: '8px 12px',
+  padding: '10px 12px',
   fontSize: 14,
   color: '#0F172A',
   outline: 'none',
