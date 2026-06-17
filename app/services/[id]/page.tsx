@@ -126,7 +126,7 @@ export default async function ServiceDetailPage({
 
         {/* Task list */}
         {tasks.length > 0 ? (
-          <TaskList tasks={tasks} serviceDate={service.service_date} />
+          <TaskList tasks={tasks} serviceDate={service.service_date} serviceId={params.id} />
         ) : (
           <p className="text-sm text-center py-12" style={{ color: '#94A3B8' }}>
             No tasks found for this service.

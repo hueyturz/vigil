@@ -17,13 +17,13 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
   const supabase      = createClient()
   const serviceRole   = createServiceRoleClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
 
   const { data: profile } = await serviceRole
     .from('profiles')
     .select('funeral_home_id, role')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) return { error: 'Profile not found.' }
@@ -40,7 +40,7 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
       service_date:      input.service_date,
       location:          input.location,
       assigned_staff_id: input.assigned_staff_id || null,
-      created_by_id:     user.id,
+      created_by_id:     session.user.id,
       status:            'active',
     })
     .select('id')

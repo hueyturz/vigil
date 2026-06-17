@@ -11,9 +11,10 @@ interface SidebarProps {
 }
 
 const NAV = [
-  { label: 'Dashboard', href: '/dashboard', roles: ['owner', 'fd'] },
-  { label: 'My Tasks',  href: '/my-tasks',  roles: ['staff'] },
-  { label: 'Users',     href: '/settings/users', roles: ['owner'] },
+  { label: 'Dashboard', href: '/dashboard',          roles: ['owner', 'fd'] },
+  { label: 'My Tasks',  href: '/my-tasks',            roles: ['staff'] },
+  { label: 'Templates', href: '/settings/templates',  roles: ['owner', 'fd'] },
+  { label: 'Users',     href: '/settings/users',      roles: ['owner'] },
 ]
 
 export function Sidebar({ profile, redAlert = false }: SidebarProps) {

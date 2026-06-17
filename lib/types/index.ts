@@ -57,6 +57,7 @@ export interface Task {
 
 export interface TaskTemplate {
   id: string
+  funeral_home_id: string | null   // null = system default
   service_type: ServiceType
   title: string
   category: string
