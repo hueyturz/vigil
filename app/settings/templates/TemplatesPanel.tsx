@@ -34,6 +34,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   const [addValues,    setAddValues]    = useState({ title: '', category: TASK_CATEGORIES[0], confirmation_hint: '', due_days_before: 1 })
   const [busy,         setBusy]         = useState(false)
   const [error,        setError]        = useState<string | null>(null)
+  const [saved,        setSaved]        = useState(false)
 
   const customForTab = custom
     .filter(t => t.service_type === activeTab)
@@ -46,6 +47,11 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   const isCustomized = customForTab.length > 0
   const displayTemplates = isCustomized ? customForTab : systemForTab
 
+  function flashSaved() {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   async function run<T>(fn: () => Promise<{ data?: T; error?: string }>, onSuccess?: (d?: T) => void) {
     setBusy(true)
     setError(null)
@@ -53,6 +59,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     setBusy(false)
     if (result.error) { setError(result.error); return }
     onSuccess?.(result.data)
+    flashSaved()
   }
 
   async function handleCustomize() {
@@ -128,11 +135,21 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Task Templates</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-          Customize the tasks auto-generated when a new service is created.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Task Templates</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
+            Customize the tasks auto-generated when a new service is created.
+          </p>
+        </div>
+        {saved && (
+          <span
+            className="mt-1 flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+            style={{ backgroundColor: '#DCFCE7', color: '#15803D' }}
+          >
+            ✓ Saved
+          </span>
+        )}
       </div>
 
       {/* Tabs */}
