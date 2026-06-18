@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       service_id,
       services!inner (
         id,
-        family_name,
+        deceased_name,
         service_date,
         location,
         status
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   const sent: string[]   = []
   const failed: string[] = []
 
-  type ServiceRow = { id: string; family_name: string; service_date: string; location: string; status: string }
+  type ServiceRow = { id: string; deceased_name: string; service_date: string; location: string; status: string }
 
   for (const task of tasks ?? []) {
     const raw = task.services as unknown
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     const { subject, html } = taskOverdueEmail({
       taskTitle:        task.title,
-      familyName:       service.family_name,
+      familyName:       service.deceased_name,
       serviceDate:      formatDate(service.service_date),
       daysUntilService: days,
       location:         service.location,
@@ -103,9 +103,9 @@ export async function GET(request: NextRequest) {
     })
 
     if (result.success) {
-      sent.push(`${task.title} (${service.family_name})`)
+      sent.push(`${task.title} (${service.deceased_name})`)
     } else {
-      failed.push(`${task.title} (${service.family_name}): ${result.error}`)
+      failed.push(`${task.title} (${service.deceased_name}): ${result.error}`)
     }
   }
 

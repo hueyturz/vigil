@@ -62,7 +62,7 @@ export default async function PrintServicePage({
   return (
     <html>
       <head>
-        <title>{service.family_name} Family — Service Checklist</title>
+        <title>{service.deceased_name} — Service Checklist</title>
         <meta name="robots" content="noindex" />
         <style>{`
           * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,8 +89,7 @@ export default async function PrintServicePage({
         `}</style>
       </head>
       <body>
-        <h1>{/family/i.test(service.family_name) ? service.family_name : `${service.family_name} Family`}</h1>
-        <p className="meta">{service.deceased_name}</p>
+        <h1>{service.deceased_name}</h1>
         {service.service_date && (
           <p className="meta">{formatDate(service.service_date)}{service.location ? ` · ${service.location}` : ''}</p>
         )}

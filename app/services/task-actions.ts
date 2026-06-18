@@ -53,7 +53,7 @@ export async function addTaskToService(
 
   const { data: service } = await serviceRole
     .from('services')
-    .select('funeral_home_id, family_name')
+    .select('funeral_home_id, deceased_name')
     .eq('id', serviceId)
     .single()
 
@@ -98,7 +98,7 @@ export async function addTaskToService(
   if (input.assigned_to_id) {
     void maybeSendAssignmentEmail(
       serviceRole, input.assigned_to_id, session.user.id, profile.full_name,
-      input.title, service.family_name, serviceId,
+      input.title, service.deceased_name, serviceId,
     )
   }
 
@@ -249,7 +249,7 @@ export async function reassignTask(
 
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('funeral_home_id, title, service_id, services(family_name)')
+    .select('funeral_home_id, title, service_id, services(deceased_name)')
     .eq('id', taskId)
     .single()
 
@@ -264,10 +264,10 @@ export async function reassignTask(
   if (error) return { error: error.message }
 
   if (assignedToId && task.service_id) {
-    const svc = task.services as unknown as { family_name: string } | null
+    const svc = task.services as unknown as { deceased_name: string } | null
     void maybeSendAssignmentEmail(
       serviceRole, assignedToId, session.user.id, profile.full_name,
-      task.title, svc?.family_name ?? '', task.service_id,
+      task.title, svc?.deceased_name ?? '', task.service_id,
     )
   }
 

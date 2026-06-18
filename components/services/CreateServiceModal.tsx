@@ -8,11 +8,10 @@ import { createService } from '@/app/services/actions'
 import type { ServiceType } from '@/lib/types'
 
 const CreateServiceSchema = z.object({
-  family_name:   z.string().min(1, 'Family name is required.'),
   deceased_name: z.string().min(1, 'Deceased name is required.'),
 })
 
-type FieldErrors = Partial<Record<'family_name' | 'deceased_name', string>>
+type FieldErrors = Partial<Record<'deceased_name', string>>
 
 const TASK_COUNTS: Record<ServiceType, number> = {
   'full-burial': 14,
@@ -32,7 +31,6 @@ interface StaffOption { id: string; full_name: string }
 interface CreateServiceModalProps { open: boolean; onClose: () => void }
 
 export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
-  const [familyName,      setFamilyName]      = useState('')
   const [deceasedName,    setDeceasedName]     = useState('')
   const [serviceType,     setServiceType]      = useState<ServiceType | ''>('')
   const [serviceDate,     setServiceDate]      = useState('')
@@ -60,7 +58,6 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
   }, [open])
 
   function reset() {
-    setFamilyName('')
     setDeceasedName('')
     setServiceType('')
     setServiceDate('')
@@ -81,7 +78,6 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     setFieldErrors({})
 
     const validation = CreateServiceSchema.safeParse({
-      family_name:   familyName.trim(),
       deceased_name: deceasedName.trim(),
     })
 
@@ -97,7 +93,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
 
     setLoading(true)
     const result = await createService({
-      family_name:       familyName.trim(),
+      family_name:       deceasedName.trim(),
       deceased_name:     deceasedName.trim(),
       service_type:      serviceType ? (serviceType as ServiceType) : null,
       service_date:      serviceDate || null,
@@ -157,17 +153,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          <ModalField label="Family Name" required error={fieldErrors.family_name}>
-            <input
-              type="text"
-              value={familyName}
-              onChange={e => setFamilyName(e.target.value)}
-              placeholder="Henderson"
-              style={inputStyle}
-            />
-          </ModalField>
-
-          <ModalField label="Deceased Full Name" required error={fieldErrors.deceased_name}>
+          <ModalField label="Deceased Name" required error={fieldErrors.deceased_name}>
             <input
               type="text"
               value={deceasedName}

@@ -44,7 +44,7 @@ export async function POST(
 
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('*, services(id, family_name, service_date, location)')
+    .select('*, services(id, deceased_name, service_date, location)')
     .eq('id', params.id)
     .eq('funeral_home_id', profile.funeral_home_id)
     .single()
@@ -77,7 +77,7 @@ export async function POST(
     .single()
 
   const service = task.services as {
-    id: string; family_name: string; service_date: string; location: string
+    id: string; deceased_name: string; service_date: string; location: string
   } | null
 
   if (recipient && service) {
@@ -108,7 +108,7 @@ export async function POST(
         message:         buildSmsMessage({
           completedByName:   profile.full_name,
           taskTitle:         task.title,
-          familyName:        service.family_name,
+          familyName:        service.deceased_name,
           serviceDate:       service.service_date,
           confirmationValue: confirmation_value,
         }),
@@ -123,7 +123,7 @@ export async function POST(
       if (recipientEmail) {
         const { subject, html } = taskConfirmedEmail({
           taskTitle:         task.title,
-          familyName:        service.family_name,
+          familyName:        service.deceased_name,
           serviceDate:       formatDate(service.service_date),
           serviceId:         service.id,
           confirmedByName:   profile.full_name,

@@ -82,7 +82,7 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
               {/* Label */}
               <div className="flex-shrink-0" style={{ width: 140 }}>
                 <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
-                  {service.family_name}
+                  {service.deceased_name}
                 </p>
                 {service.service_date && (
                   <p className="text-xs truncate" style={{ color: '#94A3B8' }}>

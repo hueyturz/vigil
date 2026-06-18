@@ -47,14 +47,11 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
 
     if (search.trim()) {
       const q = search.toLowerCase()
-      list = list.filter(s =>
-        s.family_name.toLowerCase().includes(q) ||
-        s.deceased_name.toLowerCase().includes(q)
-      )
+      list = list.filter(s => s.deceased_name.toLowerCase().includes(q))
     }
 
     list.sort((a, b) => {
-      if (sortKey === 'name_asc') return a.family_name.localeCompare(b.family_name)
+      if (sortKey === 'name_asc') return a.deceased_name.localeCompare(b.deceased_name)
       if (sortKey === 'date_desc') return (b.created_at ?? '').localeCompare(a.created_at ?? '')
       const aDate = a.service_date ?? '9999-12-31'
       const bDate = b.service_date ?? '9999-12-31'
@@ -94,7 +91,7 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
             type="text"
             value={searchRaw}
             onChange={e => setSearchRaw(e.target.value)}
-            placeholder="Search family or deceased name…"
+            placeholder="Search by name…"
             className="w-full rounded-lg border pl-8 pr-3 py-2 text-sm outline-none"
             style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
           />

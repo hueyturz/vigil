@@ -116,11 +116,8 @@ export default async function ServiceDetailPage({
                 className="font-serif text-3xl font-bold leading-tight"
                 style={{ color: '#0F172A' }}
               >
-                {/family/i.test(service.family_name) ? service.family_name : `${service.family_name} Family`}
-              </h1>
-              <p className="mt-1 text-base" style={{ color: '#475569' }}>
                 {service.deceased_name}
-              </p>
+              </h1>
               {(service.service_date || service.location) && (
                 <div className="mt-3 flex flex-wrap gap-4 text-sm" style={{ color: '#475569' }}>
                   {service.service_date && <span>{formatDate(service.service_date)}</span>}

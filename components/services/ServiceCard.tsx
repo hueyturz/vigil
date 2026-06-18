@@ -12,9 +12,6 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
   'military':    'Military Honors',
 }
 
-function familyLabel(name: string): string {
-  return /family/i.test(name) ? name : `${name} Family`
-}
 
 export function ServiceCard({ service }: { service: ServiceWithTasks }) {
   const { tasks } = service
@@ -56,11 +53,8 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
       {/* Family / deceased names */}
       <div>
         <h3 className="font-serif text-xl font-bold leading-tight" style={{ color: '#0F172A' }}>
-          {familyLabel(service.family_name)}
-        </h3>
-        <p className="mt-0.5 text-sm" style={{ color: '#475569' }}>
           {service.deceased_name}
-        </p>
+        </h3>
       </div>
 
       {/* Date + days chip */}

@@ -29,7 +29,6 @@ interface EditServiceModalProps {
 export function EditServiceModal({ service, open, onClose }: EditServiceModalProps) {
   const router = useRouter()
 
-  const [familyName,      setFamilyName]      = useState(service.family_name)
   const [deceasedName,    setDeceasedName]     = useState(service.deceased_name)
   const [serviceType,     setServiceType]      = useState<ServiceType | ''>(service.service_type ?? '')
   const [serviceDate,     setServiceDate]      = useState(service.service_date ?? '')
@@ -72,11 +71,11 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!familyName.trim() || !deceasedName.trim()) return
+    if (!deceasedName.trim()) return
     setLoading(true); setError(null)
 
     const result = await updateService(service.id, {
-      family_name:       familyName.trim(),
+      family_name:       deceasedName.trim(),
       deceased_name:     deceasedName.trim(),
       service_type:      serviceType ? (serviceType as ServiceType) : null,
       service_date:      serviceDate || null,
@@ -112,11 +111,7 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <Field label="Family Name" required>
-            <input type="text" required value={familyName} onChange={e => setFamilyName(e.target.value)} style={inputStyle} />
-          </Field>
-
-          <Field label="Deceased Full Name" required>
+          <Field label="Deceased Name" required>
             <input type="text" required value={deceasedName} onChange={e => setDeceasedName(e.target.value)} style={inputStyle} />
           </Field>
 
@@ -169,7 +164,7 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>
               Cancel
             </button>
-            <button type="submit" disabled={loading || !familyName.trim() || !deceasedName.trim()}
+            <button type="submit" disabled={loading || !deceasedName.trim()}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: '#0D6E68' }}>
               {loading ? 'Saving…' : 'Save Changes'}

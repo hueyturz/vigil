@@ -116,7 +116,7 @@ export default async function MyTasksPage() {
                           className="font-serif text-xl font-bold"
                           style={{ color: '#0F172A' }}
                         >
-                          {service.family_name} Family
+                          {service.deceased_name}
                         </h2>
                         <div
                           className="flex flex-wrap gap-3 mt-1 text-sm"
