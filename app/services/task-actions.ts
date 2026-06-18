@@ -1,7 +1,28 @@
 'use server'
 
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { sendEmail } from '@/lib/utils/email'
+import { taskAssignedEmail } from '@/lib/utils/email-templates'
 import type { TaskWithProfile } from '@/lib/types'
+
+async function maybeSendAssignmentEmail(
+  serviceRole: ReturnType<typeof createServiceRoleClient>,
+  assignedToId: string,
+  actorId: string,
+  actorName: string,
+  taskTitle: string,
+  familyName: string,
+  serviceId: string,
+) {
+  if (assignedToId === actorId) return
+  try {
+    const { data: authData } = await serviceRole.auth.admin.getUserById(assignedToId)
+    const email = authData?.user?.email
+    if (!email) return
+    const { subject, html } = taskAssignedEmail({ taskTitle, familyName, serviceId, actorName })
+    await sendEmail({ to: email, subject, html })
+  } catch { /* fire-and-forget */ }
+}
 
 // ── Add a custom task to a specific service ────────────────────────────────
 
@@ -23,7 +44,7 @@ export async function addTaskToService(
 
   const { data: profile } = await serviceRole
     .from('profiles')
-    .select('funeral_home_id, role')
+    .select('funeral_home_id, role, full_name')
     .eq('id', session.user.id)
     .single()
 
@@ -32,7 +53,7 @@ export async function addTaskToService(
 
   const { data: service } = await serviceRole
     .from('services')
-    .select('funeral_home_id')
+    .select('funeral_home_id, family_name')
     .eq('id', serviceId)
     .single()
 
@@ -74,6 +95,13 @@ export async function addTaskToService(
     assigned_to:  null,
   }
 
+  if (input.assigned_to_id) {
+    void maybeSendAssignmentEmail(
+      serviceRole, input.assigned_to_id, session.user.id, profile.full_name,
+      input.title, service.family_name, serviceId,
+    )
+  }
+
   return { data: newTask }
 }
 
@@ -90,7 +118,7 @@ export async function deleteServiceTask(
 
   const { data: profile } = await serviceRole
     .from('profiles')
-    .select('funeral_home_id, role')
+    .select('funeral_home_id, role, full_name')
     .eq('id', session.user.id)
     .single()
 
@@ -129,7 +157,7 @@ export async function updateServiceTask(
 
   const { data: profile } = await serviceRole
     .from('profiles')
-    .select('funeral_home_id, role')
+    .select('funeral_home_id, role, full_name')
     .eq('id', session.user.id)
     .single()
 
@@ -172,7 +200,7 @@ export async function updateTaskNotes(
 
   const { data: profile } = await serviceRole
     .from('profiles')
-    .select('funeral_home_id, role')
+    .select('funeral_home_id, role, full_name')
     .eq('id', session.user.id)
     .single()
 
@@ -212,7 +240,7 @@ export async function reassignTask(
 
   const { data: profile } = await serviceRole
     .from('profiles')
-    .select('funeral_home_id, role')
+    .select('funeral_home_id, role, full_name')
     .eq('id', session.user.id)
     .single()
 
@@ -221,7 +249,7 @@ export async function reassignTask(
 
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('funeral_home_id')
+    .select('funeral_home_id, title, service_id, services(family_name)')
     .eq('id', taskId)
     .single()
 
@@ -234,5 +262,14 @@ export async function reassignTask(
     .eq('id', taskId)
 
   if (error) return { error: error.message }
+
+  if (assignedToId && task.service_id) {
+    const svc = task.services as unknown as { family_name: string } | null
+    void maybeSendAssignmentEmail(
+      serviceRole, assignedToId, session.user.id, profile.full_name,
+      task.title, svc?.family_name ?? '', task.service_id,
+    )
+  }
+
   return {}
 }

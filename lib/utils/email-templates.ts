@@ -111,7 +111,37 @@ export function taskConfirmedEmail(data: TaskConfirmedData): { subject: string; 
   return { subject, html }
 }
 
-// ── Template B — Task Overdue ─────────────────────────────────────────────────
+// ── Template B — Task Assigned ───────────────────────────────────────────────
+
+export interface TaskAssignedData {
+  taskTitle:   string
+  familyName:  string
+  serviceId:   string
+  actorName:   string
+}
+
+export function taskAssignedEmail(data: TaskAssignedData): { subject: string; html: string } {
+  const serviceUrl = `${BASE_URL}/services/${data.serviceId}`
+  const subject    = `You've been assigned a task — ${data.familyName}`
+
+  const html = baseLayout(`
+    <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;text-transform:uppercase;
+              letter-spacing:0.05em;color:#0D6E68;">Task Assignment</p>
+    <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#0F172A;line-height:1.3;">
+      ${data.taskTitle}
+    </h1>
+    <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.6;">
+      <strong style="color:#0F172A;">${data.actorName}</strong> assigned you this task
+      on the <strong style="color:#0F172A;">${data.familyName}</strong> service.
+      Log in to Vigil to view it.
+    </p>
+    ${ctaButton(serviceUrl, 'View service →')}
+  `)
+
+  return { subject, html }
+}
+
+// ── Template C — Task Overdue ─────────────────────────────────────────────────
 
 export interface TaskOverdueData {
   taskTitle: string

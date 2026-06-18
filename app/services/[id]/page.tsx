@@ -9,6 +9,7 @@ import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
 import { CaseNotes }             from '@/components/services/CaseNotes'
 import { ContactCard }           from '@/components/services/ContactCard'
 import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
+import { EditServiceButton }     from '@/components/services/EditServiceButton'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile } from '@/lib/types'
@@ -87,6 +88,16 @@ export default async function ServiceDetailPage({
     <AppShell profile={profile}>
       <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
 
+        {/* Sticky back pill — fixed to viewport, accounts for sidebar on desktop */}
+        <Link
+          href="/dashboard"
+          className="fixed top-4 left-4 md:left-[236px] z-40 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition hover:shadow"
+          style={{ color: '#0D6E68', borderColor: '#E2E8F0' }}
+        >
+          ← Dashboard
+        </Link>
+
+        {/* Inline back link (scrolls with page, for layout spacing) */}
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-1 text-sm mb-6 hover:underline"
@@ -143,6 +154,20 @@ export default async function ServiceDetailPage({
                 >
                   Print Checklist
                 </a>
+              )}
+              {canManage && (
+                <EditServiceButton service={{
+                  id:                service.id,
+                  family_name:       service.family_name,
+                  deceased_name:     service.deceased_name,
+                  service_type:      service.service_type,
+                  service_date:      service.service_date,
+                  location:          service.location,
+                  assigned_staff_id: service.assigned_staff_id,
+                  contact_name:      service.contact_name ?? null,
+                  contact_phone:     service.contact_phone ?? null,
+                  contact_email:     service.contact_email ?? null,
+                }} />
               )}
               {canManage && (
                 <ServiceCompletionFlow

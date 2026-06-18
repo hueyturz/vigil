@@ -48,7 +48,7 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
         <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>
           {service.service_type
             ? (SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type)
-            : 'No type set'}
+            : ''}
         </span>
         <Badge status={status} />
       </div>

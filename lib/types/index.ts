@@ -128,6 +128,16 @@ export interface TaskWithProfile extends Task {
   assigned_to: Pick<Profile, 'id' | 'full_name'> | null
 }
 
+export interface TaskSubtask {
+  id: string
+  task_id: string
+  funeral_home_id: string
+  title: string
+  is_complete: boolean
+  sort_order: number
+  created_at: string
+}
+
 // ── Intake / Meeting Recording ────────────────────────────────────────────────
 
 export type IntakeStatus = 'recording' | 'transcribing' | 'extracting' | 'complete' | 'failed'

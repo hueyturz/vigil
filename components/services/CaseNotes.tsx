@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { updateServiceNotes } from '@/app/services/actions'
 import { logActivity } from '@/lib/utils/activity'
 
@@ -35,6 +36,7 @@ export function CaseNotes({ serviceId, funeralHomeId, actorId, actorName, initia
     setSaving(false)
     if (result.error) { setError(result.error); return }
     setSavedAt(new Date())
+    toast.success('Notes saved')
     logActivity({
       funeral_home_id: funeralHomeId,
       service_id:      serviceId,

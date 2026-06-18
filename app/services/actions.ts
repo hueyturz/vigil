@@ -66,6 +66,60 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
   return {}
 }
 
+// ── Update service fields (Edit Service modal) ────────────────────────────
+
+interface UpdateServiceInput {
+  family_name:       string
+  deceased_name:     string
+  service_type:      ServiceType | null
+  service_date:      string | null
+  location:          string | null
+  assigned_staff_id: string | null
+  contact_name:      string | null
+  contact_phone:     string | null
+  contact_email:     string | null
+}
+
+export async function updateService(
+  serviceId: string,
+  input: UpdateServiceInput,
+): Promise<{ error?: string }> {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { error } = await serviceRole
+    .from('services')
+    .update({
+      family_name:       input.family_name,
+      deceased_name:     input.deceased_name,
+      service_type:      input.service_type      || null,
+      service_date:      input.service_date       || null,
+      location:          input.location           || null,
+      assigned_staff_id: input.assigned_staff_id  || null,
+      contact_name:      input.contact_name       || null,
+      contact_phone:     input.contact_phone      || null,
+      contact_email:     input.contact_email      || null,
+    })
+    .eq('id', serviceId)
+    .eq('funeral_home_id', profile.funeral_home_id)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/services/${serviceId}`)
+  return {}
+}
+
 // ── Update service notes ───────────────────────────────────────────────────
 
 export async function updateServiceNotes(
