@@ -138,7 +138,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
       <div
-        className="relative mx-auto my-8 w-full max-w-lg rounded-xl shadow-xl min-w-0"
+        className="relative mx-auto my-8 w-full max-w-lg rounded-xl shadow-xl min-w-0 overflow-x-hidden"
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
