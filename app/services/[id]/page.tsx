@@ -90,11 +90,11 @@ export default async function ServiceDetailPage({
 
         {/* Sticky back pill — fixed to viewport, accounts for sidebar on desktop */}
         <Link
-          href="/dashboard"
+          href="/services"
           className="fixed top-4 left-4 md:left-[236px] z-40 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition hover:shadow"
           style={{ color: '#0D6E68', borderColor: '#E2E8F0' }}
         >
-          ← Dashboard
+          ← Services
         </Link>
 
         {/* Service header */}
