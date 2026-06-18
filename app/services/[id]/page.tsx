@@ -134,6 +134,17 @@ export default async function ServiceDetailPage({
               <div className="flex items-center gap-2">
                 <Badge status={status} />
                 {canManage && (
+                  <a
+                    href={`/services/${params.id}/print`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+                    style={{ borderColor: '#0D6E68', color: '#0D6E68', backgroundColor: 'transparent' }}
+                  >
+                    Print Checklist
+                  </a>
+                )}
+                {canManage && (
                   <EditServiceButton service={{
                     id:                service.id,
                     family_name:       service.family_name,
@@ -151,17 +162,6 @@ export default async function ServiceDetailPage({
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
               </p>
-              {canManage && (
-                <a
-                  href={`/services/${params.id}/print`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-medium hover:underline"
-                  style={{ color: '#94A3B8' }}
-                >
-                  Print Checklist
-                </a>
-              )}
               {canManage && (
                 <ServiceCompletionFlow
                   serviceId={params.id}
