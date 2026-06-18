@@ -16,8 +16,8 @@ export function EditServiceButton({ service }: { service: ServiceSlice }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-medium hover:underline transition"
-        style={{ color: '#94A3B8' }}
+        className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+        style={{ borderColor: '#0D6E68', color: '#0D6E68', backgroundColor: 'transparent' }}
       >
         Edit Service
       </button>

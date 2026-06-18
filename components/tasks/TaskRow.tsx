@@ -144,16 +144,19 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
       .select('*')
       .eq('task_id', taskId)
       .order('sort_order', { ascending: true })
-      .then(({ data }) => { setSubtasks((data ?? []) as TaskSubtask[]); setLoading(false) })
+      .then(({ data, error }) => {
+        if (error) console.error('[subtask fetch]', error.message)
+        setSubtasks((data ?? []) as TaskSubtask[])
+        setLoading(false)
+      })
   }, [taskId])
 
   async function toggleComplete(id: string, current: boolean) {
     const supabase = createClient()
     const { error } = await supabase.from('task_subtasks').update({ is_complete: !current }).eq('id', id)
-    if (!error) {
-      setSubtasks(prev => prev.map(s => s.id === id ? { ...s, is_complete: !current } : s))
-      if (!current) toast.success('Step completed')
-    }
+    if (error) { console.error('[subtask toggle]', error.message); return }
+    setSubtasks(prev => prev.map(s => s.id === id ? { ...s, is_complete: !current } : s))
+    if (!current) toast.success('Step completed')
   }
 
   async function saveTitle(id: string) {
@@ -183,7 +186,12 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
       .select('*')
       .single()
     setAddingStep(false)
-    if (!error && data) {
+    if (error) {
+      console.error('[subtask insert]', error.message, error.details, error.hint)
+      toast.error('Failed to add step')
+      return
+    }
+    if (data) {
       setSubtasks(prev => [...prev, data as TaskSubtask])
       setNewTitle('')
       toast.success('Step added')

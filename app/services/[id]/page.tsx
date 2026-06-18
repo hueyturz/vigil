@@ -97,15 +97,6 @@ export default async function ServiceDetailPage({
           ← Dashboard
         </Link>
 
-        {/* Inline back link (scrolls with page, for layout spacing) */}
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm mb-6 hover:underline"
-          style={{ color: '#475569' }}
-        >
-          ← Back to Dashboard
-        </Link>
-
         {/* Service header */}
         <div
           className="rounded-xl border p-6 mb-6"
@@ -139,8 +130,24 @@ export default async function ServiceDetailPage({
               )}
             </div>
 
-            <div className="flex-shrink-0 flex flex-col items-end gap-2">
-              <Badge status={status} />
+            <div className="flex-shrink-0 flex flex-col items-end gap-3">
+              <div className="flex items-center gap-2">
+                <Badge status={status} />
+                {canManage && (
+                  <EditServiceButton service={{
+                    id:                service.id,
+                    family_name:       service.family_name,
+                    deceased_name:     service.deceased_name,
+                    service_type:      service.service_type,
+                    service_date:      service.service_date,
+                    location:          service.location,
+                    assigned_staff_id: service.assigned_staff_id,
+                    contact_name:      service.contact_name ?? null,
+                    contact_phone:     service.contact_phone ?? null,
+                    contact_email:     service.contact_email ?? null,
+                  }} />
+                )}
+              </div>
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
               </p>
@@ -154,20 +161,6 @@ export default async function ServiceDetailPage({
                 >
                   Print Checklist
                 </a>
-              )}
-              {canManage && (
-                <EditServiceButton service={{
-                  id:                service.id,
-                  family_name:       service.family_name,
-                  deceased_name:     service.deceased_name,
-                  service_type:      service.service_type,
-                  service_date:      service.service_date,
-                  location:          service.location,
-                  assigned_staff_id: service.assigned_staff_id,
-                  contact_name:      service.contact_name ?? null,
-                  contact_phone:     service.contact_phone ?? null,
-                  contact_email:     service.contact_email ?? null,
-                }} />
               )}
               {canManage && (
                 <ServiceCompletionFlow
