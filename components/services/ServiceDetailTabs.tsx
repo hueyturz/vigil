@@ -36,12 +36,12 @@ export function ServiceDetailTabs({
   applyBanner,
 }: ServiceDetailTabsProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'activity'>('tasks')
+  const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'activity'>('meetings')
   const [addOpen,   setAddOpen]   = useState(false)
 
   const tabs = [
-    { key: 'tasks'    as const, label: 'Tasks'    },
     { key: 'meetings' as const, label: 'Meetings' },
+    { key: 'tasks'    as const, label: 'Tasks'    },
     { key: 'activity' as const, label: 'Activity' },
   ]
 
