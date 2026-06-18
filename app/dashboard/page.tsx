@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 import { StatsRow } from '@/components/services/StatsRow'
+import { ServiceProgressChart } from '@/components/dashboard/ServiceProgressChart'
 import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import type { ServiceWithTasks } from '@/lib/types'
 
@@ -56,6 +57,11 @@ export default async function DashboardPage() {
           needsAttentionCount={needsAttentionCount}
           overdueTaskCount={overdueTaskCount}
         />
+
+        <div className="mt-8 mb-3">
+          <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Service Progress</h2>
+        </div>
+        <ServiceProgressChart services={services} />
 
         <div className="mt-6">
           <Link
