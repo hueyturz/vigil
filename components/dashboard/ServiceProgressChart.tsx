@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { ServiceWithTasks } from '@/lib/types'
 
@@ -78,7 +79,8 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
           const pct     = (n: number) => `${(n / total) * 100}%`
 
           return (
-            <div key={service.id} className="flex items-center gap-3">
+            <Link key={service.id} href={`/services/${service.id}`}
+              className="flex items-center gap-3 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors hover:bg-gray-50 cursor-pointer">
               {/* Label */}
               <div className="flex-shrink-0" style={{ width: 140 }}>
                 <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
@@ -111,7 +113,7 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
               <div className="flex-shrink-0 text-xs text-right" style={{ width: 80, color: '#94A3B8' }}>
                 {buckets.confirmed}/{total} confirmed
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>
