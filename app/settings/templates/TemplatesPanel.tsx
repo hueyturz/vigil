@@ -65,7 +65,25 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
-  const [editingTabs, setEditingTabs] = useState<Set<ServiceType>>(new Set())
+  const [editingTabs,  setEditingTabs]  = useState<Set<ServiceType>>(new Set())
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [rowSteps,     setRowSteps]     = useState<Record<string, TaskTemplateSubtask[] | null>>({})
+
+  function toggleRow(tplId: string) {
+    setExpandedRows(prev => {
+      const next = new Set(prev)
+      if (next.has(tplId)) { next.delete(tplId); return next }
+      next.add(tplId)
+      // Lazy-fetch steps if not yet loaded
+      if (!(tplId in rowSteps)) {
+        setRowSteps(r => ({ ...r, [tplId]: null })) // null = loading
+        getTemplateSubtasks(tplId).then(({ data }) =>
+          setRowSteps(r => ({ ...r, [tplId]: data ?? [] }))
+        )
+      }
+      return next
+    })
+  }
 
   const customForTab = custom
     .filter(t => t.service_type === activeTab)
@@ -289,42 +307,78 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
             )
           }
 
+          const isExpanded = expandedRows.has(tpl.id)
+          const steps      = rowSteps[tpl.id]
+
           return (
             <div key={tpl.id}
-              className="flex items-center gap-3 rounded-lg border px-4 py-3"
+              className="rounded-lg border overflow-hidden"
               style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
             >
-              {panelState === 'editing' && (
-                <div className="flex flex-col gap-0.5 flex-shrink-0">
-                  <button type="button" onClick={() => handleReorder(tpl.id, 'up')}
-                    disabled={busy || idx === 0}
-                    className="p-0.5 rounded hover:opacity-60 disabled:opacity-20 transition"
-                    style={{ color: '#94A3B8' }} aria-label="Move up"><ChevronUpIcon /></button>
-                  <button type="button" onClick={() => handleReorder(tpl.id, 'down')}
-                    disabled={busy || idx === displayTemplates.length - 1}
-                    className="p-0.5 rounded hover:opacity-60 disabled:opacity-20 transition"
-                    style={{ color: '#94A3B8' }} aria-label="Move down"><ChevronDownIcon /></button>
+              {/* Header row */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                {panelState === 'editing' && (
+                  <div className="flex flex-col gap-0.5 flex-shrink-0">
+                    <button type="button" onClick={() => handleReorder(tpl.id, 'up')}
+                      disabled={busy || idx === 0}
+                      className="p-0.5 rounded hover:opacity-60 disabled:opacity-20 transition"
+                      style={{ color: '#94A3B8' }} aria-label="Move up"><ChevronUpIcon /></button>
+                    <button type="button" onClick={() => handleReorder(tpl.id, 'down')}
+                      disabled={busy || idx === displayTemplates.length - 1}
+                      className="p-0.5 rounded hover:opacity-60 disabled:opacity-20 transition"
+                      style={{ color: '#94A3B8' }} aria-label="Move down"><ChevronDownIcon /></button>
+                  </div>
+                )}
+
+                <PriorityDot priority={tpl.priority} />
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{tpl.title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
+                    {tpl.category} · {tpl.due_days_before}d before · {tpl.confirmation_hint}
+                  </p>
                 </div>
-              )}
 
-              {/* Priority dot */}
-              <PriorityDot priority={tpl.priority} />
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{tpl.title}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
-                  {tpl.category} · {tpl.due_days_before}d before · {tpl.confirmation_hint}
-                </p>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {panelState === 'editing' && (
+                    <>
+                      <button type="button" onClick={() => setEditTarget(tpl)}
+                        className="p-1.5 rounded hover:opacity-60 transition"
+                        style={{ color: '#94A3B8' }} aria-label="Edit"><PencilIcon /></button>
+                      <button type="button" onClick={() => setConfirmDel(tpl.id)}
+                        className="p-1.5 rounded hover:opacity-60 transition"
+                        style={{ color: '#94A3B8' }} aria-label="Delete"><TrashIcon /></button>
+                    </>
+                  )}
+                  <button type="button" onClick={() => toggleRow(tpl.id)}
+                    className="p-1.5 rounded hover:opacity-60 transition"
+                    style={{ color: '#94A3B8' }} aria-label={isExpanded ? 'Collapse' : 'Expand'}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              {panelState === 'editing' && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button type="button" onClick={() => setEditTarget(tpl)}
-                    className="p-1.5 rounded hover:opacity-60 transition"
-                    style={{ color: '#94A3B8' }} aria-label="Edit"><PencilIcon /></button>
-                  <button type="button" onClick={() => setConfirmDel(tpl.id)}
-                    className="p-1.5 rounded hover:opacity-60 transition"
-                    style={{ color: '#94A3B8' }} aria-label="Delete"><TrashIcon /></button>
+              {/* Expanded steps panel */}
+              {isExpanded && (
+                <div className="px-4 pb-3 border-t" style={{ borderColor: '#F1F5F9' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider mt-3 mb-2" style={{ color: '#CBD5E1' }}>Steps</p>
+                  {steps === null && (
+                    <p className="text-xs" style={{ color: '#CBD5E1' }}>Loading…</p>
+                  )}
+                  {steps !== null && steps.length === 0 && (
+                    <p className="text-xs" style={{ color: '#CBD5E1' }}>No steps defined.</p>
+                  )}
+                  {steps !== null && steps.map(step => (
+                    <div key={step.id} className="flex items-center gap-2 py-1">
+                      <span className="flex-shrink-0 rounded-full border" style={{ width: 7, height: 7, borderColor: '#CBD5E1' }} />
+                      <span className="text-sm" style={{ color: '#475569' }}>
+                        {step.title}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
