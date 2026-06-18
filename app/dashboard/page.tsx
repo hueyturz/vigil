@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 import { StatsRow } from '@/components/services/StatsRow'
-import { DashboardClient } from '@/components/services/DashboardClient'
 import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import type { ServiceWithTasks } from '@/lib/types'
 
@@ -12,24 +12,21 @@ export default async function DashboardPage() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) redirect('/login')
 
-  const userId = session.user.id
   const db = createServiceRoleClient()
 
   const { data: profile } = await db
     .from('profiles')
     .select('id, full_name, role, funeral_home_id')
-    .eq('id', userId)
+    .eq('id', session.user.id)
     .single()
 
   if (!profile) redirect('/login')
   if (profile.role === 'staff') redirect('/my-tasks')
 
-  // Fetch all statuses so the client can filter/switch without a page reload
   const { data: servicesRaw } = await db
     .from('services')
     .select('*, tasks (*)')
     .eq('funeral_home_id', profile.funeral_home_id)
-    .order('service_date', { ascending: true, nullsFirst: false })
 
   const services: ServiceWithTasks[] = (servicesRaw ?? []).map(s => ({
     ...s,
@@ -50,14 +47,25 @@ export default async function DashboardPage() {
     <AppShell profile={profile} redAlert={needsAttentionCount > 0}>
       <div className="px-4 py-4 md:px-8 md:py-8 max-w-7xl mx-auto">
         <div className="mb-8">
-          <StatsRow
-            activeCount={activeCount}
-            needsAttentionCount={needsAttentionCount}
-            overdueTaskCount={overdueTaskCount}
-          />
+          <h1 className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>Overview</h1>
+          <p className="text-sm" style={{ color: '#475569' }}>At-a-glance summary of your funeral home</p>
         </div>
 
-        <DashboardClient services={services} />
+        <StatsRow
+          activeCount={activeCount}
+          needsAttentionCount={needsAttentionCount}
+          overdueTaskCount={overdueTaskCount}
+        />
+
+        <div className="mt-6">
+          <Link
+            href="/services"
+            className="inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70"
+            style={{ color: '#0D6E68' }}
+          >
+            View all services →
+          </Link>
+        </div>
       </div>
     </AppShell>
   )

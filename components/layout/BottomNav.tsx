@@ -41,6 +41,17 @@ export function BottomNav({ profile }: BottomNavProps) {
 
       {(profile.role === 'owner' || profile.role === 'fd') && (
         <Link
+          href="/services"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium"
+          style={{ color: pathname.startsWith('/services') ? '#FFFFFF' : '#94A3B8' }}
+        >
+          <FolderIcon />
+          Services
+        </Link>
+      )}
+
+      {(profile.role === 'owner' || profile.role === 'fd') && (
+        <Link
           href="/settings/templates"
           className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium"
           style={{ color: pathname.startsWith('/settings/templates') ? '#FFFFFF' : '#94A3B8' }}
@@ -79,6 +90,14 @@ export function BottomNav({ profile }: BottomNavProps) {
         Sign Out
       </button>
     </nav>
+  )
+}
+
+function FolderIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
   )
 }
 

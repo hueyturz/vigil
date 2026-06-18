@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { CreateServiceModal } from './CreateServiceModal'
 import { ServiceCard } from './ServiceCard'
 import type { ServiceWithTasks } from '@/lib/types'
@@ -30,27 +30,21 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
-interface DashboardClientProps {
-  services: ServiceWithTasks[]
-}
-
-export function DashboardClient({ services }: DashboardClientProps) {
-  const [modalOpen,     setModalOpen]     = useState(false)
-  const [searchRaw,     setSearchRaw]     = useState('')
-  const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('active')
-  const [sortKey,       setSortKey]       = useState<SortKey>('date_asc')
+export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
+  const [modalOpen,    setModalOpen]    = useState(false)
+  const [searchRaw,    setSearchRaw]    = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active')
+  const [sortKey,      setSortKey]      = useState<SortKey>('date_asc')
 
   const search = useDebounce(searchRaw, 200)
 
   const filtered = useMemo(() => {
     let list = [...services]
 
-    // Status filter
     if (statusFilter !== 'all') {
       list = list.filter(s => s.status === statusFilter)
     }
 
-    // Text search
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(s =>
@@ -59,15 +53,9 @@ export function DashboardClient({ services }: DashboardClientProps) {
       )
     }
 
-    // Sort
     list.sort((a, b) => {
-      if (sortKey === 'name_asc') {
-        return a.family_name.localeCompare(b.family_name)
-      }
-      if (sortKey === 'date_desc') {
-        return (b.created_at ?? '').localeCompare(a.created_at ?? '')
-      }
-      // date_asc: null dates go to bottom
+      if (sortKey === 'name_asc') return a.family_name.localeCompare(b.family_name)
+      if (sortKey === 'date_desc') return (b.created_at ?? '').localeCompare(a.created_at ?? '')
       const aDate = a.service_date ?? '9999-12-31'
       const bDate = b.service_date ?? '9999-12-31'
       return aDate.localeCompare(bDate)
@@ -78,12 +66,12 @@ export function DashboardClient({ services }: DashboardClientProps) {
 
   return (
     <>
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Dashboard</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Services</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-            Active services across your funeral home
+            Manage all services across your funeral home
           </p>
         </div>
         <button
@@ -97,7 +85,6 @@ export function DashboardClient({ services }: DashboardClientProps) {
 
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24"
             fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -112,8 +99,6 @@ export function DashboardClient({ services }: DashboardClientProps) {
             style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
           />
         </div>
-
-        {/* Sort */}
         <select
           value={sortKey}
           onChange={e => setSortKey(e.target.value as SortKey)}
@@ -145,10 +130,7 @@ export function DashboardClient({ services }: DashboardClientProps) {
               }}
             >
               {tab.label}
-              <span
-                className="ml-1.5 text-xs"
-                style={{ color: active ? '#0D6E68' : '#CBD5E1' }}
-              >
+              <span className="ml-1.5 text-xs" style={{ color: active ? '#0D6E68' : '#CBD5E1' }}>
                 {count}
               </span>
             </button>
@@ -166,8 +148,21 @@ export function DashboardClient({ services }: DashboardClientProps) {
             {search.trim() ? 'No matching services' : 'No services'}
           </p>
           <p className="mt-1 text-sm" style={{ color: '#475569' }}>
-            {search.trim() ? 'Try a different search term.' : 'Create your first service to get started.'}
+            {search.trim()
+              ? 'Try a different search term.'
+              : statusFilter === 'active'
+              ? 'Create your first service to get started.'
+              : 'No services with this status.'}
           </p>
+          {!search.trim() && statusFilter === 'active' && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="mt-4 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ backgroundColor: '#0D6E68' }}
+            >
+              + New Service
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
