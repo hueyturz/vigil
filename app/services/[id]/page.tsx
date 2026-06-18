@@ -201,7 +201,12 @@ export default async function ServiceDetailPage({
           canManage={canManage}
           applyBanner={
             !service.service_type && canManage
-              ? <ApplyTemplateBanner serviceId={params.id} />
+              ? <ApplyTemplateBanner
+                  serviceId={params.id}
+                  funeralHomeId={profile.funeral_home_id}
+                  actorId={actorId}
+                  actorName={actorName}
+                />
               : null
           }
         />
