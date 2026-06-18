@@ -91,6 +91,58 @@ function SummarySection({ session }: { session: IntakeSession }) {
   return <p className="text-sm leading-relaxed" style={{ color: '#334155' }}>{summary}</p>
 }
 
+// ── Transcript rendering ──────────────────────────────────────────────────────
+
+const FAMILY_MEMBER_COLORS = ['#475569', '#64748B', '#334155', '#5B6A7A']
+
+function speakerColor(label: string): string {
+  if (/funeral director/i.test(label)) return '#0D6E68'
+  const match = label.match(/family member (\d+)/i)
+  if (match) {
+    const idx = (parseInt(match[1], 10) - 1) % FAMILY_MEMBER_COLORS.length
+    return FAMILY_MEMBER_COLORS[idx]
+  }
+  // "Family Member" (no number) or "Speaker N" fallback
+  if (/family member/i.test(label)) return FAMILY_MEMBER_COLORS[0]
+  // Speaker N: cycle through muted colors
+  const numMatch = label.match(/speaker (\d+)/i)
+  if (numMatch) {
+    return FAMILY_MEMBER_COLORS[parseInt(numMatch[1], 10) % FAMILY_MEMBER_COLORS.length]
+  }
+  return '#475569'
+}
+
+function hasSpeakerLabels(transcript: string): boolean {
+  return /^(Funeral Director|Family Member|Speaker \d+):/m.test(transcript)
+}
+
+function DiarizedTranscript({ transcript }: { transcript: string }) {
+  const lines = transcript.split('\n').filter(Boolean)
+  return (
+    <div className="space-y-2">
+      {lines.map((line, i) => {
+        const colonIdx = line.indexOf(':')
+        if (colonIdx === -1) {
+          return (
+            <p key={i} className="text-sm" style={{ color: '#0F172A', lineHeight: 1.8 }}>
+              {line}
+            </p>
+          )
+        }
+        const speaker = line.slice(0, colonIdx).trim()
+        const text    = line.slice(colonIdx + 1).trim()
+        const color   = speakerColor(speaker)
+        return (
+          <div key={i} style={{ lineHeight: 1.8 }}>
+            <span className="text-xs font-bold mr-2" style={{ color }}>{speaker}:</span>
+            <span className="text-sm" style={{ color: '#0F172A' }}>{text}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Transcript section ────────────────────────────────────────────────────────
 
 function TranscriptSection({ session }: { session: IntakeSession }) {
@@ -104,6 +156,8 @@ function TranscriptSection({ session }: { session: IntakeSession }) {
       setTimeout(() => setCopied(false), 2000)
     })
   }
+
+  const diarized = session.transcript ? hasSpeakerLabels(session.transcript) : false
 
   return (
     <div className="border-t" style={{ borderColor: '#E2E8F0' }}>
@@ -132,18 +186,28 @@ function TranscriptSection({ session }: { session: IntakeSession }) {
                 {copied ? 'Copied!' : 'Copy'}
               </button>
               <div
-                className="rounded-lg border p-4 pr-20 text-sm overflow-y-auto"
+                className="rounded-lg border p-4 pr-20 overflow-y-auto"
                 style={{
-                  borderColor:    '#E2E8F0',
+                  borderColor:     '#E2E8F0',
                   backgroundColor: '#F8FAFC',
-                  fontFamily:     '"SF Mono", "Fira Code", Consolas, monospace',
-                  lineHeight:     1.8,
-                  color:          '#0F172A',
-                  whiteSpace:     'pre-wrap',
-                  maxHeight:      '24rem',
+                  maxHeight:       '24rem',
                 }}
               >
-                {session.transcript}
+                {diarized ? (
+                  <DiarizedTranscript transcript={session.transcript} />
+                ) : (
+                  <p
+                    className="text-sm"
+                    style={{
+                      fontFamily: '"SF Mono", "Fira Code", Consolas, monospace',
+                      lineHeight: 1.8,
+                      color:      '#0F172A',
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {session.transcript}
+                  </p>
+                )}
               </div>
             </div>
           )}
