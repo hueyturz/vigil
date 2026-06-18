@@ -147,5 +147,17 @@ export async function POST(
     }
   }
 
+  // Fire-and-forget activity log (use service role — no browser session in API route)
+  void serviceRole.from('activity_log').insert({
+    funeral_home_id: profile.funeral_home_id,
+    service_id:      task.service_id,
+    task_id:         task.id,
+    actor_id:        profile.id,
+    actor_name:      profile.full_name,
+    action_type:     'task_completed',
+    description:     `Task "${task.title}" confirmed`,
+    metadata:        { confirmation_value },
+  })
+
   return NextResponse.json({ task: updatedTask })
 }

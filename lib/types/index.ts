@@ -36,6 +36,9 @@ export interface Service {
   created_by_id: string
   status: ServiceStatus
   notes: string | null
+  contact_name: string | null
+  contact_phone: string | null
+  contact_email: string | null
   created_at: string
 }
 
@@ -95,6 +98,19 @@ export interface SmsLog {
   recipient_id: string
   message: string
   status: SmsStatus
+  created_at: string
+}
+
+export interface ActivityLog {
+  id: string
+  funeral_home_id: string
+  service_id: string | null
+  task_id: string | null
+  actor_id: string | null
+  actor_name: string
+  action_type: string
+  description: string
+  metadata: Record<string, unknown> | null
   created_at: string
 }
 

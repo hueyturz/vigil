@@ -1,13 +1,16 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { AppShell } from '@/components/layout/AppShell'
-import { Badge } from '@/components/ui/Badge'
-import { ProgressBar } from '@/components/ui/ProgressBar'
-import { ApplyTemplateBanner } from '@/components/services/ApplyTemplateBanner'
-import { ServiceDetailTabs } from '@/components/services/ServiceDetailTabs'
-import { computeServiceStatus } from '@/lib/utils/service-status'
-import { formatDate } from '@/lib/utils/date-helpers'
+import { AppShell }              from '@/components/layout/AppShell'
+import { Badge }                 from '@/components/ui/Badge'
+import { ProgressBar }           from '@/components/ui/ProgressBar'
+import { ApplyTemplateBanner }   from '@/components/services/ApplyTemplateBanner'
+import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
+import { CaseNotes }             from '@/components/services/CaseNotes'
+import { ContactCard }           from '@/components/services/ContactCard'
+import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
+import { computeServiceStatus }  from '@/lib/utils/service-status'
+import { formatDate }            from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile } from '@/lib/types'
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -77,6 +80,9 @@ export default async function ServiceDetailPage({
   const canRecord   = profile.role === 'owner' || profile.role === 'fd'
   const canManage   = profile.role === 'owner' || profile.role === 'fd'
 
+  const actorId   = profile.id
+  const actorName = profile.full_name
+
   return (
     <AppShell profile={profile}>
       <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
@@ -127,6 +133,17 @@ export default async function ServiceDetailPage({
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
               </p>
+              {canManage && (
+                <a
+                  href={`/services/${params.id}/print`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium hover:underline"
+                  style={{ color: '#94A3B8' }}
+                >
+                  Print Checklist
+                </a>
+              )}
             </div>
           </div>
 
@@ -135,12 +152,50 @@ export default async function ServiceDetailPage({
           </div>
         </div>
 
+        {/* Side cards row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <ContactCard
+            serviceId={params.id}
+            funeralHomeId={profile.funeral_home_id}
+            actorId={actorId}
+            actorName={actorName}
+            canManage={canManage}
+            contactName={service.contact_name ?? null}
+            contactPhone={service.contact_phone ?? null}
+            contactEmail={service.contact_email ?? null}
+          />
+          <CaseNotes
+            serviceId={params.id}
+            funeralHomeId={profile.funeral_home_id}
+            actorId={actorId}
+            actorName={actorName}
+            initialNotes={service.notes ?? null}
+          />
+        </div>
+
+        {/* Service completion flow */}
+        {canManage && (
+          <div className="mb-6">
+            <ServiceCompletionFlow
+              serviceId={params.id}
+              funeralHomeId={profile.funeral_home_id}
+              actorId={actorId}
+              actorName={actorName}
+              serviceStatus={service.status as 'active' | 'completed' | 'archived'}
+              canManage={canManage}
+            />
+          </div>
+        )}
+
         {/* Tabbed content */}
         <ServiceDetailTabs
           tasks={tasks}
           serviceDate={service.service_date ?? ''}
           serviceId={params.id}
           serviceType={service.service_type}
+          funeralHomeId={profile.funeral_home_id}
+          actorId={actorId}
+          actorName={actorName}
           intakeSessions={intakeSessions}
           canRecord={canRecord}
           canManage={canManage}

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { addTaskToService } from '@/app/services/task-actions'
-import type { TaskWithProfile } from '@/lib/types'
+import { logActivity } from '@/lib/utils/activity'
+import type { TaskWithProfile, Profile } from '@/lib/types'
 
 export const TASK_CATEGORIES = [
   'Merchandise', 'Cemetery', 'Print', 'Communication',
@@ -10,51 +11,71 @@ export const TASK_CATEGORIES = [
 ]
 
 interface AddTaskModalProps {
-  serviceId: string
-  open: boolean
-  onClose: () => void
-  onAdded: (task: TaskWithProfile) => void
+  serviceId:      string
+  funeralHomeId?: string
+  actorId?:       string
+  actorName?:     string
+  open:           boolean
+  onClose:        () => void
+  onAdded:        (task: TaskWithProfile) => void
 }
 
-export function AddTaskModal({ serviceId, open, onClose, onAdded }: AddTaskModalProps) {
+export function AddTaskModal({
+  serviceId, funeralHomeId, actorId, actorName,
+  open, onClose, onAdded,
+}: AddTaskModalProps) {
   const [title,            setTitle]            = useState('')
   const [category,         setCategory]         = useState(TASK_CATEGORIES[0])
   const [confirmationHint, setConfirmationHint] = useState('')
   const [daysBefore,       setDaysBefore]       = useState(1)
+  const [assignedToId,     setAssignedToId]     = useState('')
+  const [profiles,         setProfiles]         = useState<Pick<Profile, 'id' | 'full_name'>[]>([])
   const [loading,          setLoading]          = useState(false)
   const [error,            setError]            = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!open) return
+    fetch('/api/profiles/active')
+      .then(r => r.json())
+      .then(d => setProfiles(d.profiles ?? []))
+      .catch(() => {})
+  }, [open])
+
   function reset() {
-    setTitle('')
-    setCategory(TASK_CATEGORIES[0])
-    setConfirmationHint('')
-    setDaysBefore(1)
-    setError(null)
+    setTitle(''); setCategory(TASK_CATEGORIES[0])
+    setConfirmationHint(''); setDaysBefore(1)
+    setAssignedToId(''); setError(null)
   }
 
-  function handleClose() {
-    reset()
-    onClose()
-  }
+  function handleClose() { reset(); onClose() }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !confirmationHint.trim()) return
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
 
     const result = await addTaskToService(serviceId, {
       title:             title.trim(),
       category,
       confirmation_hint: confirmationHint.trim(),
       due_days_before:   daysBefore,
+      assigned_to_id:    assignedToId || null,
     })
 
     setLoading(false)
 
-    if (result.error) {
-      setError(result.error)
-      return
+    if (result.error) { setError(result.error); return }
+
+    if (funeralHomeId && actorId && actorName) {
+      logActivity({
+        funeral_home_id: funeralHomeId,
+        service_id:      serviceId,
+        task_id:         result.data?.id,
+        actor_id:        actorId,
+        actor_name:      actorName,
+        action_type:     'task_added',
+        description:     `Task "${title.trim()}" added`,
+      })
     }
 
     reset()
@@ -75,113 +96,70 @@ export function AddTaskModal({ serviceId, open, onClose, onAdded }: AddTaskModal
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
-          style={{ borderColor: '#E2E8F0' }}
-        >
+        <div className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0" style={{ borderColor: '#E2E8F0' }}>
           <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Add Task</h2>
-          <button
-            onClick={handleClose}
-            className="text-xl leading-none hover:opacity-60 transition"
-            style={{ color: '#94A3B8' }}
-            aria-label="Close"
-          >×</button>
+          <button onClick={handleClose} className="text-xl leading-none hover:opacity-60 transition" style={{ color: '#94A3B8' }} aria-label="Close">×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          {/* Title */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Task title <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Flowers ordered"
-              style={inputStyle}
-            />
+            <input type="text" required value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Flowers ordered" style={inputStyle} />
           </div>
 
-          {/* Category */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Category <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              style={inputStyle}
-            >
-              {TASK_CATEGORIES.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+            <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
+              {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
-          {/* Confirmation hint */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Confirmation hint <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <input
-              type="text"
-              required
-              value={confirmationHint}
-              onChange={e => setConfirmationHint(e.target.value)}
-              placeholder="e.g. Vendor name & order number"
-              style={inputStyle}
-            />
-            <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>
-              Shown to staff when they confirm this task.
-            </p>
+            <input type="text" required value={confirmationHint} onChange={e => setConfirmationHint(e.target.value)}
+              placeholder="e.g. Vendor name & order number" style={inputStyle} />
+            <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Shown to staff when they confirm this task.</p>
           </div>
 
-          {/* Days before */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Due (days before service) <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <input
-              type="number"
-              required
-              min={0}
-              max={60}
-              value={daysBefore}
-              onChange={e => setDaysBefore(Number(e.target.value))}
-              style={inputStyle}
-            />
+            <input type="number" required min={0} max={60} value={daysBefore}
+              onChange={e => setDaysBefore(Number(e.target.value))} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>Assign to</label>
+            <select value={assignedToId} onChange={e => setAssignedToId(e.target.value)} style={inputStyle}>
+              <option value="">— Unassigned —</option>
+              {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+            </select>
           </div>
 
           {error && (
-            <div
-              className="rounded-lg border px-4 py-3 text-sm"
-              style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
-            >
+            <div className="rounded-lg border px-4 py-3 text-sm"
+              style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
               {error}
             </div>
           )}
 
-          {/* Footer */}
-          <div
-            className="flex justify-end gap-3 pt-2 border-t"
-            style={{ borderColor: '#E2E8F0' }}
-          >
-            <button
-              type="button"
-              onClick={handleClose}
+          <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: '#E2E8F0' }}>
+            <button type="button" onClick={handleClose}
               className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-50"
-              style={{ borderColor: '#E2E8F0', color: '#475569' }}
-            >
+              style={{ borderColor: '#E2E8F0', color: '#475569' }}>
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading || !title.trim() || !confirmationHint.trim()}
+            <button type="submit" disabled={loading || !title.trim() || !confirmationHint.trim()}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}
-            >
+              style={{ backgroundColor: '#0D6E68' }}>
               {loading ? 'Adding…' : 'Add task'}
             </button>
           </div>
@@ -192,12 +170,6 @@ export function AddTaskModal({ serviceId, open, onClose, onAdded }: AddTaskModal
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  borderRadius: 8,
-  border: '1px solid #E2E8F0',
-  padding: '10px 12px',
-  fontSize: 14,
-  color: '#0F172A',
-  outline: 'none',
-  backgroundColor: '#FFFFFF',
+  width: '100%', borderRadius: 8, border: '1px solid #E2E8F0',
+  padding: '10px 12px', fontSize: 14, color: '#0F172A', outline: 'none', backgroundColor: '#FFFFFF',
 }

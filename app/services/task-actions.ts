@@ -12,6 +12,7 @@ export async function addTaskToService(
     category: string
     confirmation_hint: string
     due_days_before: number
+    assigned_to_id?: string | null
   },
 ): Promise<{ data?: TaskWithProfile; error?: string }> {
   const supabase     = createClient()
@@ -60,6 +61,7 @@ export async function addTaskToService(
       due_days_before:   input.due_days_before,
       sort_order:        nextOrder,
       status:            'not-started',
+      assigned_to_id:    input.assigned_to_id ?? null,
     })
     .select('*')
     .single()
@@ -193,5 +195,44 @@ export async function updateTaskNotes(
 
   if (error) return { error: error.message }
 
+  return {}
+}
+
+// ── Reassign a task to a different user (or unassign) ─────────────────────
+
+export async function reassignTask(
+  taskId:        string,
+  assignedToId:  string | null,
+): Promise<{ error?: string }> {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { data: task } = await serviceRole
+    .from('tasks')
+    .select('funeral_home_id')
+    .eq('id', taskId)
+    .single()
+
+  if (!task || task.funeral_home_id !== profile.funeral_home_id)
+    return { error: 'Task not found.' }
+
+  const { error } = await serviceRole
+    .from('tasks')
+    .update({ assigned_to_id: assignedToId })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
   return {}
 }

@@ -26,7 +26,7 @@ export default async function MyTasksPage() {
   // Only staff use this page; fd/owner go to /dashboard
   if (profile.role !== 'staff') redirect('/dashboard')
 
-  // Fetch services assigned to this user, sorted by service_date ASC
+  // Fetch active services where this user is the assigned staff
   const { data: servicesRaw } = await db
     .from('services')
     .select(`
@@ -41,7 +41,32 @@ export default async function MyTasksPage() {
     .eq('status', 'active')
     .order('service_date', { ascending: true })
 
-  const services = (servicesRaw ?? []).map(s => ({
+  // Also fetch active services that have tasks directly assigned to this user
+  const { data: directTaskServicesRaw } = await db
+    .from('services')
+    .select(`
+      *,
+      tasks!inner (
+        *,
+        completed_by:profiles!tasks_completed_by_id_fkey (id, full_name),
+        assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name)
+      )
+    `)
+    .eq('tasks.assigned_to_id', session.user.id)
+    .neq('assigned_staff_id', session.user.id)
+    .eq('status', 'active')
+    .order('service_date', { ascending: true })
+
+  // Merge and deduplicate by service id
+  const allServicesRaw = [...(servicesRaw ?? []), ...(directTaskServicesRaw ?? [])]
+  const seenIds = new Set<string>()
+  const deduped = allServicesRaw.filter(s => {
+    if (seenIds.has(s.id)) return false
+    seenIds.add(s.id)
+    return true
+  })
+
+  const services = deduped.map(s => ({
     ...s,
     tasks: ((s.tasks ?? []) as TaskWithProfile[]).map(t => ({
       ...t,

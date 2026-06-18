@@ -37,6 +37,9 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
   const [serviceDate,     setServiceDate]      = useState('')
   const [location,        setLocation]         = useState('')
   const [assignedStaffId, setAssignedStaffId]  = useState('')
+  const [contactName,     setContactName]      = useState('')
+  const [contactPhone,    setContactPhone]     = useState('')
+  const [contactEmail,    setContactEmail]     = useState('')
   const [staffOptions,    setStaffOptions]     = useState<StaffOption[]>([])
   const [loading,         setLoading]          = useState(false)
   const [error,           setError]            = useState<string | null>(null)
@@ -61,6 +64,9 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     setServiceDate('')
     setLocation('')
     setAssignedStaffId('')
+    setContactName('')
+    setContactPhone('')
+    setContactEmail('')
     setError(null)
     setFieldErrors({})
   }
@@ -95,6 +101,9 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
       service_date:      serviceDate || null,
       location:          location.trim() || null,
       assigned_staff_id: assignedStaffId || null,
+      contact_name:      contactName.trim()  || null,
+      contact_phone:     contactPhone.trim() || null,
+      contact_email:     contactEmail.trim() || null,
     })
     setLoading(false)
 
@@ -204,6 +213,41 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
               ))}
             </select>
           </ModalField>
+
+          <div className="pt-2 border-t" style={{ borderColor: '#F1F5F9' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>
+              Family Contact (optional)
+            </p>
+            <div className="space-y-3">
+              <ModalField label="Contact Name">
+                <input
+                  type="text"
+                  value={contactName}
+                  onChange={e => setContactName(e.target.value)}
+                  placeholder="Primary contact name"
+                  style={inputStyle}
+                />
+              </ModalField>
+              <ModalField label="Phone">
+                <input
+                  type="tel"
+                  value={contactPhone}
+                  onChange={e => setContactPhone(e.target.value)}
+                  placeholder="e.g. (555) 123-4567"
+                  style={inputStyle}
+                />
+              </ModalField>
+              <ModalField label="Email">
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={e => setContactEmail(e.target.value)}
+                  placeholder="contact@example.com"
+                  style={inputStyle}
+                />
+              </ModalField>
+            </div>
+          </div>
 
           {error && (
             <div
