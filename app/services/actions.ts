@@ -293,7 +293,7 @@ export async function applyTemplateToService(
       continue
     }
 
-    const { error: insertErr } = await serviceRole.from('tasks').insert({
+    const { data: insertedTask, error: insertErr } = await serviceRole.from('tasks').insert({
       service_id:        serviceId,
       funeral_home_id:   profile.funeral_home_id,
       title:             tpl.title,
@@ -305,11 +305,30 @@ export async function applyTemplateToService(
       sort_order:        maxOrder + added + 1,
       status:            'not-started',
       assigned_to_id:    null,
-    })
+    }).select('id').single()
 
-    if (!insertErr) {
+    if (!insertErr && insertedTask) {
       added++
       existingTitles.add(tpl.title.toLowerCase().trim())
+
+      // Copy template subtasks to task subtasks
+      const { data: tplSubtasks } = await serviceRole
+        .from('task_template_subtasks')
+        .select('title, sort_order')
+        .eq('template_id', tpl.id)
+        .order('sort_order', { ascending: true })
+
+      if (tplSubtasks?.length) {
+        await serviceRole.from('task_subtasks').insert(
+          tplSubtasks.map(s => ({
+            task_id:        insertedTask.id,
+            funeral_home_id: profile.funeral_home_id,
+            title:          s.title,
+            sort_order:     s.sort_order,
+            is_complete:    false,
+          }))
+        )
+      }
     }
   }
 

@@ -128,6 +128,15 @@ export interface TaskWithProfile extends Task {
   assigned_to: Pick<Profile, 'id' | 'full_name'> | null
 }
 
+export interface TaskTemplateSubtask {
+  id: string
+  template_id: string
+  funeral_home_id: string
+  title: string
+  sort_order: number
+  created_at: string
+}
+
 export interface TaskSubtask {
   id: string
   task_id: string

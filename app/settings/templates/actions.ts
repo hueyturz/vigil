@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import type { ServiceType, TaskTemplate } from '@/lib/types'
+import type { ServiceType, TaskTemplate, TaskTemplateSubtask } from '@/lib/types'
 
 // ── Helper: verify caller is owner or fd and return funeral_home_id ──────────
 
@@ -259,5 +259,100 @@ export async function reorderTemplate(
   if (e1 || e2) return { error: e1?.message ?? e2?.message ?? 'Reorder failed.' }
 
   revalidatePath('/settings/templates')
+  return {}
+}
+
+// ── Template subtask actions ──────────────────────────────────────────────────
+
+export async function getTemplateSubtasks(
+  templateId: string,
+): Promise<{ data?: TaskTemplateSubtask[]; error?: string }> {
+  const auth = await requireFdOrOwner()
+  if ('error' in auth) return { error: auth.error }
+  const { funeralHomeId } = auth
+
+  const serviceRole = createServiceRoleClient()
+  const { data, error } = await serviceRole
+    .from('task_template_subtasks')
+    .select('*')
+    .eq('template_id', templateId)
+    .eq('funeral_home_id', funeralHomeId)
+    .order('sort_order', { ascending: true })
+
+  if (error) return { error: error.message }
+  return { data: data ?? [] }
+}
+
+export async function addTemplateSubtask(
+  templateId: string,
+  title: string,
+): Promise<{ data?: TaskTemplateSubtask; error?: string }> {
+  const auth = await requireFdOrOwner()
+  if ('error' in auth) return { error: auth.error }
+  const { funeralHomeId } = auth
+
+  const serviceRole = createServiceRoleClient()
+
+  // Verify the template belongs to this funeral home
+  const { data: tpl } = await serviceRole
+    .from('task_templates')
+    .select('funeral_home_id')
+    .eq('id', templateId)
+    .single()
+  if (!tpl || tpl.funeral_home_id !== funeralHomeId)
+    return { error: 'Template not found.' }
+
+  const { data: last } = await serviceRole
+    .from('task_template_subtasks')
+    .select('sort_order')
+    .eq('template_id', templateId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const { data, error } = await serviceRole
+    .from('task_template_subtasks')
+    .insert({ template_id: templateId, funeral_home_id: funeralHomeId, title: title.trim(), sort_order: (last?.sort_order ?? 0) + 1 })
+    .select('*')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'Insert failed.' }
+  return { data }
+}
+
+export async function updateTemplateSubtask(
+  subtaskId: string,
+  title: string,
+): Promise<{ error?: string }> {
+  const auth = await requireFdOrOwner()
+  if ('error' in auth) return { error: auth.error }
+  const { funeralHomeId } = auth
+
+  const serviceRole = createServiceRoleClient()
+  const { error } = await serviceRole
+    .from('task_template_subtasks')
+    .update({ title: title.trim() })
+    .eq('id', subtaskId)
+    .eq('funeral_home_id', funeralHomeId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function deleteTemplateSubtask(
+  subtaskId: string,
+): Promise<{ error?: string }> {
+  const auth = await requireFdOrOwner()
+  if ('error' in auth) return { error: auth.error }
+  const { funeralHomeId } = auth
+
+  const serviceRole = createServiceRoleClient()
+  const { error } = await serviceRole
+    .from('task_template_subtasks')
+    .delete()
+    .eq('id', subtaskId)
+    .eq('funeral_home_id', funeralHomeId)
+
+  if (error) return { error: error.message }
   return {}
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TASK_CATEGORIES } from '@/components/tasks/AddTaskModal'
 import {
@@ -10,8 +10,12 @@ import {
   updateTemplate,
   deleteTemplate,
   reorderTemplate,
+  getTemplateSubtasks,
+  addTemplateSubtask,
+  updateTemplateSubtask,
+  deleteTemplateSubtask,
 } from './actions'
-import type { Priority, ServiceType, TaskTemplate } from '@/lib/types'
+import type { Priority, ServiceType, TaskTemplate, TaskTemplateSubtask } from '@/lib/types'
 
 const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
   { value: 'full-burial', label: 'Full Burial'    },
@@ -440,6 +444,45 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
   const [days,     setDays]     = useState(template.due_days_before)
   const [priority, setPriority] = useState<Priority>(template.priority)
 
+  // Steps (template subtasks)
+  const [steps,       setSteps]       = useState<TaskTemplateSubtask[]>([])
+  const [stepsLoaded, setStepsLoaded] = useState(false)
+  const [newStep,     setNewStep]     = useState('')
+  const [addingStep,  setAddingStep]  = useState(false)
+  const [editingStep, setEditingStep] = useState<string | null>(null)
+  const [editStepVal, setEditStepVal] = useState('')
+  const stepInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    getTemplateSubtasks(template.id).then(({ data }) => {
+      setSteps(data ?? [])
+      setStepsLoaded(true)
+    })
+  }, [template.id])
+
+  async function handleAddStep() {
+    if (!newStep.trim()) return
+    setAddingStep(true)
+    const { data, error } = await addTemplateSubtask(template.id, newStep)
+    setAddingStep(false)
+    if (error || !data) return
+    setSteps(prev => [...prev, data])
+    setNewStep('')
+    stepInputRef.current?.focus()
+  }
+
+  async function handleDeleteStep(id: string) {
+    await deleteTemplateSubtask(id)
+    setSteps(prev => prev.filter(s => s.id !== id))
+  }
+
+  async function handleSaveStepEdit(id: string) {
+    if (!editStepVal.trim()) { setEditingStep(null); return }
+    await updateTemplateSubtask(id, editStepVal)
+    setSteps(prev => prev.map(s => s.id === id ? { ...s, title: editStepVal.trim() } : s))
+    setEditingStep(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !hint.trim()) return
@@ -498,11 +541,81 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
               <input type="number" required min={0} max={60} value={days}
                 onChange={e => setDays(Number(e.target.value))} style={inputStyle} />
             </div>
+
+            {/* Steps */}
+            <div className="pt-2 border-t" style={{ borderColor: '#F1F5F9' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#94A3B8' }}>
+                Steps
+              </p>
+              {!stepsLoaded && (
+                <p className="text-xs" style={{ color: '#94A3B8' }}>Loading…</p>
+              )}
+              {stepsLoaded && steps.length === 0 && (
+                <p className="text-xs mb-2" style={{ color: '#CBD5E1' }}>No steps yet.</p>
+              )}
+              {stepsLoaded && steps.map(step => (
+                <div key={step.id} className="group flex items-center gap-2 py-1">
+                  {editingStep === step.id ? (
+                    <input
+                      autoFocus
+                      className="flex-1 rounded border px-2 py-1 text-sm outline-none"
+                      style={{ borderColor: '#0D6E68', color: '#0F172A' }}
+                      value={editStepVal}
+                      onChange={e => setEditStepVal(e.target.value)}
+                      onBlur={() => handleSaveStepEdit(step.id)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleSaveStepEdit(step.id) }
+                        if (e.key === 'Escape') setEditingStep(null)
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <span
+                        className="flex-1 text-sm cursor-pointer hover:text-teal-700"
+                        style={{ color: '#0F172A' }}
+                        onClick={() => { setEditingStep(step.id); setEditStepVal(step.title) }}
+                      >
+                        {step.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteStep(step.id)}
+                        className="opacity-0 group-hover:opacity-100 transition p-0.5 rounded hover:opacity-70"
+                        style={{ color: '#94A3B8' }}
+                        aria-label="Remove step"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+              {/* Add step input */}
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  ref={stepInputRef}
+                  type="text"
+                  placeholder="Add a step…"
+                  value={newStep}
+                  onChange={e => setNewStep(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddStep() } }}
+                  className="flex-1 rounded border px-2 py-1.5 text-sm outline-none"
+                  style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddStep}
+                  disabled={addingStep || !newStep.trim()}
+                  className="rounded px-2.5 py-1.5 text-sm font-semibold text-white disabled:opacity-50 transition hover:opacity-90"
+                  style={{ backgroundColor: '#0D6E68' }}
+                >+</button>
+              </div>
+            </div>
           </div>
           <div className="flex gap-3 px-6 py-4 border-t flex-shrink-0" style={{ borderColor: '#E2E8F0' }}>
             <button type="button" onClick={onClose}
               className="flex-1 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50"
-              style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
+              style={{ borderColor: '#E2E8F0', color: '#475569' }}>Close</button>
             <button type="submit" disabled={busy || !title.trim() || !hint.trim()}
               className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
