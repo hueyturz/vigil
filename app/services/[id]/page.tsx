@@ -128,7 +128,7 @@ export default async function ServiceDetailPage({
               )}
             </div>
 
-            <div className="flex-shrink-0 flex flex-row sm:flex-col sm:items-end items-center gap-2">
+            <div className="flex-shrink-0 flex flex-col items-end gap-2">
               <Badge status={status} />
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
@@ -143,6 +143,16 @@ export default async function ServiceDetailPage({
                 >
                   Print Checklist
                 </a>
+              )}
+              {canManage && (
+                <ServiceCompletionFlow
+                  serviceId={params.id}
+                  funeralHomeId={profile.funeral_home_id}
+                  actorId={actorId}
+                  actorName={actorName}
+                  serviceStatus={service.status as 'active' | 'completed' | 'archived'}
+                  canManage={canManage}
+                />
               )}
             </div>
           </div>
@@ -172,20 +182,6 @@ export default async function ServiceDetailPage({
             initialNotes={service.notes ?? null}
           />
         </div>
-
-        {/* Service completion flow */}
-        {canManage && (
-          <div className="mb-6">
-            <ServiceCompletionFlow
-              serviceId={params.id}
-              funeralHomeId={profile.funeral_home_id}
-              actorId={actorId}
-              actorName={actorName}
-              serviceStatus={service.status as 'active' | 'completed' | 'archived'}
-              canManage={canManage}
-            />
-          </div>
-        )}
 
         {/* Tabbed content */}
         <ServiceDetailTabs
