@@ -161,6 +161,7 @@ export interface IntakeSession {
   recording_duration_seconds: number | null
   transcript:                 string | null
   raw_extraction:             ExtractionData | null
+  ai_summary:                 string | null
   status:                     IntakeStatus
   error_message:              string | null
   created_at:                 string

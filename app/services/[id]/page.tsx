@@ -4,10 +4,8 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { TaskList } from '@/components/tasks/TaskList'
-import { MeetingRecorder } from '@/components/intake/MeetingRecorder'
-import { PastMeetings } from '@/components/intake/PastMeetings'
 import { ApplyTemplateBanner } from '@/components/services/ApplyTemplateBanner'
+import { ServiceDetailTabs } from '@/components/services/ServiceDetailTabs'
 import { computeServiceStatus } from '@/lib/utils/service-status'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile } from '@/lib/types'
@@ -129,11 +127,6 @@ export default async function ServiceDetailPage({
               <p className="text-xs" style={{ color: '#475569' }}>
                 {completed}/{total} tasks confirmed
               </p>
-              {canRecord && (
-                <div className="mt-1">
-                  <MeetingRecorder serviceId={params.id} />
-                </div>
-              )}
             </div>
           </div>
 
@@ -142,26 +135,21 @@ export default async function ServiceDetailPage({
           </div>
         </div>
 
-        {/* Apply template banner — shown when no service_type set */}
-        {!service.service_type && canManage && (
-          <ApplyTemplateBanner serviceId={params.id} />
-        )}
-
-        {/* Task list */}
-        {tasks.length > 0 ? (
-          <TaskList tasks={tasks} serviceDate={service.service_date ?? ''} serviceId={params.id} />
-        ) : service.service_type ? (
-          <p className="text-sm text-center py-12" style={{ color: '#94A3B8' }}>
-            No tasks found for this service.
-          </p>
-        ) : null}
-
-        {/* Past Meetings */}
-        {intakeSessions.length > 0 && (
-          <div className="mt-10">
-            <PastMeetings sessions={intakeSessions} />
-          </div>
-        )}
+        {/* Tabbed content */}
+        <ServiceDetailTabs
+          tasks={tasks}
+          serviceDate={service.service_date ?? ''}
+          serviceId={params.id}
+          serviceType={service.service_type}
+          intakeSessions={intakeSessions}
+          canRecord={canRecord}
+          canManage={canManage}
+          applyBanner={
+            !service.service_type && canManage
+              ? <ApplyTemplateBanner serviceId={params.id} />
+              : null
+          }
+        />
       </div>
     </AppShell>
   )
