@@ -134,11 +134,11 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-black/50"
+      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-black/50 w-screen"
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
       <div
-        className="relative mx-auto my-8 w-full max-w-lg rounded-xl shadow-xl"
+        className="relative mx-auto my-8 w-full max-w-lg rounded-xl shadow-xl min-w-0"
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
