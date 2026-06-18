@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { createService } from '@/app/services/actions'
@@ -44,6 +45,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
   const [loading,         setLoading]          = useState(false)
   const [error,           setError]            = useState<string | null>(null)
   const [fieldErrors,     setFieldErrors]      = useState<FieldErrors>({})
+  const [mounted,         setMounted]          = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -111,18 +113,32 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     handleClose()
   }
 
-  if (!open) return null
+  useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
+  if (!open || !mounted) return null
 
   const taskCount = serviceType ? TASK_COUNTS[serviceType as ServiceType] : null
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center md:p-4"
-      style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}
+      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-black/50"
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
       <div
-        className="w-full h-full md:h-auto md:max-w-lg md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
+        className="relative mx-auto my-8 w-full max-w-lg rounded-xl shadow-xl"
         style={{ backgroundColor: '#FFFFFF' }}
       >
         {/* Header */}
@@ -282,7 +298,8 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
