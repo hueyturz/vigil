@@ -155,3 +155,43 @@ export async function updateServiceTask(
 
   return {}
 }
+
+// ── Update notes on any task (all statuses allowed) ───────────────────────
+
+export async function updateTaskNotes(
+  taskId: string,
+  notes:  string | null,
+): Promise<{ error?: string }> {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { data: task } = await serviceRole
+    .from('tasks')
+    .select('funeral_home_id')
+    .eq('id', taskId)
+    .single()
+
+  if (!task || task.funeral_home_id !== profile.funeral_home_id)
+    return { error: 'Task not found.' }
+
+  const { error } = await serviceRole
+    .from('tasks')
+    .update({ notes: notes || null })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+
+  return {}
+}

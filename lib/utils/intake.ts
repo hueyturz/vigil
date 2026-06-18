@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import type { ExtractionData, Priority } from '@/lib/types'
+import type { ExtractionData } from '@/lib/types'
 
 const SYSTEM_PROMPT = `You are an extraction engine for funeral arrangement conferences.
 You will receive a transcript of a meeting between a funeral director and a family. Extract all actionable decisions and logistics.
@@ -41,27 +41,23 @@ You must output ONLY a valid JSON object with this exact structure:
 }
 
 Rules:
-- task_confirmations: only include tasks that match existing task titles exactly
-- new_tasks: only include items that require action and are NOT already in the existing task list
+- task_confirmations: existing tasks that were discussed in the meeting. Only match titles exactly.
+- new_tasks: action items NOT already in the existing task list
 - anxiety_flag: true if the detail is ambiguous, contradicted, or unconfirmed
 - confidence_score: 0.0 to 1.0 based on how clearly this was stated
 - Do not include markdown, backticks, or any text outside the JSON object`
 
-export interface ExtractionSummary {
-  extraction:          ExtractionData
-  confirmed_count:     number
-  added_count:         number
-  needs_review_count:  number
-}
-
-export async function runExtraction(
+/**
+ * Calls Claude to extract tasks and notes from a stored transcript.
+ * Saves the raw extraction to intake_sessions.
+ * Does NOT write to tasks — that is done separately via /api/intake/save.
+ */
+export async function extractFromTranscript(
   intakeSessionId: string,
   serviceId:       string,
-  callerUserId:    string,
-): Promise<ExtractionSummary> {
+): Promise<ExtractionData> {
   const serviceRole = createServiceRoleClient()
 
-  // Fetch session for transcript
   const { data: session, error: sessionErr } = await serviceRole
     .from('intake_sessions')
     .select('transcript, funeral_home_id')
@@ -71,7 +67,6 @@ export async function runExtraction(
   if (sessionErr || !session?.transcript)
     throw new Error('Intake session or transcript not found.')
 
-  // Fetch service details
   const { data: service } = await serviceRole
     .from('services')
     .select('family_name, service_type, service_date')
@@ -80,28 +75,24 @@ export async function runExtraction(
 
   if (!service) throw new Error('Service not found.')
 
-  // Fetch existing tasks
   const { data: existingTasks } = await serviceRole
     .from('tasks')
-    .select('id, title, status')
+    .select('id, title')
     .eq('service_id', serviceId)
-    .eq('status', 'not-started')
 
   const existingTaskTitles = (existingTasks ?? []).map(t => t.title)
 
-  // Mark session as extracting
   await serviceRole
     .from('intake_sessions')
     .update({ status: 'extracting', updated_at: new Date().toISOString() })
     .eq('id', intakeSessionId)
 
-  // Call Claude
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.')
 
   const userMessage = [
-    `Service: ${service.family_name} family (${service.service_type}), date: ${service.service_date}`,
-    `Existing open tasks:\n${existingTaskTitles.map(t => `- ${t}`).join('\n') || 'None'}`,
+    `Service: ${service.family_name} family (${service.service_type ?? 'type TBD'}), date: ${service.service_date ?? 'TBD'}`,
+    `Existing tasks:\n${existingTaskTitles.map(t => `- ${t}`).join('\n') || 'None'}`,
     `\nTranscript:\n${session.transcript}`,
   ].join('\n\n')
 
@@ -125,7 +116,7 @@ export async function runExtraction(
     throw new Error(`Claude API ${aiResponse.status}: ${errText}`)
   }
 
-  const aiData = await aiResponse.json()
+  const aiData  = await aiResponse.json()
   const rawText: string = aiData.content?.[0]?.text ?? ''
 
   const cleaned = rawText
@@ -141,67 +132,7 @@ export async function runExtraction(
     throw new Error(`Failed to parse Claude response as JSON: ${cleaned.slice(0, 200)}`)
   }
 
-  // ── Process task_confirmations ─────────────────────────────────────────────
-  let confirmed_count    = 0
-  let needs_review_count = 0
-
-  for (const conf of extraction.task_confirmations ?? []) {
-    const autoConfirm = conf.confidence_score >= 0.8 && !conf.anxiety_flag
-
-    if (autoConfirm) {
-      const match = (existingTasks ?? []).find(
-        t => t.title.toLowerCase() === conf.task_title.toLowerCase()
-      )
-      if (match) {
-        await serviceRole
-          .from('tasks')
-          .update({
-            status:             'complete',
-            confirmation_value: conf.confirmation_value,
-            completed_by_id:    callerUserId,
-            completed_at:       new Date().toISOString(),
-          })
-          .eq('id', match.id)
-        confirmed_count++
-      }
-    } else {
-      needs_review_count++
-    }
-  }
-
-  // ── Process new_tasks ──────────────────────────────────────────────────────
-  let added_count = 0
-
-  for (const nt of extraction.new_tasks ?? []) {
-    // Find max sort_order for this service
-    const { data: lastTask } = await serviceRole
-      .from('tasks')
-      .select('sort_order')
-      .eq('service_id', serviceId)
-      .order('sort_order', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    const nextOrder = (lastTask?.sort_order ?? 0) + 1
-
-    const { error: insertErr } = await serviceRole.from('tasks').insert({
-      service_id:        serviceId,
-      funeral_home_id:   session.funeral_home_id,
-      title:             nt.title,
-      category:          nt.category,
-      confirmation_hint: nt.confirmation_hint,
-      due_days_before:   nt.due_days_before ?? 3,
-      priority:          (['critical', 'standard', 'informational'].includes(nt.priority)
-                          ? nt.priority
-                          : 'standard') as Priority,
-      sort_order:        nextOrder,
-      status:            'not-started',
-    })
-
-    if (!insertErr) added_count++
-  }
-
-  // ── Update session ─────────────────────────────────────────────────────────
+  // Save extraction JSON to session — tasks are written separately on FD confirmation
   await serviceRole
     .from('intake_sessions')
     .update({
@@ -211,5 +142,5 @@ export async function runExtraction(
     })
     .eq('id', intakeSessionId)
 
-  return { extraction, confirmed_count, added_count, needs_review_count }
+  return extraction
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { runExtraction } from '@/lib/utils/intake'
+import { extractFromTranscript } from '@/lib/utils/intake'
 
 const Schema = z.object({
   intake_session_id: z.string().uuid(),
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
   if (!service) return NextResponse.json({ error: 'Service not found.' }, { status: 404 })
 
   try {
-    const summary = await runExtraction(intake_session_id, service_id, profile.id)
-    return NextResponse.json({ intake_session_id, status: 'complete', ...summary })
+    const extraction = await extractFromTranscript(intake_session_id, service_id)
+    return NextResponse.json({ intake_session_id, status: 'complete', extraction })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Extraction failed.'
     await serviceRole

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
 import { isTaskOverdue } from '@/lib/utils/service-status'
-import { deleteServiceTask, updateServiceTask } from '@/app/services/task-actions'
+import { deleteServiceTask, updateServiceTask, updateTaskNotes } from '@/app/services/task-actions'
 import type { Priority, TaskWithProfile } from '@/lib/types'
 
 interface TaskRowProps {
@@ -26,12 +26,15 @@ export function TaskRow({
   const [modalOpen,   setModalOpen]   = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
-  const [editMode,    setEditMode]    = useState(false)
-  const [editTitle,   setEditTitle]   = useState(task.title)
-  const [editHint,    setEditHint]    = useState(task.confirmation_hint)
-  const [confirmDel,  setConfirmDel]  = useState(false)
-  const [saving,      setSaving]      = useState(false)
-  const [deleting,    setDeleting]    = useState(false)
+  const [editMode,      setEditMode]      = useState(false)
+  const [editTitle,     setEditTitle]     = useState(task.title)
+  const [editHint,      setEditHint]      = useState(task.confirmation_hint)
+  const [editNotesMode, setEditNotesMode] = useState(false)
+  const [editNotes,     setEditNotes]     = useState(task.notes ?? '')
+  const [confirmDel,    setConfirmDel]    = useState(false)
+  const [saving,        setSaving]        = useState(false)
+  const [savingNotes,   setSavingNotes]   = useState(false)
+  const [deleting,      setDeleting]      = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const overdue  = isTaskOverdue(task, serviceDate)
@@ -70,11 +73,65 @@ export function TaskRow({
     setEditMode(false)
   }
 
+  async function handleSaveNotes() {
+    setSavingNotes(true)
+    const result = await updateTaskNotes(task.id, editNotes.trim() || null)
+    setSavingNotes(false)
+    if (result.error) return
+    const updated: TaskWithProfile = { ...task, notes: editNotes.trim() || null }
+    setTask(updated)
+    onTaskUpdate?.(updated)
+    setEditNotesMode(false)
+  }
+
   async function handleDelete() {
     setDeleting(true)
     const result = await deleteServiceTask(task.id)
     setDeleting(false)
     if (!result.error) onTaskDelete?.(task.id)
+  }
+
+  // ── Edit notes mode ────────────────────────────────────────────────────────
+  if (editNotesMode) {
+    return (
+      <div
+        className="rounded-lg border p-4 space-y-3"
+        style={{ backgroundColor: '#FAFAFA', borderColor: '#CBD5E1' }}
+      >
+        <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Notes</label>
+          <textarea
+            autoFocus
+            value={editNotes}
+            onChange={e => setEditNotes(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border px-3 py-2 text-sm outline-none resize-none"
+            style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
+            placeholder="Add notes…"
+          />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => { setEditNotesMode(false); setEditNotes(task.notes ?? '') }}
+            className="rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50"
+            style={{ borderColor: '#E2E8F0', color: '#475569' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveNotes}
+            disabled={savingNotes}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#0D6E68' }}
+          >
+            {savingNotes ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
@@ -222,6 +279,15 @@ export function TaskRow({
                       >
                         <PencilIcon />
                         Edit task
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMenuOpen(false); setEditNotesMode(true); setEditNotes(task.notes ?? '') }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left transition hover:bg-gray-50"
+                        style={{ color: '#0F172A' }}
+                      >
+                        <NotesIcon />
+                        Edit notes
                       </button>
                       <button
                         type="button"
@@ -379,6 +445,18 @@ function PencilIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  )
+}
+
+function NotesIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
     </svg>
   )
 }

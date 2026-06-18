@@ -1,11 +1,34 @@
 'use client'
 
-import type { ExtractionData } from '@/lib/types'
+import { useState } from 'react'
+import type { ExtractionData, Priority } from '@/lib/types'
 
 interface ExtractionResultsProps {
-  extraction:      ExtractionData
-  durationSeconds: number | null
-  onDone?:         () => void
+  extraction:        ExtractionData
+  durationSeconds:   number | null
+  serviceId?:        string
+  intakeSessionId?:  string
+  onDone?:           () => void
+}
+
+interface ConfirmReview {
+  taskTitle:       string
+  notes:           string
+  accepted:        boolean
+  anxietyFlag:     boolean
+  confidenceScore: number
+}
+
+interface NewTaskReview {
+  title:             string
+  category:          string
+  confirmation_hint: string
+  due_days_before:   number
+  priority:          Priority
+  notes:             string
+  accepted:          boolean
+  anxietyFlag:       boolean
+  confidenceScore:   number
 }
 
 function formatDuration(seconds: number | null): string {
@@ -15,25 +38,138 @@ function formatDuration(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-export function ExtractionResults({ extraction, durationSeconds, onDone }: ExtractionResultsProps) {
-  const autoConfirmed = (extraction.task_confirmations ?? []).filter(
-    c => c.confidence_score >= 0.8 && !c.anxiety_flag
-  )
-  const needsReview = (extraction.task_confirmations ?? []).filter(
-    c => c.confidence_score < 0.8 || c.anxiety_flag
-  )
-  const newTasks    = extraction.new_tasks    ?? []
-  const notes       = extraction.service_notes ?? []
-  const meta        = extraction.case_metadata
+export function ExtractionResults({
+  extraction,
+  durationSeconds,
+  serviceId,
+  intakeSessionId,
+  onDone,
+}: ExtractionResultsProps) {
+  const readOnly = !serviceId || !intakeSessionId
 
-  const hasContent = autoConfirmed.length || newTasks.length || needsReview.length || notes.length
+  const [confirmations, setConfirmations] = useState<ConfirmReview[]>(() =>
+    (extraction.task_confirmations ?? []).map(c => ({
+      taskTitle:       c.task_title,
+      notes:           c.confirmation_value ?? '',
+      accepted:        true,
+      anxietyFlag:     c.anxiety_flag,
+      confidenceScore: c.confidence_score,
+    }))
+  )
+
+  const [newTasks, setNewTasks] = useState<NewTaskReview[]>(() =>
+    (extraction.new_tasks ?? []).map(t => ({
+      title:             t.title,
+      category:          t.category,
+      confirmation_hint: t.confirmation_hint,
+      due_days_before:   t.due_days_before,
+      priority:          t.priority as Priority,
+      notes:             t.extracted_detail ?? '',
+      accepted:          true,
+      anxietyFlag:       t.anxiety_flag,
+      confidenceScore:   t.confidence_score,
+    }))
+  )
+
+  const [saving,  setSaving]  = useState(false)
+  const [saveErr, setSaveErr] = useState<string | null>(null)
+
+  const meta  = extraction.case_metadata
+  const notes = extraction.service_notes ?? []
+
+  function toggleConfirmation(i: number) {
+    setConfirmations(prev => {
+      const next = [...prev]
+      next[i] = { ...next[i], accepted: !next[i].accepted }
+      return next
+    })
+  }
+
+  function updateConfirmationNotes(i: number, value: string) {
+    setConfirmations(prev => {
+      const next = [...prev]
+      next[i] = { ...next[i], notes: value }
+      return next
+    })
+  }
+
+  function toggleNewTask(i: number) {
+    setNewTasks(prev => {
+      const next = [...prev]
+      next[i] = { ...next[i], accepted: !next[i].accepted }
+      return next
+    })
+  }
+
+  function updateNewTaskNotes(i: number, value: string) {
+    setNewTasks(prev => {
+      const next = [...prev]
+      next[i] = { ...next[i], notes: value }
+      return next
+    })
+  }
+
+  function updateNewTaskPriority(i: number, value: Priority) {
+    setNewTasks(prev => {
+      const next = [...prev]
+      next[i] = { ...next[i], priority: value }
+      return next
+    })
+  }
+
+  async function handleSave() {
+    if (!serviceId || !intakeSessionId) return
+    setSaving(true)
+    setSaveErr(null)
+
+    const payload = {
+      intake_session_id: intakeSessionId,
+      service_id:        serviceId,
+      confirmations: confirmations
+        .filter(c => c.accepted)
+        .map(c => ({ task_title: c.taskTitle, notes: c.notes })),
+      new_tasks: newTasks
+        .filter(t => t.accepted)
+        .map(t => ({
+          title:             t.title,
+          category:          t.category,
+          confirmation_hint: t.confirmation_hint,
+          due_days_before:   t.due_days_before,
+          priority:          t.priority,
+          notes:             t.notes,
+        })),
+    }
+
+    try {
+      const res = await fetch('/api/intake/save', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSaveErr(data.error ?? 'Save failed. Please try again.')
+        setSaving(false)
+        return
+      }
+    } catch {
+      setSaveErr('Network error. Please try again.')
+      setSaving(false)
+      return
+    }
+
+    setSaving(false)
+    onDone?.()
+  }
+
+  const hasContent = confirmations.length || newTasks.length || notes.length
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold" style={{ color: '#0F172A' }}>Meeting Summary</h2>
-        {durationSeconds && (
+        {durationSeconds != null && (
           <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
             Recording duration: {formatDuration(durationSeconds)}
           </p>
@@ -54,93 +190,68 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
         </div>
       )}
 
-      {/* Tasks Confirmed */}
-      {autoConfirmed.length > 0 && (
+      {/* Task confirmations (updates to existing tasks) */}
+      {confirmations.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: '#15803D' }}>
-            <CheckCircleIcon /> Tasks Confirmed ({autoConfirmed.length})
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#475569' }}>
+            Existing Tasks — {confirmations.length}
           </h3>
-          <div className="space-y-2">
-            {autoConfirmed.map((c) => (
-              <div
-                key={c.task_title}
-                className="rounded-lg border px-4 py-3"
-                style={{ backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }}
-              >
-                <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{c.task_title}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#15803D' }}>{c.confirmation_value}</p>
-                <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
-                  Confidence: {Math.round(c.confidence_score * 100)}%
-                </p>
-              </div>
+          <div className="space-y-3">
+            {confirmations.map((c, i) => (
+              <ReviewCard
+                key={c.taskTitle}
+                title={c.taskTitle}
+                badge="Updates existing task"
+                badgeColor="#0D6E68"
+                badgeBg="#F0FDFA"
+                notes={c.notes}
+                accepted={c.accepted}
+                anxietyFlag={c.anxietyFlag}
+                confidenceScore={c.confidenceScore}
+                readOnly={readOnly}
+                onToggle={() => toggleConfirmation(i)}
+                onNotesChange={v => updateConfirmationNotes(i, v)}
+              />
             ))}
           </div>
         </section>
       )}
 
-      {/* Tasks Added */}
+      {/* New tasks */}
       {newTasks.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: '#0D6E68' }}>
-            <PlusCircleIcon /> Tasks Added ({newTasks.length})
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#475569' }}>
+            New Tasks — {newTasks.length}
           </h3>
-          <div className="space-y-2">
-            {newTasks.map((t) => (
-              <div
+          <div className="space-y-3">
+            {newTasks.map((t, i) => (
+              <ReviewCard
                 key={t.title}
-                className="rounded-lg border px-4 py-3"
-                style={{ backgroundColor: '#F0FDFA', borderColor: '#99F6E4' }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{t.title}</p>
-                  <PriorityPill priority={t.priority} />
-                </div>
-                {t.extracted_detail && (
-                  <p className="text-xs mt-0.5" style={{ color: '#0D6E68' }}>{t.extracted_detail}</p>
-                )}
-                <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
-                  {t.category} · due {t.due_days_before}d before service
-                </p>
-              </div>
+                title={t.title}
+                badge="New task"
+                badgeColor="#166534"
+                badgeBg="#F0FDF4"
+                notes={t.notes}
+                accepted={t.accepted}
+                anxietyFlag={t.anxietyFlag}
+                confidenceScore={t.confidenceScore}
+                readOnly={readOnly}
+                onToggle={() => toggleNewTask(i)}
+                onNotesChange={v => updateNewTaskNotes(i, v)}
+                priority={t.priority}
+                onPriorityChange={readOnly ? undefined : v => updateNewTaskPriority(i, v)}
+                meta={`${t.category} · due ${t.due_days_before}d before service`}
+              />
             ))}
           </div>
         </section>
       )}
 
-      {/* Needs Review */}
-      {needsReview.length > 0 && (
-        <section>
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: '#92400E' }}>
-            <AlertIcon /> Needs Review ({needsReview.length})
-          </h3>
-          <div className="space-y-2">
-            {needsReview.map((c) => (
-              <div
-                key={c.task_title}
-                className="rounded-lg border px-4 py-3"
-                style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}
-              >
-                <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{c.task_title}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#92400E' }}>{c.confirmation_value}</p>
-                <div className="flex gap-3 mt-1">
-                  {c.anxiety_flag && (
-                    <span className="text-xs font-medium" style={{ color: '#B45309' }}>⚠ Ambiguous</span>
-                  )}
-                  <span className="text-xs" style={{ color: '#94A3B8' }}>
-                    Confidence: {Math.round(c.confidence_score * 100)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Notes */}
+      {/* Service notes (read-only) */}
       {notes.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold mb-2" style={{ color: '#475569' }}>
-            Family Notes ({notes.length})
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#475569' }}>
+            Family Notes — {notes.length}
           </h3>
           <div className="space-y-2">
             {notes.map((n) => (
@@ -156,7 +267,41 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
         </section>
       )}
 
-      {onDone && (
+      {/* Save error */}
+      {saveErr && (
+        <div
+          className="rounded-lg border px-4 py-3 text-sm"
+          style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+        >
+          {saveErr}
+        </div>
+      )}
+
+      {/* Actions */}
+      {!readOnly && (
+        <div className="flex flex-col gap-2 pt-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#0D6E68' }}
+          >
+            {saving ? 'Saving…' : 'Save to Service'}
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            disabled={saving}
+            className="w-full rounded-xl py-3 text-sm font-semibold transition hover:opacity-70"
+            style={{ color: '#94A3B8' }}
+          >
+            Discard All
+          </button>
+        </div>
+      )}
+
+      {readOnly && onDone && (
         <button
           type="button"
           onClick={onDone}
@@ -170,50 +315,179 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
   )
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── ReviewCard ────────────────────────────────────────────────────────────────
 
-function PriorityPill({ priority }: { priority: string }) {
-  const styles: Record<string, { bg: string; text: string; label: string }> = {
-    critical:      { bg: '#FEF2F2', text: '#991B1B', label: 'Critical' },
-    standard:      { bg: '#FFFBEB', text: '#92400E', label: 'Standard' },
-    informational: { bg: '#F8FAFC', text: '#475569', label: 'Info' },
-  }
-  const s = styles[priority] ?? styles.standard
+interface ReviewCardProps {
+  title:            string
+  badge:            string
+  badgeColor:       string
+  badgeBg:          string
+  notes:            string
+  accepted:         boolean
+  anxietyFlag:      boolean
+  confidenceScore:  number
+  readOnly:         boolean
+  onToggle:         () => void
+  onNotesChange:    (v: string) => void
+  priority?:        Priority
+  onPriorityChange?: (v: Priority) => void
+  meta?:            string
+}
+
+function ReviewCard({
+  title, badge, badgeColor, badgeBg, notes, accepted,
+  anxietyFlag, confidenceScore, readOnly,
+  onToggle, onNotesChange,
+  priority, onPriorityChange, meta,
+}: ReviewCardProps) {
+  const dim = !readOnly && !accepted
+
   return (
-    <span
-      className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
-      style={{ backgroundColor: s.bg, color: s.text }}
+    <div
+      className="rounded-lg border px-4 py-3 transition"
+      style={{
+        backgroundColor: dim ? '#F8FAFC' : '#FFFFFF',
+        borderColor:     dim ? '#E2E8F0' : (accepted ? '#CBD5E1' : '#E2E8F0'),
+        opacity:         dim ? 0.6 : 1,
+      }}
     >
-      {s.label}
-    </span>
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: badgeBg, color: badgeColor }}
+            >
+              {badge}
+            </span>
+            {anxietyFlag && (
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: '#FFFBEB', color: '#92400E' }}
+              >
+                ⚠ Needs verification
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{title}</p>
+          {meta && <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{meta}</p>}
+        </div>
+
+        {/* Accept/reject toggle */}
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex-shrink-0 rounded-full w-8 h-8 flex items-center justify-center border transition"
+            style={{
+              backgroundColor: accepted ? '#0D6E68' : '#FFFFFF',
+              borderColor:     accepted ? '#0D6E68' : '#CBD5E1',
+              color:           accepted ? '#FFFFFF'  : '#94A3B8',
+            }}
+            title={accepted ? 'Accepted — click to reject' : 'Rejected — click to accept'}
+          >
+            {accepted ? <CheckIcon /> : <XIcon />}
+          </button>
+        )}
+      </div>
+
+      {/* Priority selector (new tasks only) */}
+      {priority && onPriorityChange && !readOnly && accepted && (
+        <div className="mb-2">
+          <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Priority</label>
+          <div className="flex gap-2">
+            {(['critical', 'standard', 'informational'] as Priority[]).map(p => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPriorityChange(p)}
+                className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition"
+                style={{
+                  borderColor:     priority === p ? PRIORITY_COLORS[p] : '#E2E8F0',
+                  backgroundColor: priority === p ? PRIORITY_BG[p]    : '#FFFFFF',
+                  color:           priority === p ? PRIORITY_COLORS[p] : '#94A3B8',
+                }}
+              >
+                <span
+                  className="inline-block rounded-full"
+                  style={{ width: 6, height: 6, backgroundColor: PRIORITY_COLORS[p] }}
+                />
+                {p.charAt(0).toUpperCase() + p.slice(1, 4)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Priority display (read-only) */}
+      {priority && readOnly && (
+        <div className="mb-2">
+          <span
+            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: PRIORITY_BG[priority], color: PRIORITY_COLORS[priority] }}
+          >
+            <span className="inline-block rounded-full" style={{ width: 6, height: 6, backgroundColor: PRIORITY_COLORS[priority] }} />
+            {priority.charAt(0).toUpperCase() + priority.slice(1)}
+          </span>
+        </div>
+      )}
+
+      {/* Notes textarea */}
+      {readOnly ? (
+        notes ? (
+          <p className="text-sm" style={{ color: '#475569' }}>{notes}</p>
+        ) : null
+      ) : (
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Notes</label>
+          <textarea
+            value={notes}
+            onChange={e => onNotesChange(e.target.value)}
+            disabled={!accepted}
+            rows={2}
+            className="w-full rounded-lg border px-3 py-2 text-sm outline-none resize-none disabled:opacity-50"
+            style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FAFAFA' }}
+            placeholder="Add notes from this meeting…"
+          />
+        </div>
+      )}
+
+      {/* Confidence score */}
+      <p className="text-xs mt-1.5" style={{ color: '#CBD5E1' }}>
+        Confidence: {Math.round(confidenceScore * 100)}%
+      </p>
+    </div>
   )
 }
 
-function CheckCircleIcon() {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const PRIORITY_COLORS: Record<Priority, string> = {
+  critical:      '#EF4444',
+  standard:      '#F59E0B',
+  informational: '#94A3B8',
+}
+
+const PRIORITY_BG: Record<Priority, string> = {
+  critical:      '#FEF2F2',
+  standard:      '#FFFBEB',
+  informational: '#F8FAFC',
+}
+
+function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="9 12 11 14 15 10" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   )
 }
 
-function PlusCircleIcon() {
+function XIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  )
-}
-
-function AlertIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   )
 }

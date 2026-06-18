@@ -12,23 +12,23 @@ interface MeetingRecorderProps {
 type RecorderState = 'idle' | 'recording' | 'processing' | 'complete' | 'error'
 
 interface CompletedResult {
-  durationSeconds: number | null
-  extraction:      ExtractionData
+  durationSeconds:  number | null
+  extraction:       ExtractionData
+  intakeSessionId:  string
 }
 
 function getSupportedMimeType(): string {
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-    'audio/ogg',
-  ]
   if (typeof MediaRecorder === 'undefined') return ''
-  for (const t of types) {
-    if (MediaRecorder.isTypeSupported(t)) return t
-  }
+  // audio/mp4 (AAC) must be first — it's the only format iOS Safari supports
+  if (MediaRecorder.isTypeSupported('audio/mp4'))             return 'audio/mp4'
+  if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus'
+  if (MediaRecorder.isTypeSupported('audio/webm'))            return 'audio/webm'
+  if (MediaRecorder.isTypeSupported('audio/ogg'))             return 'audio/ogg'
   return ''
+}
+
+function isRecordingSupported(): boolean {
+  return typeof MediaRecorder !== 'undefined'
 }
 
 function formatTimer(seconds: number): string {
@@ -90,7 +90,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
 
     const mimeType = getSupportedMimeType()
     if (!mimeType) {
-      setError('Your browser does not support audio recording. Please try Chrome or Safari.')
+      setError('Recording is not supported on this browser. Please use Chrome on desktop or Android.')
       return
     }
 
@@ -116,7 +116,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
     recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: mimeType })
       const duration = Math.round((Date.now() - startTimeRef.current) / 1000)
-      await uploadAndProcess(blob, duration)
+      await uploadAndProcess(blob, mimeType, duration)
     }
 
     recorder.onerror = () => {
@@ -145,11 +145,12 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
     }
   }
 
-  async function uploadAndProcess(blob: Blob, durationSeconds: number) {
+  async function uploadAndProcess(blob: Blob, mimeType: string, durationSeconds: number) {
     const formData = new FormData()
     formData.append('audio', blob, 'recording')
     formData.append('service_id', serviceId)
     formData.append('duration_seconds', String(durationSeconds))
+    formData.append('mimeType', mimeType)
 
     try {
       const res = await fetch('/api/intake/transcribe', {
@@ -165,7 +166,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
         return
       }
 
-      setResult({ durationSeconds, extraction: data.extraction })
+      setResult({ durationSeconds, extraction: data.extraction, intakeSessionId: data.intake_session_id })
       setRecState('complete')
     } catch {
       if (!isMountedRef.current) return
@@ -223,14 +224,23 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
                 <p className="text-sm mb-6" style={{ color: '#64748B' }}>
                   Vigil will transcribe the conversation and automatically populate tasks from the decisions made.
                 </p>
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ backgroundColor: '#0D6E68' }}
-                >
-                  Start Recording
-                </button>
+                {!isRecordingSupported() || !getSupportedMimeType() ? (
+                  <div
+                    className="rounded-lg border px-4 py-3 text-sm"
+                    style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+                  >
+                    Recording is not supported on this browser. Please use Chrome on desktop or Android.
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                    style={{ backgroundColor: '#0D6E68' }}
+                  >
+                    Start Recording
+                  </button>
+                )}
               </div>
             )}
 
@@ -276,6 +286,8 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
               <ExtractionResults
                 extraction={result.extraction}
                 durationSeconds={result.durationSeconds}
+                serviceId={serviceId}
+                intakeSessionId={result.intakeSessionId}
                 onDone={closeModal}
               />
             )}

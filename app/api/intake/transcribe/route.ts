@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { transcribeAudio } from '@/lib/utils/deepgram'
-import { runExtraction } from '@/lib/utils/intake'
+import { extractFromTranscript } from '@/lib/utils/intake'
 
 export async function POST(request: NextRequest) {
   const supabase    = createClient()
@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid form data.' }, { status: 400 })
   }
 
-  const audioBlob  = formData.get('audio')  as Blob   | null
-  const serviceId  = formData.get('service_id') as string | null
-  const durationRaw = formData.get('duration_seconds') as string | null
+  const audioBlob       = formData.get('audio')            as Blob   | null
+  const serviceId       = formData.get('service_id')       as string | null
+  const durationRaw     = formData.get('duration_seconds') as string | null
+  const clientMimeType  = formData.get('mimeType')         as string | null
   const durationSeconds = durationRaw ? parseInt(durationRaw, 10) : null
 
   if (!audioBlob || !serviceId)
@@ -66,7 +67,9 @@ export async function POST(request: NextRequest) {
   let transcript: string
   try {
     const audioBuffer = Buffer.from(await audioBlob.arrayBuffer())
-    const mimeType    = audioBlob.type || 'audio/webm'
+    // Prefer the MIME type the client detected via MediaRecorder.isTypeSupported(),
+    // since audioBlob.type can be empty or wrong on iOS Safari.
+    const mimeType = clientMimeType || audioBlob.type || 'audio/webm'
     transcript = await transcribeAudio(audioBuffer, mimeType)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Transcription failed.'
@@ -83,14 +86,13 @@ export async function POST(request: NextRequest) {
     .update({ transcript, status: 'extracting', updated_at: new Date().toISOString() })
     .eq('id', intakeSessionId)
 
-  // Extract with AI
+  // Extract with Claude — returns ExtractionData only; no task writes happen here
   try {
-    const summary = await runExtraction(intakeSessionId, serviceId, profile.id)
+    const extraction = await extractFromTranscript(intakeSessionId, serviceId)
     return NextResponse.json({
       intake_session_id: intakeSessionId,
-      status:            'complete',
       duration_seconds:  durationSeconds,
-      ...summary,
+      extraction,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Extraction failed.'
