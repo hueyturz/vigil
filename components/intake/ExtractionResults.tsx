@@ -61,9 +61,9 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
             <CheckCircleIcon /> Tasks Confirmed ({autoConfirmed.length})
           </h3>
           <div className="space-y-2">
-            {autoConfirmed.map((c, i) => (
+            {autoConfirmed.map((c) => (
               <div
-                key={i}
+                key={c.task_title}
                 className="rounded-lg border px-4 py-3"
                 style={{ backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }}
               >
@@ -85,9 +85,9 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
             <PlusCircleIcon /> Tasks Added ({newTasks.length})
           </h3>
           <div className="space-y-2">
-            {newTasks.map((t, i) => (
+            {newTasks.map((t) => (
               <div
-                key={i}
+                key={t.title}
                 className="rounded-lg border px-4 py-3"
                 style={{ backgroundColor: '#F0FDFA', borderColor: '#99F6E4' }}
               >
@@ -114,9 +114,9 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
             <AlertIcon /> Needs Review ({needsReview.length})
           </h3>
           <div className="space-y-2">
-            {needsReview.map((c, i) => (
+            {needsReview.map((c) => (
               <div
-                key={i}
+                key={c.task_title}
                 className="rounded-lg border px-4 py-3"
                 style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }}
               >
@@ -143,9 +143,9 @@ export function ExtractionResults({ extraction, durationSeconds, onDone }: Extra
             Family Notes ({notes.length})
           </h3>
           <div className="space-y-2">
-            {notes.map((n, i) => (
+            {notes.map((n) => (
               <div
-                key={i}
+                key={n.note}
                 className="rounded-lg border px-4 py-3"
                 style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}
               >

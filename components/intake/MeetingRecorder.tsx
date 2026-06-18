@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ExtractionResults } from './ExtractionResults'
 import type { ExtractionData } from '@/lib/types'
@@ -50,10 +50,15 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
   const chunksRef        = useRef<BlobPart[]>([])
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef     = useRef<number>(0)
+  const isMountedRef     = useRef(true)
 
-  // Clean up timer on unmount
+  // Track mount state and clean up timer on unmount
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
   }, [])
 
   function openModal() {
@@ -80,7 +85,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
     }
   }
 
-  const startRecording = useCallback(async () => {
+  async function startRecording() {
     setError(null)
 
     const mimeType = getSupportedMimeType()
@@ -129,7 +134,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
     timerRef.current = setInterval(() => {
       setElapsed(Math.round((Date.now() - startTimeRef.current) / 1000))
     }, 1000)
-  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   function stopRecording() {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -153,6 +158,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
       })
 
       const data = await res.json()
+      if (!isMountedRef.current) return
       if (!res.ok) {
         setError(data.error ?? 'Processing failed. Please try again.')
         setRecState('error')
@@ -162,6 +168,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
       setResult({ durationSeconds, extraction: data.extraction })
       setRecState('complete')
     } catch {
+      if (!isMountedRef.current) return
       setError('Network error. Please check your connection and try again.')
       setRecState('error')
     }
