@@ -76,7 +76,7 @@ export default async function MyTasksPage() {
               const sortedTasks = [...tasks].sort((a, b) => a.sort_order - b.sort_order)
               const pending   = sortedTasks.filter(t => t.status !== 'complete')
               const completed = sortedTasks.filter(t => t.status === 'complete')
-              const status    = computeServiceStatus(tasks, service.service_date)
+              const status    = computeServiceStatus(tasks, service.service_date ?? '')
 
               return (
                 <div key={service.id}>
@@ -97,9 +97,9 @@ export default async function MyTasksPage() {
                           className="flex flex-wrap gap-3 mt-1 text-sm"
                           style={{ color: '#475569' }}
                         >
-                          <span>{formatDate(service.service_date)}</span>
-                          <span>·</span>
-                          <span>{service.location}</span>
+                          {service.service_date && <span>{formatDate(service.service_date)}</span>}
+                          {service.service_date && service.location && <span>·</span>}
+                          {service.location && <span>{service.location}</span>}
                         </div>
                       </div>
                       <Badge status={status} />
@@ -120,7 +120,7 @@ export default async function MyTasksPage() {
                           <TaskRow
                             key={task.id}
                             task={task}
-                            serviceDate={service.service_date}
+                            serviceDate={service.service_date ?? ''}
                           />
                         ))}
                       </div>
@@ -141,7 +141,7 @@ export default async function MyTasksPage() {
                           <TaskRow
                             key={task.id}
                             task={task}
-                            serviceDate={service.service_date}
+                            serviceDate={service.service_date ?? ''}
                           />
                         ))}
                       </div>

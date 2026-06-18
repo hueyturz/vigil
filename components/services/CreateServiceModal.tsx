@@ -9,13 +9,10 @@ import type { ServiceType } from '@/lib/types'
 const CreateServiceSchema = z.object({
   family_name:   z.string().min(1, 'Family name is required.'),
   deceased_name: z.string().min(1, 'Deceased name is required.'),
-  service_date:  z.string().min(1, 'Service date is required.'),
-  location:      z.string().min(1, 'Location is required.'),
 })
 
-type FieldErrors = Partial<Record<keyof z.infer<typeof CreateServiceSchema>, string>>
+type FieldErrors = Partial<Record<'family_name' | 'deceased_name', string>>
 
-// Task counts per service type — sourced from seed data, no DB call needed
 const TASK_COUNTS: Record<ServiceType, number> = {
   'full-burial': 14,
   'graveside':   10,
@@ -24,37 +21,27 @@ const TASK_COUNTS: Record<ServiceType, number> = {
 }
 
 const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
-  { value: 'full-burial', label: 'Full Burial'     },
-  { value: 'graveside',   label: 'Graveside'        },
-  { value: 'cremation',   label: 'Cremation'        },
-  { value: 'military',    label: 'Military Honors'  },
+  { value: 'full-burial', label: 'Full Burial'    },
+  { value: 'graveside',   label: 'Graveside Only'  },
+  { value: 'cremation',   label: 'Cremation'       },
+  { value: 'military',    label: 'Military Honors' },
 ]
 
-interface StaffOption {
-  id: string
-  full_name: string
-}
-
-interface CreateServiceModalProps {
-  open: boolean
-  onClose: () => void
-}
+interface StaffOption { id: string; full_name: string }
+interface CreateServiceModalProps { open: boolean; onClose: () => void }
 
 export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
-  const [familyName,       setFamilyName]       = useState('')
-  const [deceasedName,     setDeceasedName]      = useState('')
-  const [serviceType,      setServiceType]       = useState<ServiceType>('full-burial')
-  const [serviceDate,      setServiceDate]       = useState('')
-  const [location,         setLocation]          = useState('')
-  const [assignedStaffId,  setAssignedStaffId]   = useState('')
-  const [staffOptions,     setStaffOptions]      = useState<StaffOption[]>([])
-  const [loading,          setLoading]           = useState(false)
-  const [error,            setError]             = useState<string | null>(null)
-  const [fieldErrors,      setFieldErrors]       = useState<FieldErrors>({})
+  const [familyName,      setFamilyName]      = useState('')
+  const [deceasedName,    setDeceasedName]     = useState('')
+  const [serviceType,     setServiceType]      = useState<ServiceType | ''>('')
+  const [serviceDate,     setServiceDate]      = useState('')
+  const [location,        setLocation]         = useState('')
+  const [assignedStaffId, setAssignedStaffId]  = useState('')
+  const [staffOptions,    setStaffOptions]     = useState<StaffOption[]>([])
+  const [loading,         setLoading]          = useState(false)
+  const [error,           setError]            = useState<string | null>(null)
+  const [fieldErrors,     setFieldErrors]      = useState<FieldErrors>({})
 
-  const today = new Date().toISOString().split('T')[0]
-
-  // Fetch staff list once when modal opens
   useEffect(() => {
     if (!open) return
     const supabase = createClient()
@@ -70,7 +57,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
   function reset() {
     setFamilyName('')
     setDeceasedName('')
-    setServiceType('full-burial')
+    setServiceType('')
     setServiceDate('')
     setLocation('')
     setAssignedStaffId('')
@@ -78,10 +65,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     setFieldErrors({})
   }
 
-  function handleClose() {
-    reset()
-    onClose()
-  }
+  function handleClose() { reset(); onClose() }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -91,8 +75,6 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     const validation = CreateServiceSchema.safeParse({
       family_name:   familyName.trim(),
       deceased_name: deceasedName.trim(),
-      service_date:  serviceDate,
-      location:      location.trim(),
     })
 
     if (!validation.success) {
@@ -106,38 +88,30 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     }
 
     setLoading(true)
-
     const result = await createService({
       family_name:       familyName.trim(),
       deceased_name:     deceasedName.trim(),
-      service_type:      serviceType,
-      service_date:      serviceDate,
-      location:          location.trim(),
+      service_type:      serviceType ? (serviceType as ServiceType) : null,
+      service_date:      serviceDate || null,
+      location:          location.trim() || null,
       assigned_staff_id: assignedStaffId || null,
     })
-
     setLoading(false)
 
-    if (result.error) {
-      setError(result.error)
-      return
-    }
-
+    if (result.error) { setError(result.error); return }
     handleClose()
   }
 
   if (!open) return null
 
-  const taskCount = TASK_COUNTS[serviceType]
+  const taskCount = serviceType ? TASK_COUNTS[serviceType as ServiceType] : null
 
   return (
-    /* Backdrop — full-screen on mobile, centered dialog on md+ */
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center md:p-4"
       style={{ backgroundColor: 'rgba(15,23,42,0.5)' }}
       onClick={e => { if (e.target === e.currentTarget) handleClose() }}
     >
-      {/* Panel */}
       <div
         className="w-full h-full md:h-auto md:max-w-lg md:rounded-2xl shadow-xl flex flex-col overflow-hidden"
         style={{ backgroundColor: '#FFFFFF' }}
@@ -147,20 +121,16 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
           className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0"
           style={{ borderColor: '#E2E8F0' }}
         >
-          <h2 className="text-lg font-semibold" style={{ color: '#0F172A' }}>
-            New Service
-          </h2>
+          <h2 className="text-lg font-semibold" style={{ color: '#0F172A' }}>New Service</h2>
           <button
             onClick={handleClose}
             className="text-xl leading-none hover:opacity-60 transition"
             style={{ color: '#94A3B8' }}
             aria-label="Close"
-          >
-            ×
-          </button>
+          >×</button>
         </div>
 
-        {/* Form — scrollable on mobile */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <ModalField label="Family Name" required error={fieldErrors.family_name}>
             <input
@@ -182,40 +152,42 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
             />
           </ModalField>
 
-          <ModalField label="Service Type" required>
+          <ModalField label="Service Type">
             <select
-              required
               value={serviceType}
-              onChange={e => setServiceType(e.target.value as ServiceType)}
+              onChange={e => setServiceType(e.target.value as ServiceType | '')}
               style={inputStyle}
             >
+              <option value="">Select service type (optional)</option>
               {SERVICE_TYPE_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </ModalField>
 
-          {/* Live task count preview */}
-          <p className="text-xs -mt-1" style={{ color: '#0D6E68' }}>
-            {taskCount} tasks will be auto-generated
+          {/* Task count preview */}
+          <p className="text-xs -mt-1" style={{ color: taskCount ? '#0D6E68' : '#94A3B8' }}>
+            {taskCount
+              ? `${taskCount} tasks will be auto-generated`
+              : 'Select a service type to preview tasks'}
           </p>
 
-          <ModalField label="Service Date" required error={fieldErrors.service_date}>
+          <ModalField label="Service Date">
             <input
               type="date"
-              min={today}
               value={serviceDate}
               onChange={e => setServiceDate(e.target.value)}
+              placeholder="To be determined"
               style={inputStyle}
             />
           </ModalField>
 
-          <ModalField label="Location" required error={fieldErrors.location}>
+          <ModalField label="Location">
             <input
               type="text"
               value={location}
               onChange={e => setLocation(e.target.value)}
-              placeholder="Riverside Cemetery"
+              placeholder="To be determined"
               style={inputStyle}
             />
           </ModalField>
@@ -242,11 +214,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
             </div>
           )}
 
-          {/* Footer */}
-          <div
-            className="flex justify-end gap-3 pt-2 border-t mt-2"
-            style={{ borderColor: '#E2E8F0' }}
-          >
+          <div className="flex justify-end gap-3 pt-2 border-t mt-2" style={{ borderColor: '#E2E8F0' }}>
             <button
               type="button"
               onClick={handleClose}
@@ -261,7 +229,11 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: '#0D6E68' }}
             >
-              {loading ? 'Creating…' : 'Create service'}
+              {loading
+                ? 'Creating…'
+                : serviceType
+                  ? 'Create Service & Generate Tasks'
+                  : 'Create Service'}
             </button>
           </div>
         </form>
@@ -271,15 +243,9 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
 }
 
 function ModalField({
-  label,
-  required,
-  error,
-  children,
+  label, required, error, children,
 }: {
-  label: string
-  required?: boolean
-  error?: string
-  children: React.ReactNode
+  label: string; required?: boolean; error?: string; children: React.ReactNode
 }) {
   return (
     <div>
@@ -288,9 +254,7 @@ function ModalField({
         {required && <span style={{ color: '#EF4444' }}> *</span>}
       </label>
       {children}
-      {error && (
-        <p className="mt-1 text-xs" style={{ color: '#EF4444' }}>{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs" style={{ color: '#EF4444' }}>{error}</p>}
     </div>
   )
 }

@@ -185,9 +185,14 @@ export function TaskRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-start gap-1.5 min-w-0">
               <PriorityDot priority={task.priority} />
-              <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{task.title}</p>
+                {task.notes && (
+                  <p className="text-xs italic mt-0.5" style={{ color: '#94A3B8' }}>{task.notes}</p>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5 flex-shrink-0">

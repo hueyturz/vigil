@@ -17,18 +17,22 @@ function familyLabel(name: string): string {
 }
 
 export function ServiceCard({ service }: { service: ServiceWithTasks }) {
-  const { tasks, service_date } = service
-  const status      = computeServiceStatus(tasks, service_date)
+  const { tasks } = service
+  const serviceDate = service.service_date ?? ''
+  const status      = computeServiceStatus(tasks, serviceDate)
   const completed   = tasks.filter(t => t.status === 'complete').length
   const total       = tasks.length
   const progressPct = total > 0 ? (completed / total) * 100 : 0
-  const days        = daysUntil(service_date)
+
+  const days = serviceDate ? daysUntil(serviceDate) : null
 
   let dayChipColor = '#94A3B8'
-  if (days <= 2)      dayChipColor = '#EF4444'
-  else if (days <= 5) dayChipColor = '#F59E0B'
+  if (days !== null && days <= 2)      dayChipColor = '#EF4444'
+  else if (days !== null && days <= 5) dayChipColor = '#F59E0B'
 
-  const dayLabel = days < 0
+  const dayLabel = days === null
+    ? 'TBD'
+    : days < 0
     ? `${Math.abs(days)}d ago`
     : days === 0
     ? 'Today'
@@ -42,7 +46,9 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
       {/* Top row: type label + status badge */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>
-          {SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type}
+          {service.service_type
+            ? (SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type)
+            : 'No type set'}
         </span>
         <Badge status={status} />
       </div>
@@ -59,7 +65,7 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
 
       {/* Date + days chip */}
       <div className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
-        <span>{formatDate(service_date)}</span>
+        <span>{serviceDate ? formatDate(serviceDate) : 'Date TBD'}</span>
         <span
           className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
           style={{ backgroundColor: dayChipColor }}
@@ -69,7 +75,9 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
       </div>
 
       {/* Location */}
-      <p className="text-sm truncate" style={{ color: '#475569' }}>{service.location}</p>
+      {service.location && (
+        <p className="text-sm truncate" style={{ color: '#475569' }}>{service.location}</p>
+      )}
 
       {/* Progress */}
       <div className="space-y-1.5 mt-auto pt-1">
@@ -79,7 +87,6 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
         <ProgressBar value={progressPct} status={status} />
       </div>
 
-      {/* Link */}
       <Link
         href={`/services/${service.id}`}
         className="mt-1 text-sm font-medium hover:underline"

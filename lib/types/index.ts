@@ -29,9 +29,9 @@ export interface Service {
   funeral_home_id: string
   family_name: string
   deceased_name: string
-  service_type: ServiceType
-  service_date: string       // ISO date string 'YYYY-MM-DD'
-  location: string
+  service_type: ServiceType | null
+  service_date: string | null  // ISO date string 'YYYY-MM-DD'
+  location: string | null
   assigned_staff_id: string | null
   created_by_id: string
   status: ServiceStatus
@@ -51,6 +51,7 @@ export interface Task {
   assigned_to_id: string | null
   status: TaskStatus
   priority: Priority
+  notes: string | null
   confirmation_value: string | null
   completed_by_id: string | null
   completed_at: string | null
@@ -67,6 +68,7 @@ export interface TaskTemplate {
   due_days_before: number
   sort_order: number
   priority: Priority
+  notes: string | null
 }
 
 export interface NotificationPreferences {

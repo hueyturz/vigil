@@ -7,6 +7,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { TaskList } from '@/components/tasks/TaskList'
 import { MeetingRecorder } from '@/components/intake/MeetingRecorder'
 import { PastMeetings } from '@/components/intake/PastMeetings'
+import { ApplyTemplateBanner } from '@/components/services/ApplyTemplateBanner'
 import { computeServiceStatus } from '@/lib/utils/service-status'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile } from '@/lib/types'
@@ -38,7 +39,6 @@ export default async function ServiceDetailPage({
 
   if (!profile) redirect('/login')
 
-  // Fetch service
   const { data: service } = await db
     .from('services')
     .select('*')
@@ -48,7 +48,6 @@ export default async function ServiceDetailPage({
 
   if (!service) notFound()
 
-  // Fetch tasks with completed_by and assigned_to profile joins
   const { data: tasksRaw } = await db
     .from('tasks')
     .select(`
@@ -65,7 +64,6 @@ export default async function ServiceDetailPage({
     assigned_to:  t.assigned_to  ?? null,
   }))
 
-  // Fetch intake sessions for this service
   const { data: intakeRaw } = await db
     .from('intake_sessions')
     .select('*')
@@ -74,17 +72,17 @@ export default async function ServiceDetailPage({
 
   const intakeSessions: IntakeSession[] = (intakeRaw ?? []) as IntakeSession[]
 
-  const status      = computeServiceStatus(tasks, service.service_date)
+  const status      = computeServiceStatus(tasks, service.service_date ?? '')
   const completed   = tasks.filter(t => t.status === 'complete').length
   const total       = tasks.length
   const progressPct = total > 0 ? (completed / total) * 100 : 0
   const canRecord   = profile.role === 'owner' || profile.role === 'fd'
+  const canManage   = profile.role === 'owner' || profile.role === 'fd'
 
   return (
     <AppShell profile={profile}>
       <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
 
-        {/* Back link */}
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-1 text-sm mb-6 hover:underline"
@@ -100,12 +98,14 @@ export default async function ServiceDetailPage({
         >
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
-              <p
-                className="text-xs font-semibold uppercase tracking-wide mb-1"
-                style={{ color: '#94A3B8' }}
-              >
-                {SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type}
-              </p>
+              {service.service_type && (
+                <p
+                  className="text-xs font-semibold uppercase tracking-wide mb-1"
+                  style={{ color: '#94A3B8' }}
+                >
+                  {SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type}
+                </p>
+              )}
               <h1
                 className="font-serif text-3xl font-bold leading-tight"
                 style={{ color: '#0F172A' }}
@@ -115,11 +115,13 @@ export default async function ServiceDetailPage({
               <p className="mt-1 text-base" style={{ color: '#475569' }}>
                 {service.deceased_name}
               </p>
-              <div className="mt-3 flex flex-wrap gap-4 text-sm" style={{ color: '#475569' }}>
-                <span>{formatDate(service.service_date)}</span>
-                <span>·</span>
-                <span>{service.location}</span>
-              </div>
+              {(service.service_date || service.location) && (
+                <div className="mt-3 flex flex-wrap gap-4 text-sm" style={{ color: '#475569' }}>
+                  {service.service_date && <span>{formatDate(service.service_date)}</span>}
+                  {service.service_date && service.location && <span>·</span>}
+                  {service.location && <span>{service.location}</span>}
+                </div>
+              )}
             </div>
 
             <div className="flex-shrink-0 flex flex-row sm:flex-col sm:items-end items-center gap-2">
@@ -135,20 +137,24 @@ export default async function ServiceDetailPage({
             </div>
           </div>
 
-          {/* Full-width progress bar */}
           <div className="mt-5">
             <ProgressBar value={progressPct} status={status} />
           </div>
         </div>
 
+        {/* Apply template banner — shown when no service_type set */}
+        {!service.service_type && canManage && (
+          <ApplyTemplateBanner serviceId={params.id} />
+        )}
+
         {/* Task list */}
         {tasks.length > 0 ? (
-          <TaskList tasks={tasks} serviceDate={service.service_date} serviceId={params.id} />
-        ) : (
+          <TaskList tasks={tasks} serviceDate={service.service_date ?? ''} serviceId={params.id} />
+        ) : service.service_type ? (
           <p className="text-sm text-center py-12" style={{ color: '#94A3B8' }}>
             No tasks found for this service.
           </p>
-        )}
+        ) : null}
 
         {/* Past Meetings */}
         {intakeSessions.length > 0 && (

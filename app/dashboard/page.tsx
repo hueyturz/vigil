@@ -41,10 +41,10 @@ export default async function DashboardPage() {
 
   const activeCount         = services.length
   const needsAttentionCount = services.filter(
-    s => computeServiceStatus(s.tasks, s.service_date) === 'red'
+    s => computeServiceStatus(s.tasks, s.service_date ?? '') === 'red'
   ).length
   const overdueTaskCount    = services.reduce(
-    (sum, s) => sum + s.tasks.filter(t => isTaskOverdue(t, s.service_date)).length,
+    (sum, s) => sum + s.tasks.filter(t => isTaskOverdue(t, s.service_date ?? '')).length,
     0
   )
 
