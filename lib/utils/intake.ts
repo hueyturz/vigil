@@ -128,11 +128,17 @@ export async function runExtraction(
   const aiData = await aiResponse.json()
   const rawText: string = aiData.content?.[0]?.text ?? ''
 
+  const cleaned = rawText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim()
+
   let extraction: ExtractionData
   try {
-    extraction = JSON.parse(rawText)
+    extraction = JSON.parse(cleaned)
   } catch {
-    throw new Error(`Failed to parse Claude response as JSON: ${rawText.slice(0, 200)}`)
+    throw new Error(`Failed to parse Claude response as JSON: ${cleaned.slice(0, 200)}`)
   }
 
   // ── Process task_confirmations ─────────────────────────────────────────────
