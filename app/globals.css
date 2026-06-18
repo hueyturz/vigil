@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes vigil-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes vigil-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.vigil-pulse { animation: vigil-pulse 1.5s ease-in-out infinite; }
+.vigil-spin  { animation: vigil-spin  1s linear infinite; }

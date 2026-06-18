@@ -232,8 +232,8 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
               <div className="text-center py-4">
                 <div className="flex items-center justify-center gap-2 mb-6">
                   <span
-                    className="inline-block h-3 w-3 rounded-full"
-                    style={{ backgroundColor: '#EF4444', animation: 'pulse 1.5s ease-in-out infinite' }}
+                    className="vigil-pulse inline-block h-3 w-3 rounded-full"
+                    style={{ backgroundColor: '#EF4444' }}
                   />
                   <span className="text-2xl font-mono font-bold" style={{ color: '#0F172A' }}>
                     {formatTimer(elapsed)}
@@ -296,12 +296,6 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
         </div>
       )}
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
     </>
   )
 }
@@ -342,11 +336,10 @@ function CloseIcon() {
 function SpinnerIcon() {
   return (
     <svg
+      className="vigil-spin"
       width="36" height="36" viewBox="0 0 24 24" fill="none"
       stroke="#0D6E68" strokeWidth="2.5" strokeLinecap="round"
-      style={{ animation: 'spin 1s linear infinite' }}
     >
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
   )
