@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 
 // Hardcoded allow-list. Anyone else gets a 404 (route existence stays hidden).
-const ADMIN_EMAILS = ['hueyturz@gmail.com', 'houst33@gmail.com']
+const ADMIN_EMAILS = ['hueyturz@gmail.com']
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────
 
