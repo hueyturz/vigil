@@ -100,6 +100,42 @@ export async function updateUserRole(
   return {}
 }
 
+// ── Update your own profile ───────────────────────────────────────────────────
+
+const OwnProfileSchema = z.object({
+  full_name: z.string().min(2, 'Name must be at least 2 characters.'),
+  phone:     z.string().optional(),
+})
+
+export async function updateOwnProfile(formData: FormData): Promise<{ error?: string }> {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const raw = {
+    full_name: formData.get('full_name') as string,
+    phone:     (formData.get('phone') as string | null) ?? undefined,
+  }
+
+  const parsed = OwnProfileSchema.safeParse(raw)
+  if (!parsed.success) return { error: parsed.error.errors[0].message }
+
+  const { full_name, phone } = parsed.data
+
+  // Any authenticated user may edit their own profile, regardless of role.
+  const { error } = await serviceRole
+    .from('profiles')
+    .update({ full_name: full_name.trim(), phone: phone?.trim() ? phone.trim() : null })
+    .eq('id', session.user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/settings/users')
+  return {}
+}
+
 // ── Deactivate / reactivate a user ───────────────────────────────────────────
 
 export async function setUserActive(
