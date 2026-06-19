@@ -14,6 +14,34 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  try {
+    return await handleComplete(request, params)
+  } catch (err) {
+    // Catch synchronous throws (e.g. missing env vars crashing client init)
+    // so the function always returns a response instead of a silent status 0.
+    console.error('[tasks/complete] fatal error:', err)
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal server error.' },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleComplete(
+  request: NextRequest,
+  params: { id: string }
+) {
+  // Fail loudly with a real message if required server env vars are missing,
+  // rather than letting the Supabase client throw an opaque sync error.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    console.error('[tasks/complete] missing NEXT_PUBLIC_SUPABASE_URL')
+    return NextResponse.json({ error: 'Server misconfigured: missing Supabase URL.' }, { status: 500 })
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[tasks/complete] missing SUPABASE_SERVICE_ROLE_KEY')
+    return NextResponse.json({ error: 'Server misconfigured: missing service role key.' }, { status: 500 })
+  }
+
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
