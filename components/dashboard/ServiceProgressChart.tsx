@@ -58,7 +58,7 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
 
   return (
     <div
-      className="rounded-xl border p-5"
+      className="rounded-xl border p-5 overflow-hidden"
       style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
     >
       {/* Legend */}
@@ -82,7 +82,7 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
             <Link key={service.id} href={`/services/${service.id}`}
               className="flex items-center gap-3 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors hover:bg-gray-50 cursor-pointer">
               {/* Label */}
-              <div className="flex-shrink-0" style={{ width: 140 }}>
+              <div className="flex-shrink-0 w-24 sm:w-36">
                 <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
                   {service.deceased_name}
                 </p>
@@ -110,7 +110,7 @@ export function ServiceProgressChart({ services }: { services: ServiceWithTasks[
               </div>
 
               {/* Count */}
-              <div className="flex-shrink-0 text-xs text-right" style={{ width: 80, color: '#94A3B8' }}>
+              <div className="flex-shrink-0 w-16 sm:w-20 text-xs text-right" style={{ color: '#94A3B8' }}>
                 {buckets.confirmed}/{total} confirmed
               </div>
             </Link>

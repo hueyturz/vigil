@@ -440,9 +440,9 @@ export function TaskRow({
 
           {/* Title + urgency */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
               <PriorityDot priority={task.priority} />
-              <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{task.title}</p>
+              <p className="text-sm font-medium truncate min-w-0" style={{ color: '#0F172A' }}>{task.title}</p>
             </div>
             {!complete && urgency && (
               <p className="text-xs font-medium mt-0.5" style={{ color: urgency.color }}>{urgency.text}</p>

@@ -86,7 +86,7 @@ export default async function ServiceDetailPage({
 
   return (
     <AppShell profile={profile}>
-      <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
+      <div className="px-4 py-4 pt-12 md:pt-0 md:px-8 md:py-8 max-w-4xl mx-auto">
 
         {/* Sticky back pill — fixed to viewport, accounts for sidebar on desktop */}
         <Link
@@ -128,7 +128,7 @@ export default async function ServiceDetailPage({
             </div>
 
             <div className="flex-shrink-0 flex flex-col items-end gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <Badge status={status} />
                 {canManage && (
                   <a
