@@ -657,7 +657,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
             <button type="button" onClick={onClose}
               className="flex-1 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50"
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>Close</button>
-            <button type="submit" disabled={busy || !title.trim() || !hint.trim()}
+            <button type="submit" disabled={busy || !title.trim()}
               className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
           </div>
