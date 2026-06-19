@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { createService } from '@/app/services/actions'
+import { formatPhoneInput } from '@/lib/utils/phone'
 import type { ServiceType } from '@/lib/types'
 
 const CreateServiceSchema = z.object({
@@ -234,7 +235,7 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
                 <input
                   type="tel"
                   value={contactPhone}
-                  onChange={e => setContactPhone(e.target.value)}
+                  onChange={e => setContactPhone(formatPhoneInput(e.target.value))}
                   placeholder="e.g. (555) 123-4567"
                   style={inputStyle}
                 />

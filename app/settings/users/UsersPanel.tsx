@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { inviteUser, updateUserRole, setUserActive, updateOwnProfile } from './actions'
+import { formatPhone, formatPhoneInput } from '@/lib/utils/phone'
 import type { Role } from '@/lib/types'
 
 const InviteSchema = z.object({
@@ -191,6 +192,7 @@ function EditProfileModal({ user, onClose }: { user: UserRow; onClose: () => voi
   const router = useRouter()
   const [error,       setError]       = useState<string | null>(null)
   const [nameError,   setNameError]   = useState<string | null>(null)
+  const [phone,       setPhone]       = useState(() => formatPhoneInput(user.phone ?? ''))
   const [pending, startTransition] = useTransition()
   const [mounted, setMounted] = useState(false)
 
@@ -283,8 +285,9 @@ function EditProfileModal({ user, onClose }: { user: UserRow; onClose: () => voi
             <input
               name="phone"
               type="tel"
-              defaultValue={user.phone ?? ''}
-              placeholder="+1 555 000 0000"
+              value={phone}
+              onChange={e => setPhone(formatPhoneInput(e.target.value))}
+              placeholder="(555) 123-4567"
               className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
               style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
             />
@@ -396,7 +399,7 @@ function UserCard({
 
       {/* Phone */}
       <p className="text-sm mt-0.5" style={{ color: user.phone ? '#475569' : '#94A3B8' }}>
-        {user.phone ?? 'No phone'}
+        {user.phone ? formatPhone(user.phone) : 'No phone'}
       </p>
 
       {/* Role change (owner editing others) */}
@@ -480,7 +483,7 @@ function UserTableRow({
 
       {/* Phone */}
       <td className="px-4 py-3">
-        <p className="text-sm" style={{ color: '#475569' }}>{user.phone ?? '—'}</p>
+        <p className="text-sm" style={{ color: '#475569' }}>{formatPhone(user.phone)}</p>
       </td>
 
       {/* Role */}

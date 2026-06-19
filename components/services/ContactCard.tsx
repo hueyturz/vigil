@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { updateServiceContact } from '@/app/services/actions'
 import { logActivity } from '@/lib/utils/activity'
+import { formatPhone, formatPhoneInput } from '@/lib/utils/phone'
 
 interface ContactCardProps {
   serviceId:     string
@@ -21,7 +22,7 @@ export function ContactCard({
 }: ContactCardProps) {
   const [editing,      setEditing]      = useState(false)
   const [name,         setName]         = useState(contactName ?? '')
-  const [phone,        setPhone]        = useState(contactPhone ?? '')
+  const [phone,        setPhone]        = useState(() => formatPhoneInput(contactPhone ?? ''))
   const [email,        setEmail]        = useState(contactEmail ?? '')
   const [saving,       setSaving]       = useState(false)
   const [error,        setError]        = useState<string | null>(null)
@@ -88,8 +89,8 @@ export function ContactCard({
           <input
             type="tel"
             value={phone}
-            onChange={e => setPhone(e.target.value)}
-            placeholder="Phone number"
+            onChange={e => setPhone(formatPhoneInput(e.target.value))}
+            placeholder="(555) 123-4567"
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
           />
@@ -148,7 +149,7 @@ export function ContactCard({
                 </svg>
               </span>
               <a href={`tel:${savedContact.phone}`} className="text-sm hover:underline" style={{ color: '#0D6E68' }}>
-                {savedContact.phone}
+                {formatPhone(savedContact.phone)}
               </a>
             </div>
           )}
