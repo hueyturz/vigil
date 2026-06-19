@@ -308,10 +308,18 @@ export function TaskRow({
   const [savingNotes,  setSavingNotes]  = useState(false)
   const [deleting,     setDeleting]     = useState(false)
   const [expanded,     setExpanded]     = useState(false)
+  const [mounted,      setMounted]      = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const overdue  = isTaskOverdue(task, serviceDate)
+  // Date-derived UI (overdue state, relative labels, formatted timestamps) must
+  // only render after mount — computing them during SSR/hydration produces
+  // different values server vs client (timezone + clock), causing hydration
+  // errors (#418/#422/#425). Before mount we render the neutral, deterministic
+  // state so the server HTML and first client render match exactly.
+  const overdue  = mounted ? isTaskOverdue(task, serviceDate) : false
   const complete = task.status === 'complete'
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -367,7 +375,7 @@ export function TaskRow({
     }
   }
 
-  const urgency = complete ? null : dueDateLabel(serviceDate, task.due_days_before)
+  const urgency = (!complete && mounted) ? dueDateLabel(serviceDate, task.due_days_before) : null
 
   // ── Edit mode ────────────────────────────────────────────────────────────────
   if (editMode) {
@@ -442,7 +450,7 @@ export function TaskRow({
             {complete && (
               <p className="text-xs mt-0.5" style={{ color: '#065F46' }}>
                 Confirmed by {task.completed_by?.full_name ?? 'unknown'}
-                {task.completed_at && <span style={{ color: '#94A3B8' }}> · {formatDateTime(task.completed_at)}</span>}
+                {mounted && task.completed_at && <span style={{ color: '#94A3B8' }}> · {formatDateTime(task.completed_at)}</span>}
               </p>
             )}
           </div>
