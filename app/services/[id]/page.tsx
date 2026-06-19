@@ -86,12 +86,12 @@ export default async function ServiceDetailPage({
 
   return (
     <AppShell profile={profile}>
-      <div className="px-4 py-4 pt-12 md:pt-0 md:px-8 md:py-8 max-w-4xl mx-auto">
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-4xl mx-auto">
 
-        {/* Sticky back pill — fixed to viewport, accounts for sidebar on desktop */}
+        {/* Back pill — in-flow on mobile (scrolls with page), fixed on desktop */}
         <Link
           href="/services"
-          className="fixed top-4 left-4 md:left-[236px] z-40 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition hover:shadow"
+          className="inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition hover:shadow mb-3 md:mb-0 md:fixed md:top-4 md:left-[236px] md:z-40"
           style={{ color: '#0D6E68', borderColor: '#E2E8F0' }}
         >
           ← Services
@@ -102,7 +102,7 @@ export default async function ServiceDetailPage({
           className="rounded-xl border p-6 mb-6"
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="min-w-0">
               {service.service_type && (
                 <p
@@ -127,8 +127,8 @@ export default async function ServiceDetailPage({
               )}
             </div>
 
-            <div className="flex-shrink-0 flex flex-col items-end gap-3">
-              <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="w-full md:w-auto md:flex-shrink-0 flex flex-col items-start md:items-end gap-3">
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 <Badge status={status} />
                 {canManage && (
                   <a
