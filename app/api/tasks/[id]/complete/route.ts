@@ -80,71 +80,75 @@ export async function POST(
     id: string; deceased_name: string; service_date: string; location: string
   } | null
 
-  if (recipient && service) {
-    const taskPriority = (task.priority ?? 'standard') as 'critical' | 'standard' | 'informational'
+  try {
+    if (recipient && service) {
+      const taskPriority = (task.priority ?? 'standard') as 'critical' | 'standard' | 'informational'
 
-    // Fetch recipient's notification preferences
-    const { data: recipientPrefs } = await serviceRole
-      .from('notification_preferences')
-      .select('*')
-      .eq('user_id', recipient.id)
-      .maybeSingle()
+      // Fetch recipient's notification preferences
+      const { data: recipientPrefs } = await serviceRole
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', recipient.id)
+        .maybeSingle()
 
-    const emailEnabled = recipientPrefs
-      ? recipientPrefs[`${taskPriority}_email` as keyof typeof recipientPrefs] as boolean
-      : true  // default: send email if no prefs saved
+      const emailEnabled = recipientPrefs
+        ? recipientPrefs[`${taskPriority}_email` as keyof typeof recipientPrefs] as boolean
+        : true  // default: send email if no prefs saved
 
-    const smsEnabled = recipientPrefs
-      ? recipientPrefs[`${taskPriority}_sms` as keyof typeof recipientPrefs] as boolean
-      : false
+      const smsEnabled = recipientPrefs
+        ? recipientPrefs[`${taskPriority}_sms` as keyof typeof recipientPrefs] as boolean
+        : false
 
-    // SMS log (Twilio stub — status stays 'pending' until wired)
-    if (smsEnabled) {
-      await serviceRole.from('sms_log').insert({
-        funeral_home_id: profile.funeral_home_id,
-        service_id:      task.service_id,
-        task_id:         task.id,
-        recipient_id:    recipient.id,
-        message:         buildSmsMessage({
-          completedByName:   profile.full_name,
-          taskTitle:         task.title,
-          familyName:        service.deceased_name,
-          serviceDate:       service.service_date,
-          confirmationValue: confirmation_value,
-        }),
-        status: 'pending',
-      })
-    }
-
-    if (emailEnabled) {
-      const { data: authData } = await serviceRole.auth.admin.getUserById(recipient.id)
-      const recipientEmail = authData?.user?.email
-
-      if (recipientEmail) {
-        const { subject, html } = taskConfirmedEmail({
-          taskTitle:         task.title,
-          familyName:        service.deceased_name,
-          serviceDate:       formatDate(service.service_date),
-          serviceId:         service.id,
-          confirmedByName:   profile.full_name,
-          confirmedAt:       formatDateTime(new Date().toISOString()),
-          confirmationValue: confirmation_value,
-        })
-
-        const emailResult = await sendEmail({ to: recipientEmail, subject, html })
-
-        await serviceRole.from('email_log').insert({
+      // SMS log (Twilio stub — status stays 'pending' until wired)
+      if (smsEnabled) {
+        await serviceRole.from('sms_log').insert({
           funeral_home_id: profile.funeral_home_id,
           service_id:      task.service_id,
           task_id:         task.id,
           recipient_id:    recipient.id,
-          recipient_email: recipientEmail,
-          subject,
-          status:          emailResult.success ? 'sent' : 'failed',
-          error_message:   emailResult.error ?? null,
+          message:         buildSmsMessage({
+            completedByName:   profile.full_name,
+            taskTitle:         task.title,
+            familyName:        service.deceased_name,
+            serviceDate:       service.service_date,
+            confirmationValue: confirmation_value,
+          }),
+          status: 'pending',
         })
       }
+
+      if (emailEnabled) {
+        const { data: authData } = await serviceRole.auth.admin.getUserById(recipient.id)
+        const recipientEmail = authData?.user?.email
+
+        if (recipientEmail) {
+          const { subject, html } = taskConfirmedEmail({
+            taskTitle:         task.title,
+            familyName:        service.deceased_name,
+            serviceDate:       formatDate(service.service_date),
+            serviceId:         service.id,
+            confirmedByName:   profile.full_name,
+            confirmedAt:       formatDateTime(new Date().toISOString()),
+            confirmationValue: confirmation_value,
+          })
+
+          const emailResult = await sendEmail({ to: recipientEmail, subject, html })
+
+          await serviceRole.from('email_log').insert({
+            funeral_home_id: profile.funeral_home_id,
+            service_id:      task.service_id,
+            task_id:         task.id,
+            recipient_id:    recipient.id,
+            recipient_email: recipientEmail,
+            subject,
+            status:          emailResult.success ? 'sent' : 'failed',
+            error_message:   emailResult.error ?? null,
+          })
+        }
+      }
     }
+  } catch (notifyErr) {
+    console.error('[notifications] error — continuing to activity log:', notifyErr)
   }
 
   // Activity log (use service role — no browser session in API route)
