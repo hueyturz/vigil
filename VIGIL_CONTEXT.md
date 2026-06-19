@@ -274,7 +274,7 @@ TWILIO_AUTH_TOKEN
 TWILIO_FROM_NUMBER=+18338055941
 DEEPGRAM_API_KEY
 ANTHROPIC_API_KEY
-CRON_SECRET=vigil_cron_9x4mK2pQwR8vLnT5jYeA7bZdFhUcS3
+CRON_SECRET=<set in Vercel env — do not commit the real value>
 NEXT_PUBLIC_APP_URL=https://vigil-three-theta.vercel.app
 ```
 
