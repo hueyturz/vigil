@@ -147,8 +147,9 @@ export async function POST(
     }
   }
 
-  // Fire-and-forget activity log (use service role — no browser session in API route)
-  void serviceRole.from('activity_log').insert({
+  // Activity log (use service role — no browser session in API route)
+  console.log('[activity_log] inserting for task', task.id, 'funeral_home_id', profile.funeral_home_id)
+  const { error: activityError } = await serviceRole.from('activity_log').insert({
     funeral_home_id: profile.funeral_home_id,
     service_id:      task.service_id,
     task_id:         task.id,
@@ -158,6 +159,11 @@ export async function POST(
     description:     `Task "${task.title}" confirmed`,
     metadata:        { confirmation_value },
   })
+  if (activityError) {
+    console.error('[activity_log] insert failed:', activityError.message, activityError.code, activityError.details)
+  } else {
+    console.log('[activity_log] insert succeeded')
+  }
 
   return NextResponse.json({ task: updatedTask })
 }
