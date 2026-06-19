@@ -74,7 +74,7 @@ export async function POST(
     .in('role', ['owner', 'fd'])
     .eq('is_active', true)
     .limit(1)
-    .single()
+    .maybeSingle()
 
   const service = task.services as {
     id: string; deceased_name: string; service_date: string; location: string
@@ -152,21 +152,25 @@ export async function POST(
   }
 
   // Activity log (use service role — no browser session in API route)
-  console.log('[activity_log] inserting for task', task.id, 'funeral_home_id', profile.funeral_home_id)
-  const { error: activityError } = await serviceRole.from('activity_log').insert({
-    funeral_home_id: profile.funeral_home_id,
-    service_id:      task.service_id,
-    task_id:         task.id,
-    actor_id:        profile.id,
-    actor_name:      profile.full_name,
-    action_type:     'task_completed',
-    description:     `Task "${task.title}" confirmed`,
-    metadata:        { confirmation_value },
-  })
-  if (activityError) {
-    console.error('[activity_log] insert failed:', activityError.message, activityError.code, activityError.details)
-  } else {
-    console.log('[activity_log] insert succeeded')
+  try {
+    console.log('[activity_log] inserting for task', task.id, 'funeral_home_id', profile.funeral_home_id)
+    const { error: activityError } = await serviceRole.from('activity_log').insert({
+      funeral_home_id: profile.funeral_home_id,
+      service_id:      task.service_id,
+      task_id:         task.id,
+      actor_id:        profile.id,
+      actor_name:      profile.full_name,
+      action_type:     'task_completed',
+      description:     `Task "${task.title}" confirmed`,
+      metadata:        { confirmation_value },
+    })
+    if (activityError) {
+      console.error('[activity_log] insert failed:', activityError.message, activityError.code, activityError.details)
+    } else {
+      console.log('[activity_log] insert succeeded')
+    }
+  } catch (activityErr) {
+    console.error('[activity_log] unexpected error:', activityErr)
   }
 
   return NextResponse.json({ task: updatedTask })
