@@ -1,31 +1,15 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-
-// Hardcoded allow-list. Anyone else gets a 404 (route existence stays hidden).
-const ADMIN_EMAILS = ['hueyturz@gmail.com']
-
-// ── Helpers ─────────────────────────────────────────────────────────────────────
-
-function daysSince(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
-}
-
-function relativeJoined(iso: string): string {
-  const days = daysSince(iso)
-  if (days <= 0)  return 'today'
-  if (days === 1) return 'yesterday'
-  if (days < 30)  return `${days} days ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`
-  const years = Math.floor(days / 365)
-  return `${years} year${years !== 1 ? 's' : ''} ago`
-}
-
-function completionColor(pct: number): string {
-  if (pct > 70) return '#0D6E68'
-  if (pct >= 30) return '#F59E0B'
-  return '#EF4444'
-}
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import {
+  getAdminSession,
+  daysSince,
+  relativeJoined,
+  timeAgo,
+  completionColor,
+  ACTION_LABELS,
+  actionColor,
+} from '@/lib/utils/admin'
 
 type AccountStatus = 'New' | 'Active' | 'Stale'
 
@@ -38,14 +22,8 @@ const STATUS_STYLE: Record<AccountStatus, { bg: string; color: string }> = {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AdminPage() {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-
   // Gate: must be logged in AND on the admin allow-list — otherwise 404.
-  const email = session?.user.email?.toLowerCase() ?? null
-  if (!email || !ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
-    notFound()
-  }
+  if (!(await getAdminSession())) notFound()
 
   const db = createServiceRoleClient()
 
@@ -56,16 +34,29 @@ export default async function AdminPage() {
     { data: tasks },
     { data: owners },
     { data: { users: authUsers } },
+    { data: activity },
   ] = await Promise.all([
     db.from('funeral_homes').select('id, name, created_at'),
     db.from('services').select('funeral_home_id, status, created_at'),
     db.from('tasks').select('funeral_home_id, status'),
     db.from('profiles').select('id, full_name, funeral_home_id').eq('role', 'owner'),
     db.auth.admin.listUsers({ perPage: 1000 }),
+    db.from('activity_log')
+      .select('id, actor_name, description, action_type, created_at, funeral_home_id')
+      .order('created_at', { ascending: false })
+      .limit(30),
   ])
 
   const emailById: Record<string, string> = {}
   for (const au of authUsers ?? []) emailById[au.id] = au.email ?? ''
+
+  const homeNameById: Record<string, string> = {}
+  for (const h of homes ?? []) homeNameById[h.id] = h.name
+
+  const recentActivity = (activity ?? []).map(a => ({
+    ...a,
+    homeName: homeNameById[a.funeral_home_id] ?? 'Unknown',
+  }))
 
   const now = Date.now()
 
@@ -146,12 +137,13 @@ export default async function AdminPage() {
                   <Th className="text-center">Active services</Th>
                   <Th className="text-center">Completion</Th>
                   <Th className="text-center">Status</Th>
+                  <Th className="text-right">Account</Th>
                 </tr>
               </thead>
               <tbody>
                 {accounts.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center" style={{ color: '#94A3B8' }}>
+                    <td colSpan={7} className="px-4 py-12 text-center" style={{ color: '#94A3B8' }}>
                       No funeral homes yet.
                     </td>
                   </tr>
@@ -178,10 +170,68 @@ export default async function AdminPage() {
                         {a.status}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/impersonate/${a.id}`}
+                        className="inline-block rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+                        style={{ borderColor: '#0D6E68', color: '#0D6E68' }}
+                      >
+                        View Account →
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Recent activity */}
+        <div className="mt-10">
+          <h2 className="text-lg font-bold mb-4" style={{ color: '#0F172A' }}>Recent Activity</h2>
+
+          <div
+            className="rounded-xl border p-6"
+            style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+          >
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-center py-6" style={{ color: '#94A3B8' }}>
+                No activity recorded yet.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {recentActivity.map(entry => (
+                  <div key={entry.id} className="flex gap-3 items-start">
+                    {/* Action icon */}
+                    <div
+                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+                      style={{ backgroundColor: `${actionColor(entry.action_type)}18` }}
+                    >
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: actionColor(entry.action_type) }} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className="inline-block rounded-full border px-2 py-0.5 text-xs font-medium"
+                          style={{ borderColor: '#0D6E68', color: '#0D6E68' }}
+                        >
+                          {entry.homeName}
+                        </span>
+                        <p className="text-sm" style={{ color: '#0F172A' }}>
+                          <span className="font-medium">{entry.actor_name}</span>
+                          {' — '}
+                          {entry.description}
+                        </p>
+                      </div>
+                      <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
+                        {ACTION_LABELS[entry.action_type] ?? entry.action_type} · {timeAgo(entry.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
