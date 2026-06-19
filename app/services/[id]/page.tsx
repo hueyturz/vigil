@@ -14,6 +14,10 @@ import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
 
+// Always render fresh — contact data changes via client mutations and we never
+// want a cached/stale snapshot of the service detail page.
+export const revalidate = 0
+
 const SERVICE_TYPE_LABEL: Record<string, string> = {
   'full-burial': 'Full Burial',
   'graveside':   'Graveside',
