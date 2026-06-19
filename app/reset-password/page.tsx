@@ -2,39 +2,42 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const [error,   setError]   = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
-    setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email    = formData.get('email')    as string
-    const password = formData.get('password') as string
+    const password = formData.get('password')         as string
+    const confirm  = formData.get('confirm_password') as string
 
-    // Sign in via API route — the server sets session cookies directly in the
-    // HTTP response, so they're guaranteed to be present on the next navigation.
-    const res = await fetch('/api/auth/login', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password }),
-    })
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
+    }
 
-    const json = await res.json()
+    setLoading(true)
 
-    if (!res.ok) {
-      setError(json.error ?? 'Sign in failed.')
+    const supabase = createClient()
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+
+    if (updateError) {
+      setError(updateError.message)
       setLoading(false)
       return
     }
 
-    // Cookies are now set in the browser by the server response.
-    // Full-page navigation so the middleware sees them on the very first request.
-    window.location.href = json.destination
+    // Full-page navigation so the middleware sees the refreshed session cookies.
+    window.location.href = '/dashboard'
   }
 
   return (
@@ -44,7 +47,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold" style={{ color: '#0D6E68' }}>Vigil</h1>
           <p className="mt-2 text-sm" style={{ color: '#475569' }}>
-            Sign in to your funeral home account
+            Choose a new password
           </p>
         </div>
 
@@ -55,50 +58,41 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
-                htmlFor="email"
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: '#0F172A' }}
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
-                style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label
                 htmlFor="password"
                 className="block text-sm font-medium mb-1.5"
                 style={{ color: '#0F172A' }}
               >
-                Password
+                New password
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
+                required
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
+                placeholder="At least 8 characters"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirm_password"
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: '#0F172A' }}
+              >
+                Confirm password
+              </label>
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                autoComplete="new-password"
                 required
                 className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
                 style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
               />
-              <div className="mt-1.5 text-right">
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium hover:underline"
-                  style={{ color: '#0D6E68' }}
-                >
-                  Forgot password?
-                </Link>
-              </div>
             </div>
 
             {error && (
@@ -116,15 +110,14 @@ export default function LoginPage() {
               className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: '#0D6E68' }}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Updating…' : 'Update password'}
             </button>
           </form>
         </div>
 
         <p className="text-center mt-6 text-sm" style={{ color: '#475569' }}>
-          Setting up a new funeral home?{' '}
-          <Link href="/onboarding" className="font-medium hover:underline" style={{ color: '#0D6E68' }}>
-            Get started
+          <Link href="/login" className="font-medium hover:underline" style={{ color: '#0D6E68' }}>
+            Back to sign in
           </Link>
         </p>
       </div>
