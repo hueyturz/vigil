@@ -360,6 +360,11 @@ function ChatSection({ session }: { session: IntakeSession }) {
 function MeetingCard({ session }: { session: IntakeSession }) {
   const style = STATUS_STYLES[session.status] ?? STATUS_STYLES.complete
 
+  // Date string uses the runtime's local timezone — only render after mount so
+  // the server (UTC) and first client render match, avoiding hydration errors.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   return (
     <div
       className="rounded-xl border overflow-hidden"
@@ -369,7 +374,7 @@ function MeetingCard({ session }: { session: IntakeSession }) {
       <div className="flex items-start justify-between gap-3 px-5 py-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>
-            {formatCardDate(session.created_at)}
+            {mounted && formatCardDate(session.created_at)}
           </p>
           <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
             Recording: {formatDuration(session.recording_duration_seconds)}

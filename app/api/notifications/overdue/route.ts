@@ -5,9 +5,16 @@ import { taskOverdueEmail } from '@/lib/utils/email-templates'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const secret = request.headers.get('x-cron-secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  // Verify cron secret. Vercel's native cron sends `Authorization: Bearer
+  // ${CRON_SECRET}` automatically; manual/external callers may use the custom
+  // `x-cron-secret` header. Accept either.
+  const cronSecret = process.env.CRON_SECRET
+  const headerSecret = request.headers.get('x-cron-secret')
+  const bearer = request.headers.get('authorization')
+  const authorized =
+    !!cronSecret &&
+    (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)
+  if (!authorized) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
   }
 

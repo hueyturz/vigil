@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ExtractionResults } from './ExtractionResults'
 import type { IntakeSession } from '@/lib/types'
 
@@ -37,6 +37,11 @@ const STATUS_STYLES: Record<string, { label: string; color: string; bg: string }
 export function PastMeetings({ sessions }: PastMeetingsProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  // Timestamps format in the runtime's local timezone — only render after mount
+  // so server (UTC) and first client render match, avoiding hydration errors.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   if (!sessions.length) return null
 
   return (
@@ -58,7 +63,7 @@ export function PastMeetings({ sessions }: PastMeetingsProps) {
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium" style={{ color: '#0F172A' }}>
-                    {formatDateTime(s.created_at)}
+                    {mounted && formatDateTime(s.created_at)}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
                     Duration: {formatDuration(s.recording_duration_seconds)}
