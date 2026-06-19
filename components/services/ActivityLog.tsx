@@ -50,8 +50,11 @@ function ActionIcon({ action }: { action: string }) {
 }
 
 export function ActivityLog({ serviceId }: ActivityLogProps) {
+  const [mounted,  setMounted]  = useState(false)
   const [entries,  setEntries]  = useState<ActivityLogType[]>([])
   const [loading,  setLoading]  = useState(true)
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -66,6 +69,8 @@ export function ActivityLog({ serviceId }: ActivityLogProps) {
         setLoading(false)
       })
   }, [serviceId])
+
+  if (!mounted) return null
 
   if (loading) {
     return (
