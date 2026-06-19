@@ -9,11 +9,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
+     * - api (route handlers run on the Node.js runtime and do their own auth;
+     *        the Edge middleware must not sit in front of them)
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
