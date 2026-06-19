@@ -113,8 +113,8 @@ export function AllTasksView({
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
+      <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-3 mb-6">
+        <div className="relative w-full sm:flex-1 sm:min-w-[180px] sm:max-w-xs">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="13" height="13" viewBox="0 0 24 24"
             fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -129,37 +129,40 @@ export function AllTasksView({
           />
         </div>
 
-        <select
-          value={priorityFilter}
-          onChange={e => setPriorityFilter(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm outline-none"
-          style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
-        >
-          <option value="all">All Priorities</option>
-          <option value="critical">Critical</option>
-          <option value="standard">Standard</option>
-          <option value="informational">Informational</option>
-        </select>
-
-        {!isStaff && (
+        {/* Priority + Assignee side by side on mobile */}
+        <div className="grid grid-cols-2 gap-2 sm:contents">
           <select
-            value={assigneeFilter}
-            onChange={e => setAssigneeFilter(e.target.value)}
-            className="rounded-lg border px-3 py-2 text-sm outline-none"
+            value={priorityFilter}
+            onChange={e => setPriorityFilter(e.target.value)}
+            className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
           >
-            <option value="all">All Assignees</option>
-            <option value="unassigned">Unassigned</option>
-            {staffOptions.map(s => (
-              <option key={s.id} value={s.id}>{s.full_name}</option>
-            ))}
+            <option value="all">All Priorities</option>
+            <option value="critical">Critical</option>
+            <option value="standard">Standard</option>
+            <option value="informational">Informational</option>
           </select>
-        )}
+
+          {!isStaff && (
+            <select
+              value={assigneeFilter}
+              onChange={e => setAssigneeFilter(e.target.value)}
+              className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
+              style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
+            >
+              <option value="all">All Assignees</option>
+              <option value="unassigned">Unassigned</option>
+              {staffOptions.map(s => (
+                <option key={s.id} value={s.id}>{s.full_name}</option>
+              ))}
+            </select>
+          )}
+        </div>
 
         <select
           value={serviceFilter}
           onChange={e => setServiceFilter(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm outline-none"
+          className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
           style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
         >
           <option value="all">All Services</option>
@@ -209,26 +212,22 @@ export function AllTasksView({
                   </span>
                 </div>
 
-                {/* Service name sub-headers + TaskRow per task */}
+                {/* One TaskRow per task; service name shows inline in the row */}
                 <div className="space-y-2">
                   {group.map(task => (
-                    <div key={task.id}>
-                      {/* Service context label above each task */}
-                      <p className="text-xs font-medium mb-1 ml-1" style={{ color: '#94A3B8' }}>
-                        {task.service.deceased_name}
-                      </p>
-                      <TaskRow
-                        task={task}
-                        serviceDate={task.service.service_date ?? ''}
-                        serviceId={task.service.id}
-                        funeralHomeId={funeralHomeId}
-                        actorId={actorId}
-                        actorName={actorName}
-                        onTaskComplete={handleTaskComplete}
-                        onTaskDelete={handleTaskDelete}
-                        onTaskUpdate={handleTaskUpdate}
-                      />
-                    </div>
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      serviceDate={task.service.service_date ?? ''}
+                      serviceId={task.service.id}
+                      serviceName={task.service.deceased_name}
+                      funeralHomeId={funeralHomeId}
+                      actorId={actorId}
+                      actorName={actorName}
+                      onTaskComplete={handleTaskComplete}
+                      onTaskDelete={handleTaskDelete}
+                      onTaskUpdate={handleTaskUpdate}
+                    />
                   ))}
                 </div>
               </div>

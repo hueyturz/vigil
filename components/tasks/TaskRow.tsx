@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
@@ -14,6 +15,7 @@ interface TaskRowProps {
   task:            TaskWithProfile
   serviceDate:     string
   serviceId?:      string
+  serviceName?:    string
   funeralHomeId?:  string
   actorId?:        string
   actorName?:      string
@@ -287,6 +289,7 @@ export function TaskRow({
   task: initialTask,
   serviceDate,
   serviceId,
+  serviceName,
   funeralHomeId,
   actorId,
   actorName,
@@ -444,6 +447,20 @@ export function TaskRow({
               <PriorityDot priority={task.priority} />
               <p className="text-sm font-medium truncate min-w-0" style={{ color: '#0F172A' }}>{task.title}</p>
             </div>
+            {serviceName && (
+              serviceId ? (
+                <Link
+                  href={`/services/${serviceId}`}
+                  onClick={e => e.stopPropagation()}
+                  className="inline-block text-xs font-medium mt-0.5 hover:underline"
+                  style={{ color: '#5A8C88' }}
+                >
+                  {serviceName}
+                </Link>
+              ) : (
+                <p className="text-xs font-medium mt-0.5" style={{ color: '#5A8C88' }}>{serviceName}</p>
+              )
+            )}
             {!complete && urgency && (
               <p className="text-xs font-medium mt-0.5" style={{ color: urgency.color }}>{urgency.text}</p>
             )}

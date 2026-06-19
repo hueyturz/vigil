@@ -64,8 +64,8 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
   return (
     <>
       {/* Page header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
+      <div className="flex items-start justify-between gap-3 mb-8">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Services</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
             Manage all services across your funeral home
@@ -73,10 +73,10 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+          className="flex-shrink-0 rounded-full sm:rounded-lg px-3 py-1.5 sm:px-4 sm:py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           style={{ backgroundColor: '#0D6E68' }}
         >
-          + New Service
+          + New<span className="hidden sm:inline"> Service</span>
         </button>
       </div>
 
@@ -99,7 +99,7 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
         <select
           value={sortKey}
           onChange={e => setSortKey(e.target.value as SortKey)}
-          className="rounded-lg border px-3 py-2 text-sm outline-none"
+          className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
           style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
         >
           {SORT_OPTIONS.map(o => (
