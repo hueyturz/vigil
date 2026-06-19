@@ -7,12 +7,12 @@ import { ProgressBar }           from '@/components/ui/ProgressBar'
 import { ApplyTemplateBanner }   from '@/components/services/ApplyTemplateBanner'
 import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
 import { CaseNotes }             from '@/components/services/CaseNotes'
-import { ContactCard }           from '@/components/services/ContactCard'
+import { MultiContactCard }      from '@/components/services/MultiContactCard'
 import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
 import { EditServiceButton }     from '@/components/services/EditServiceButton'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
-import type { IntakeSession, TaskWithProfile } from '@/lib/types'
+import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
   'full-burial': 'Full Burial',
@@ -73,6 +73,15 @@ export default async function ServiceDetailPage({
     .order('created_at', { ascending: false })
 
   const intakeSessions: IntakeSession[] = (intakeRaw ?? []) as IntakeSession[]
+
+  const { data: contactsRaw } = await db
+    .from('service_contacts')
+    .select('*')
+    .eq('service_id', service.id)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true })
+
+  const contacts: ServiceContact[] = (contactsRaw ?? []) as ServiceContact[]
 
   const status      = computeServiceStatus(tasks, service.service_date ?? '')
   const completed   = tasks.filter(t => t.status === 'complete').length
@@ -150,9 +159,6 @@ export default async function ServiceDetailPage({
                     service_date:      service.service_date,
                     location:          service.location,
                     assigned_staff_id: service.assigned_staff_id,
-                    contact_name:      service.contact_name ?? null,
-                    contact_phone:     service.contact_phone ?? null,
-                    contact_email:     service.contact_email ?? null,
                   }} />
                 )}
               </div>
@@ -179,15 +185,10 @@ export default async function ServiceDetailPage({
 
         {/* Side cards row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <ContactCard
+          <MultiContactCard
             serviceId={params.id}
             funeralHomeId={profile.funeral_home_id}
-            actorId={actorId}
-            actorName={actorName}
-            canManage={canManage}
-            contactName={service.contact_name ?? null}
-            contactPhone={service.contact_phone ?? null}
-            contactEmail={service.contact_email ?? null}
+            initialContacts={contacts}
           />
           <CaseNotes
             serviceId={params.id}

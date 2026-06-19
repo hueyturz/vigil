@@ -1,7 +1,8 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils/date-helpers'
-import type { TaskWithProfile } from '@/lib/types'
+import { formatPhone } from '@/lib/utils/phone'
+import type { TaskWithProfile, ServiceContact } from '@/lib/types'
 
 export default async function PrintServicePage({
   params,
@@ -48,6 +49,15 @@ export default async function PrintServicePage({
     assigned_to:  t.assigned_to  ?? null,
   }))
 
+  const { data: contactsRaw } = await db
+    .from('service_contacts')
+    .select('*')
+    .eq('service_id', params.id)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true })
+
+  const contacts: ServiceContact[] = (contactsRaw ?? []) as ServiceContact[]
+
   // Group by category
   const categoryOrder: string[] = []
   const groups: Record<string, TaskWithProfile[]> = {}
@@ -85,6 +95,11 @@ export default async function PrintServicePage({
           .task-title.done { color: #94a3b8; text-decoration: line-through; }
           .task-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
           .summary { display: inline-block; background: #f0fdfa; color: #0d6e68; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+          .contacts { margin-top: 12px; }
+          .contact { margin-bottom: 8px; }
+          .contact-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+          .contact-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+          .contact-detail { font-size: 12px; color: #475569; }
           .print-btn { display: inline-block; margin-top: 24px; padding: 8px 20px; background: #0d6e68; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         `}</style>
       </head>
@@ -97,6 +112,26 @@ export default async function PrintServicePage({
           Task progress:
           <span className="summary">{completed}/{total} confirmed</span>
         </p>
+
+        {contacts.length > 0 && (
+          <div className="contacts">
+            {contacts.map(contact => (
+              <div key={contact.id} className="contact">
+                <div className="contact-label">
+                  {contact.is_primary
+                    ? 'Primary Contact'
+                    : contact.relationship || 'Contact'}
+                </div>
+                <div className="contact-name">{contact.name}</div>
+                <div className="contact-detail">
+                  {[contact.phone ? formatPhone(contact.phone) : null, contact.email]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <hr className="divider" />
 

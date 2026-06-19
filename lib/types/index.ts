@@ -42,6 +42,18 @@ export interface Service {
   created_at: string
 }
 
+export interface ServiceContact {
+  id: string
+  service_id: string
+  funeral_home_id: string
+  name: string
+  phone: string | null
+  email: string | null
+  relationship: string | null
+  is_primary: boolean
+  created_at: string
+}
+
 export interface Task {
   id: string
   service_id: string

@@ -20,7 +20,7 @@ interface StaffOption { id: string; full_name: string }
 interface EditServiceModalProps {
   service: Pick<Service,
     'id' | 'family_name' | 'deceased_name' | 'service_type' | 'service_date' |
-    'location' | 'assigned_staff_id' | 'contact_name' | 'contact_phone' | 'contact_email'
+    'location' | 'assigned_staff_id'
   >
   open:    boolean
   onClose: () => void
@@ -34,9 +34,6 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
   const [serviceDate,     setServiceDate]      = useState(service.service_date ?? '')
   const [location,        setLocation]         = useState(service.location ?? '')
   const [assignedStaffId, setAssignedStaffId]  = useState(service.assigned_staff_id ?? '')
-  const [contactName,     setContactName]      = useState(service.contact_name ?? '')
-  const [contactPhone,    setContactPhone]     = useState(service.contact_phone ?? '')
-  const [contactEmail,    setContactEmail]     = useState(service.contact_email ?? '')
   const [staffOptions,    setStaffOptions]     = useState<StaffOption[]>([])
   const [loading,         setLoading]          = useState(false)
   const [error,           setError]            = useState<string | null>(null)
@@ -81,9 +78,6 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
       service_date:      serviceDate || null,
       location:          location.trim() || null,
       assigned_staff_id: assignedStaffId || null,
-      contact_name:      contactName.trim()  || null,
-      contact_phone:     contactPhone.trim() || null,
-      contact_email:     contactEmail.trim() || null,
     })
 
     setLoading(false)
@@ -136,21 +130,6 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
               {staffOptions.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
           </Field>
-
-          <div className="pt-2 border-t" style={{ borderColor: '#F1F5F9' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#94A3B8' }}>Family Contact</p>
-            <div className="space-y-3">
-              <Field label="Contact Name">
-                <input type="text" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Primary contact name" style={inputStyle} />
-              </Field>
-              <Field label="Phone">
-                <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="e.g. (555) 123-4567" style={inputStyle} />
-              </Field>
-              <Field label="Email">
-                <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="contact@example.com" style={inputStyle} />
-              </Field>
-            </div>
-          </div>
 
           {error && (
             <div className="rounded-lg border px-4 py-3 text-sm" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>

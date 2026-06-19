@@ -42,9 +42,6 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
       service_date:      input.service_date  || null,
       location:          input.location      || null,
       assigned_staff_id: input.assigned_staff_id || null,
-      contact_name:      input.contact_name  || null,
-      contact_phone:     input.contact_phone || null,
-      contact_email:     input.contact_email || null,
       created_by_id:     session.user.id,
       status:            'active',
     })
@@ -53,6 +50,19 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
 
   if (insertError || !service)
     return { error: insertError?.message ?? 'Failed to create service.' }
+
+  // Contacts now live in service_contacts. If an initial contact was provided,
+  // store it there as the primary contact (we no longer write contact_* on services).
+  if (input.contact_name && input.contact_name.trim()) {
+    await serviceRole.from('service_contacts').insert({
+      service_id:      service.id,
+      funeral_home_id: profile.funeral_home_id,
+      name:            input.contact_name.trim(),
+      phone:           input.contact_phone?.trim() || null,
+      email:           input.contact_email?.trim() || null,
+      is_primary:      true,
+    })
+  }
 
   // Only generate tasks if a service type was selected
   if (input.service_type) {
@@ -75,9 +85,12 @@ interface UpdateServiceInput {
   service_date:      string | null
   location:          string | null
   assigned_staff_id: string | null
-  contact_name:      string | null
-  contact_phone:     string | null
-  contact_email:     string | null
+  // Contact fields are optional — contacts are managed in service_contacts now.
+  // When provided, we sync them to the service's primary contact instead of the
+  // (deprecated) contact_* columns on the services table.
+  contact_name?:     string | null
+  contact_phone?:    string | null
+  contact_email?:    string | null
 }
 
 export async function updateService(
@@ -108,14 +121,28 @@ export async function updateService(
       service_date:      input.service_date       || null,
       location:          input.location           || null,
       assigned_staff_id: input.assigned_staff_id  || null,
-      contact_name:      input.contact_name       || null,
-      contact_phone:     input.contact_phone      || null,
-      contact_email:     input.contact_email      || null,
     })
     .eq('id', serviceId)
     .eq('funeral_home_id', profile.funeral_home_id)
 
   if (error) return { error: error.message }
+
+  // If a contact name was supplied, sync the contact fields to the primary contact
+  // row (kept for backwards compatibility — the Edit Service modal no longer sends
+  // these; `name` is NOT NULL, so we only sync when a real name is present).
+  if (input.contact_name && input.contact_name.trim()) {
+    await serviceRole
+      .from('service_contacts')
+      .update({
+        name:  input.contact_name.trim(),
+        phone: input.contact_phone?.trim() || null,
+        email: input.contact_email?.trim() || null,
+      })
+      .eq('service_id', serviceId)
+      .eq('funeral_home_id', profile.funeral_home_id)
+      .eq('is_primary', true)
+  }
+
   revalidatePath(`/services/${serviceId}`)
   return {}
 }

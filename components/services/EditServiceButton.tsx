@@ -6,7 +6,7 @@ import type { Service } from '@/lib/types'
 
 type ServiceSlice = Pick<Service,
   'id' | 'family_name' | 'deceased_name' | 'service_type' | 'service_date' |
-  'location' | 'assigned_staff_id' | 'contact_name' | 'contact_phone' | 'contact_email'
+  'location' | 'assigned_staff_id'
 >
 
 export function EditServiceButton({ service }: { service: ServiceSlice }) {
