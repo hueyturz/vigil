@@ -180,12 +180,12 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    if (!addValues.title.trim() || !addValues.confirmation_hint.trim()) return
+    if (!addValues.title.trim()) return
     await run(
       () => addTemplate(activeTab, {
         title:             addValues.title.trim(),
         category:          addValues.category,
-        confirmation_hint: addValues.confirmation_hint.trim(),
+        confirmation_hint: '',
         due_days_before:   addValues.due_days_before,
         priority:          addValues.priority,
       }),
@@ -335,7 +335,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{tpl.title}</p>
                   <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
-                    {tpl.category} · {tpl.due_days_before}d before · {tpl.confirmation_hint}
+                    {tpl.category} · {tpl.due_days_before}d before
                   </p>
                 </div>
 
@@ -422,11 +422,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
               <input type="number" required min={0} max={60} value={addValues.due_days_before}
                 onChange={e => setAddValues(v => ({ ...v, due_days_before: Number(e.target.value) }))} style={inputStyle} />
             </Field>
-            <Field label="Confirmation hint" required className="sm:col-span-2">
-              <input type="text" required value={addValues.confirmation_hint}
-                onChange={e => setAddValues(v => ({ ...v, confirmation_hint: e.target.value }))}
-                style={inputStyle} placeholder="e.g. Vendor name & order number" />
-            </Field>
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={() => setAddOpen(false)}
@@ -494,7 +489,6 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
 }) {
   const [title,    setTitle]    = useState(template.title)
   const [cat,      setCat]      = useState(template.category)
-  const [hint,     setHint]     = useState(template.confirmation_hint)
   const [days,     setDays]     = useState(template.due_days_before)
   const [priority, setPriority] = useState<Priority>(template.priority)
 
@@ -539,8 +533,8 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || !hint.trim()) return
-    onSave({ title, category: cat, confirmation_hint: hint, due_days_before: days, priority })
+    if (!title.trim()) return
+    onSave({ title, category: cat, confirmation_hint: template.confirmation_hint, due_days_before: days, priority })
   }
 
   return (
@@ -580,13 +574,6 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
               <select value={priority} onChange={e => setPriority(e.target.value as Priority)} style={inputStyle}>
                 {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
-                Confirmation hint <span style={{ color: '#EF4444' }}>*</span>
-              </label>
-              <input type="text" required value={hint} onChange={e => setHint(e.target.value)} style={inputStyle} />
-              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Shown to staff when they confirm this task.</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>

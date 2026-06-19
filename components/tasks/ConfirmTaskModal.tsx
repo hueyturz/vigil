@@ -152,7 +152,7 @@ export function ConfirmTaskModal({ task, open, onClose, onSuccess }: ConfirmTask
           {/* Confirmation detail */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
-              {task.confirmation_hint}
+              Confirmation details
               <span style={{ color: '#EF4444' }}> *</span>
             </label>
             <textarea

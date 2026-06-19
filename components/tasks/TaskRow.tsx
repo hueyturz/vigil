@@ -329,12 +329,12 @@ export function TaskRow({
   }
 
   async function handleSave() {
-    if (!editTitle.trim() || !editHint.trim()) return
+    if (!editTitle.trim()) return
     setSaving(true)
-    const result = await updateServiceTask(task.id, { title: editTitle.trim(), confirmation_hint: editHint.trim() })
+    const result = await updateServiceTask(task.id, { title: editTitle.trim(), confirmation_hint: task.confirmation_hint })
     setSaving(false)
     if (result.error) return
-    const updated: TaskWithProfile = { ...task, title: editTitle.trim(), confirmation_hint: editHint.trim() }
+    const updated: TaskWithProfile = { ...task, title: editTitle.trim() }
     setTask(updated)
     onTaskUpdate?.(updated)
     if (funeralHomeId && actorId && actorName) {
@@ -379,17 +379,11 @@ export function TaskRow({
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
             style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }} />
         </div>
-        <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Confirmation hint</label>
-          <input type="text" value={editHint} onChange={e => setEditHint(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }} />
-        </div>
         <div className="flex gap-2 justify-end">
-          <button type="button" onClick={() => { setEditMode(false); setEditTitle(task.title); setEditHint(task.confirmation_hint) }}
+          <button type="button" onClick={() => { setEditMode(false); setEditTitle(task.title) }}
             className="rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50"
             style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
-          <button type="button" onClick={handleSave} disabled={saving || !editTitle.trim() || !editHint.trim()}
+          <button type="button" onClick={handleSave} disabled={saving || !editTitle.trim()}
             className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             style={{ backgroundColor: '#0D6E68' }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
@@ -476,7 +470,7 @@ export function TaskRow({
                 <div className="absolute right-0 top-full mt-1 z-20 rounded-lg border shadow-lg py-1 min-w-[160px]"
                   style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
                   <button type="button"
-                    onClick={() => { setMenuOpen(false); setEditMode(true); setEditTitle(task.title); setEditHint(task.confirmation_hint) }}
+                    onClick={() => { setMenuOpen(false); setEditMode(true); setEditTitle(task.title) }}
                     className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left transition hover:bg-gray-50"
                     style={{ color: '#0F172A' }}>
                     <PencilIcon /> Edit task
@@ -525,12 +519,6 @@ export function TaskRow({
         {/* Expanded panel */}
         {expanded && (
           <div className="border-t px-4 pb-4 pt-3 space-y-4" style={{ borderColor: '#F1F5F9' }}>
-
-            {/* Confirmation hint */}
-            <div>
-              <p className="text-xs font-medium mb-0.5" style={{ color: '#94A3B8' }}>What to confirm:</p>
-              <p className="text-sm" style={{ color: '#475569' }}>{task.confirmation_hint}</p>
-            </div>
 
             {/* Confirmation value (if complete) */}
             {complete && task.confirmation_value && (

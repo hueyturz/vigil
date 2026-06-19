@@ -51,13 +51,13 @@ export function AddTaskModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || !confirmationHint.trim()) return
+    if (!title.trim()) return
     setLoading(true); setError(null)
 
     const result = await addTaskToService(serviceId, {
       title:             title.trim(),
       category,
-      confirmation_hint: confirmationHint.trim(),
+      confirmation_hint: '',
       due_days_before:   daysBefore,
       assigned_to_id:    assignedToId || null,
     })
@@ -121,15 +121,6 @@ export function AddTaskModal({
 
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
-              Confirmation hint <span style={{ color: '#EF4444' }}>*</span>
-            </label>
-            <input type="text" required value={confirmationHint} onChange={e => setConfirmationHint(e.target.value)}
-              placeholder="e.g. Vendor name & order number" style={inputStyle} />
-            <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Shown to staff when they confirm this task.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Due (days before service) <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <input type="number" required min={0} max={60} value={daysBefore}
@@ -157,7 +148,7 @@ export function AddTaskModal({
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>
               Cancel
             </button>
-            <button type="submit" disabled={loading || !title.trim() || !confirmationHint.trim()}
+            <button type="submit" disabled={loading || !title.trim()}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: '#0D6E68' }}>
               {loading ? 'Adding…' : 'Add task'}
