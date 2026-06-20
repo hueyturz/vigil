@@ -5,6 +5,15 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Vigil',
   description: 'Funeral service task confirmation platform',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Vigil',
+  },
+  icons: {
+    apple: '/icon-192.png',
+  },
 }
 
 export const viewport: Viewport = {
@@ -12,6 +21,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#0D6E68',
 }
 
 export default function RootLayout({
