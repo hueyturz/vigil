@@ -28,25 +28,22 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-const ACTION_COLORS: Record<string, string> = {
-  task_completed:    '#10B981', // green
-  task_assigned:     '#3B82F6', // blue
-  task_added:        '#0D6E68', // teal
-  task_deleted:      '#EF4444', // red
-  task_edited:       '#94A3B8', // gray
-  notes_updated:     '#94A3B8', // gray
-  contact_updated:   '#94A3B8', // gray
-  service_completed: '#10B981', // green
-  service_reopened:  '#F59E0B', // amber
-}
-
-function ActionDot({ action }: { action: string }) {
-  return (
-    <span
-      className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
-      style={{ backgroundColor: ACTION_COLORS[action] ?? '#94A3B8' }}
-    />
-  )
+function getDotColor(actionType: string): string {
+  switch (actionType) {
+    case 'task_completed':
+    case 'service_completed':
+      return '#10B981'
+    case 'task_assigned':
+      return '#3B82F6'
+    case 'task_added':
+      return '#0D6E68'
+    case 'task_deleted':
+      return '#EF4444'
+    case 'service_reopened':
+      return '#F59E0B'
+    default:
+      return '#94A3B8'
+  }
 }
 
 export function RecentActivity({
@@ -67,7 +64,10 @@ export function RecentActivity({
               const serviceName = entry.service_id ? serviceNameById[entry.service_id] : undefined
               return (
                 <div key={entry.id} className="flex gap-3 items-start">
-                  <ActionDot action={entry.action_type} />
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+                    style={{ backgroundColor: getDotColor(entry.action_type) }}
+                  />
                   <div className="min-w-0 flex-1 pt-0.5">
                     <p className="text-sm" style={{ color: '#0F172A' }}>
                       <span className="font-medium">{entry.actor_name}</span>
