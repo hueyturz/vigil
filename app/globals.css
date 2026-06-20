@@ -19,3 +19,12 @@ html, body {
 
 .vigil-pulse { animation: vigil-pulse 1.5s ease-in-out infinite; }
 .vigil-spin  { animation: vigil-spin  1s linear infinite; }
+
+/* Hide scrollbars while keeping horizontal scroll (e.g. mobile tab bars) */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}

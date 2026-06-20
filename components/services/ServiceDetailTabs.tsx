@@ -61,8 +61,8 @@ export function ServiceDetailTabs({
 
   return (
     <div>
-      {/* Tab bar + Add Task button */}
-      <div className="flex items-center justify-between border-b mb-6" style={{ borderColor: '#E2E8F0' }}>
+      {/* Tab bar — horizontally scrollable on mobile */}
+      <div className="border-b mb-6 overflow-x-auto scrollbar-hide" style={{ borderColor: '#E2E8F0' }}>
         <div className="flex gap-6">
           {tabs.map(tab => {
             const active = activeTab === tab.key
@@ -71,7 +71,7 @@ export function ServiceDetailTabs({
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className="pb-3 text-sm font-semibold capitalize transition"
+                className="flex-shrink-0 pb-3 text-sm font-semibold capitalize transition"
                 style={{
                   color:        active ? '#0D6E68' : '#94A3B8',
                   borderBottom: active ? '2px solid #0D6E68' : '2px solid transparent',
@@ -93,23 +93,24 @@ export function ServiceDetailTabs({
             )
           })}
         </div>
-
-        {canManage && activeTab === 'tasks' && (
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="mb-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: '#0D6E68' }}
-          >
-            + Add Task
-          </button>
-        )}
       </div>
 
       {/* Tasks tab */}
       {activeTab === 'tasks' && (
         <div>
           {!serviceType && canManage && applyBanner}
+          {canManage && (
+            <div className="flex justify-end mb-3">
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: '#0D6E68' }}
+              >
+                + Add Task
+              </button>
+            </div>
+          )}
           {tasks.length > 0 ? (
             <TaskList
               tasks={tasks}
