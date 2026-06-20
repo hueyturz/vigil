@@ -2,12 +2,12 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { AppShell }              from '@/components/layout/AppShell'
-import { Badge }                 from '@/components/ui/Badge'
 import { ProgressBar }           from '@/components/ui/ProgressBar'
 import { ApplyTemplateBanner }   from '@/components/services/ApplyTemplateBanner'
 import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
 import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
 import { EditServiceButton }     from '@/components/services/EditServiceButton'
+import { ServiceActionsMenu }    from '@/components/services/ServiceActionsMenu'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
 import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
@@ -110,9 +110,24 @@ export default async function ServiceDetailPage({
 
         {/* Service header */}
         <div
-          className="rounded-xl border p-6 mb-6"
+          className="relative rounded-xl border p-6 mb-6"
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
         >
+          {/* Mobile-only three-dot actions menu (top-right) */}
+          {canManage && (
+            <div className="absolute top-4 right-4 md:hidden">
+              <ServiceActionsMenu service={{
+                id:                service.id,
+                family_name:       service.family_name,
+                deceased_name:     service.deceased_name,
+                service_type:      service.service_type,
+                service_date:      service.service_date,
+                location:          service.location,
+                assigned_staff_id: service.assigned_staff_id,
+              }} />
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="min-w-0">
               {service.service_type && (
@@ -139,8 +154,8 @@ export default async function ServiceDetailPage({
             </div>
 
             <div className="w-full md:w-auto md:flex-shrink-0 flex flex-col items-start md:items-end gap-3">
-              <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                <Badge status={status} />
+              {/* Pill actions — desktop only; mobile uses the three-dot menu */}
+              <div className="hidden md:flex flex-wrap items-center gap-2 md:justify-end">
                 {canManage && (
                   <a
                     href={`/services/${params.id}/print`}
@@ -164,7 +179,7 @@ export default async function ServiceDetailPage({
                   }} />
                 )}
               </div>
-              <p className="text-xs" style={{ color: '#475569' }}>
+              <p className="text-sm text-gray-400">
                 {completed}/{total} tasks confirmed
               </p>
               {canManage && (

@@ -76,7 +76,7 @@ export function ServiceCompletionFlow({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="w-full md:w-auto rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
             style={{ backgroundColor: '#0D6E68' }}
           >
             Mark Service Complete
