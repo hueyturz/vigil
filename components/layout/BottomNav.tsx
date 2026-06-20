@@ -44,7 +44,7 @@ export function BottomNav({ profile }: BottomNavProps) {
             key={item.href}
             href={item.href}
             aria-label={item.label}
-            className="flex flex-1 items-center justify-center"
+            className="flex flex-1 items-center justify-center transition-opacity active:opacity-70"
           >
             <item.Icon color={color} strong={active} />
           </Link>
