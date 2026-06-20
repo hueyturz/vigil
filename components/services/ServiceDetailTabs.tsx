@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { MeetingsTab }  from '@/components/intake/MeetingsTab'
-import { TaskList }     from '@/components/tasks/TaskList'
-import { ActivityLog }  from '@/components/services/ActivityLog'
-import { AddTaskModal } from '@/components/tasks/AddTaskModal'
-import { useRouter }    from 'next/navigation'
-import type { IntakeSession, TaskWithProfile } from '@/lib/types'
+import { MeetingsTab }      from '@/components/intake/MeetingsTab'
+import { TaskList }         from '@/components/tasks/TaskList'
+import { ActivityLog }      from '@/components/services/ActivityLog'
+import { AddTaskModal }     from '@/components/tasks/AddTaskModal'
+import { MultiContactCard } from '@/components/services/MultiContactCard'
+import { CaseNotes }        from '@/components/services/CaseNotes'
+import { useRouter }        from 'next/navigation'
+import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
 
 interface ServiceDetailTabsProps {
   tasks:          TaskWithProfile[]
@@ -17,6 +19,8 @@ interface ServiceDetailTabsProps {
   actorId:        string
   actorName:      string
   intakeSessions: IntakeSession[]
+  contacts:       ServiceContact[]
+  notes:          string | null
   canRecord:      boolean
   canManage:      boolean
   applyBanner:    React.ReactNode
@@ -31,17 +35,21 @@ export function ServiceDetailTabs({
   actorId,
   actorName,
   intakeSessions,
+  contacts,
+  notes,
   canRecord,
   canManage,
   applyBanner,
 }: ServiceDetailTabsProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'activity'>('meetings')
+  const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'contacts' | 'notes' | 'activity'>('meetings')
   const [addOpen,   setAddOpen]   = useState(false)
 
   const tabs = [
     { key: 'meetings' as const, label: 'Meetings' },
     { key: 'tasks'    as const, label: 'Tasks'    },
+    { key: 'contacts' as const, label: 'Contacts' },
+    { key: 'notes'    as const, label: 'Notes'    },
     { key: 'activity' as const, label: 'Activity' },
   ]
 
@@ -125,6 +133,26 @@ export function ServiceDetailTabs({
           sessions={intakeSessions}
           serviceId={serviceId}
           canRecord={canRecord}
+        />
+      )}
+
+      {/* Contacts tab */}
+      {activeTab === 'contacts' && (
+        <MultiContactCard
+          serviceId={serviceId}
+          funeralHomeId={funeralHomeId}
+          initialContacts={contacts}
+        />
+      )}
+
+      {/* Notes tab */}
+      {activeTab === 'notes' && (
+        <CaseNotes
+          serviceId={serviceId}
+          funeralHomeId={funeralHomeId}
+          actorId={actorId}
+          actorName={actorName}
+          initialNotes={notes}
         />
       )}
 

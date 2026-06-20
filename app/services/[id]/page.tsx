@@ -6,8 +6,6 @@ import { Badge }                 from '@/components/ui/Badge'
 import { ProgressBar }           from '@/components/ui/ProgressBar'
 import { ApplyTemplateBanner }   from '@/components/services/ApplyTemplateBanner'
 import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
-import { CaseNotes }             from '@/components/services/CaseNotes'
-import { MultiContactCard }      from '@/components/services/MultiContactCard'
 import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
 import { EditServiceButton }     from '@/components/services/EditServiceButton'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
@@ -187,22 +185,6 @@ export default async function ServiceDetailPage({
           </div>
         </div>
 
-        {/* Side cards row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <MultiContactCard
-            serviceId={params.id}
-            funeralHomeId={profile.funeral_home_id}
-            initialContacts={contacts}
-          />
-          <CaseNotes
-            serviceId={params.id}
-            funeralHomeId={profile.funeral_home_id}
-            actorId={actorId}
-            actorName={actorName}
-            initialNotes={service.notes ?? null}
-          />
-        </div>
-
         {/* Tabbed content */}
         <ServiceDetailTabs
           tasks={tasks}
@@ -213,6 +195,8 @@ export default async function ServiceDetailPage({
           actorId={actorId}
           actorName={actorName}
           intakeSessions={intakeSessions}
+          contacts={contacts}
+          notes={service.notes ?? null}
           canRecord={canRecord}
           canManage={canManage}
           applyBanner={
