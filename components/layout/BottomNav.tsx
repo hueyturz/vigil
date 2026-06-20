@@ -30,7 +30,11 @@ export function BottomNav({ profile }: BottomNavProps) {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch border-t border-gray-200 bg-white"
-      style={{ height: 60 }}
+      style={{
+        // 64px (h-16) of icon area + the iOS home-indicator inset below it
+        minHeight: 'calc(4rem + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
       {items.map(item => {
         const active = pathname.startsWith(item.href)
