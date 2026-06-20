@@ -5,14 +5,13 @@ import { CreateServiceModal } from './CreateServiceModal'
 import { ServiceCard } from './ServiceCard'
 import type { ServiceWithTasks } from '@/lib/types'
 
-type StatusFilter = 'all' | 'active' | 'completed' | 'archived'
+type StatusFilter = 'all' | 'active' | 'completed'
 type SortKey = 'date_asc' | 'date_desc' | 'name_asc'
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'all',       label: 'All'       },
   { key: 'active',    label: 'Active'    },
   { key: 'completed', label: 'Completed' },
-  { key: 'archived',  label: 'Archived'  },
 ]
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [

@@ -25,6 +25,7 @@ export default async function ServicesPage() {
     .from('services')
     .select('*, tasks (*)')
     .eq('funeral_home_id', profile.funeral_home_id)
+    .neq('status', 'archived')
     .order('service_date', { ascending: true, nullsFirst: false })
 
   const services: ServiceWithTasks[] = (servicesRaw ?? []).map(s => ({

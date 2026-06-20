@@ -173,7 +173,7 @@ export default async function ServiceDetailPage({
                   funeralHomeId={profile.funeral_home_id}
                   actorId={actorId}
                   actorName={actorName}
-                  serviceStatus={service.status as 'active' | 'completed' | 'archived'}
+                  serviceStatus={service.status as 'active' | 'completed'}
                   canManage={canManage}
                 />
               )}

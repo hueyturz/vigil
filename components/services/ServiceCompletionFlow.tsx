@@ -10,7 +10,7 @@ interface ServiceCompletionFlowProps {
   funeralHomeId: string
   actorId:       string
   actorName:     string
-  serviceStatus: 'active' | 'completed' | 'archived'
+  serviceStatus: 'active' | 'completed'
   canManage:     boolean
 }
 
@@ -23,7 +23,6 @@ export function ServiceCompletionFlow({
   const [error,      setError]      = useState<string | null>(null)
 
   if (!canManage) return null
-  if (serviceStatus === 'archived') return null
 
   const isCompleted = serviceStatus === 'completed'
 
