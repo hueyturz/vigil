@@ -17,29 +17,37 @@ const LEGEND = [
 ]
 
 function bucketTasks(service: ServiceWithTasks) {
-  const serviceDate = service.service_date ?? ''
   let confirmed = 0, onTrack = 0, atRisk = 0, overdue = 0
 
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+
   for (const task of service.tasks) {
+    // Confirmed — task is complete.
     if (task.status === 'complete') {
       confirmed++
       continue
     }
 
-    if (!serviceDate) {
+    // On Track — no service date set, so the task can't be "due" yet.
+    if (!service.service_date) {
       onTrack++
       continue
     }
 
-    // Due date = serviceDate minus due_days_before
-    const svcMs  = new Date(serviceDate + 'T00:00:00').getTime()
-    const dueMs  = svcMs - task.due_days_before * 86400_000
-    const today  = new Date(); today.setHours(0, 0, 0, 0)
-    const daysLeft = Math.floor((dueMs - today.getTime()) / 86400_000)
+    // Due date = service_date minus due_days_before days.
+    const dueMs    = new Date(service.service_date + 'T00:00:00').getTime()
+                     - task.due_days_before * 86_400_000
+    const daysLeft = Math.floor((dueMs - today.getTime()) / 86_400_000)
 
-    if (daysLeft < 0)      overdue++
-    else if (daysLeft <= 3) atRisk++
-    else                   onTrack++
+    // Order matters: check Overdue BEFORE At Risk so a past-due task
+    // never falls into the amber (At Risk) bucket.
+    if (daysLeft < 0) {
+      overdue++                 // due date is before today
+    } else if (daysLeft <= 3) {
+      atRisk++                  // due within the next 0–3 days
+    } else {
+      onTrack++                 // due more than 3 days away
+    }
   }
 
   return { confirmed, onTrack, atRisk, overdue }

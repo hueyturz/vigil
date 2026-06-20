@@ -51,21 +51,13 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition"
+              className="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition"
               style={{
                 backgroundColor: active ? '#1E293B' : 'transparent',
                 color: active ? '#FFFFFF' : '#94A3B8',
               }}
             >
               {item.label}
-              {item.href === '/dashboard' && redAlert && (
-                <span
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: '#EF4444' }}
-                >
-                  !
-                </span>
-              )}
             </Link>
           )
         })}
