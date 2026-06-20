@@ -1,5 +1,5 @@
 import { Sidebar } from './Sidebar'
-import { MobileHeader } from './MobileHeader'
+import { BottomNav } from './BottomNav'
 import type { Profile } from '@/lib/types'
 import type { ComputedStatus } from '@/lib/types'
 
@@ -14,12 +14,12 @@ export function AppShell({ profile, redAlert = false, children }: AppShellProps)
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F7F8FA' }}>
       {/* Sidebar hidden on mobile, visible on md+ */}
       <Sidebar profile={profile} redAlert={redAlert} />
-      {/* Fixed top header + slide-out drawer, mobile only */}
-      <MobileHeader profile={profile} />
-      {/* Top padding on mobile leaves room for the fixed header bar */}
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">
+      {/* Bottom padding on mobile leaves room for the fixed bottom nav */}
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
         {children}
       </main>
+      {/* Icons-only bottom nav, mobile only */}
+      <BottomNav profile={profile} />
     </div>
   )
 }
