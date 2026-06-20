@@ -134,6 +134,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
               className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none"
               style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
             >
+              <option value="owner">Owner</option>
               <option value="fd">Funeral Director</option>
               <option value="staff">Staff</option>
             </select>

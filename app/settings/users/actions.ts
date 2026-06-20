@@ -8,7 +8,7 @@ import type { Role } from '@/lib/types'
 const InviteSchema = z.object({
   email:     z.string().email('Invalid email address.'),
   full_name: z.string().min(2, 'Name must be at least 2 characters.'),
-  role:      z.enum(['fd', 'staff'], { errorMap: () => ({ message: 'Role must be fd or staff.' }) }),
+  role:      z.enum(['owner', 'fd', 'staff'], { errorMap: () => ({ message: 'Role must be owner, fd, or staff.' }) }),
   phone:     z.string().optional(),
 })
 
