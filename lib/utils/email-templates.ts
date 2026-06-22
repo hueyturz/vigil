@@ -49,6 +49,45 @@ function ctaButton(href: string, label: string): string {
   </a>`
 }
 
+// ── Template — Demo Request (internal notification) ───────────────────────────
+
+export interface DemoRequestData {
+  name:        string
+  funeralHome: string
+  email:       string
+  phone:       string
+  staffCount:  string
+  referral:    string
+  submittedAt: string
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+export function demoRequestEmail(data: DemoRequestData): { subject: string; html: string } {
+  const subject = `New Demo Request — ${data.funeralHome}`
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#0F172A;line-height:1.7;">
+      <p style="margin:0 0 16px 0;">New demo request from the Vauter website.</p>
+      <p style="margin:0;">
+        <strong>Name:</strong> ${escapeHtml(data.name)}<br/>
+        <strong>Funeral Home:</strong> ${escapeHtml(data.funeralHome)}<br/>
+        <strong>Email:</strong> ${escapeHtml(data.email)}<br/>
+        <strong>Phone:</strong> ${escapeHtml(data.phone)}<br/>
+        <strong>Staff Count:</strong> ${escapeHtml(data.staffCount)}<br/>
+        <strong>How they heard:</strong> ${escapeHtml(data.referral)}<br/>
+        <strong>Submitted:</strong> ${escapeHtml(data.submittedAt)}
+      </p>
+    </div>`
+
+  return { subject, html }
+}
+
 // ── Template A — Task Confirmed ───────────────────────────────────────────────
 
 export interface TaskConfirmedData {

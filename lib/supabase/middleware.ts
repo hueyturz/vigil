@@ -44,12 +44,15 @@ export async function updateSession(request: NextRequest) {
     pathname === '/demo' ||
     pathname === '/privacy' ||
     pathname === '/terms' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/robots.txt' ||
     pathname === '/login' ||
     pathname === '/onboarding' ||
     pathname === '/forgot-password' ||
     pathname === '/reset-password' ||
     pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/auth/')
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/demo-request')
 
   if (!session && !isPublicPath) {
     const url = request.nextUrl.clone()
