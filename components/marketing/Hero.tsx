@@ -9,7 +9,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center pt-32 md:pt-40 px-6 text-center overflow-hidden"
       style={{
         background:
           'radial-gradient(ellipse at center, rgba(230,244,243,0.3) 0%, #FFFFFF 60%)',
@@ -18,7 +18,7 @@ export default function Hero() {
       <div className="max-w-4xl mx-auto w-full">
         {/* Badge */}
         <span
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm"
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm"
           style={{ backgroundColor: '#E6F4F3', color: '#0D6E68' }}
         >
           <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -26,7 +26,7 @@ export default function Hero() {
         </span>
 
         {/* Headline */}
-        <h1 className="mt-6 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#0F172A' }}>
+        <h1 className="mt-8 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#0F172A' }}>
           Nothing slips
           <br />
           through the cracks.
