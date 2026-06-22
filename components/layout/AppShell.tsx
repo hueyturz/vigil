@@ -15,10 +15,7 @@ export function AppShell({ profile, redAlert = false, children }: AppShellProps)
       {/* Sidebar hidden on mobile, visible on md+ */}
       <Sidebar profile={profile} redAlert={redAlert} />
       {/* Bottom padding on mobile leaves room for the taller fixed bottom nav */}
-      <main
-        className="flex-1 overflow-auto"
-        style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
-      >
+      <main className="flex-1 overflow-auto [padding-bottom:calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </main>
       {/* Icons-only bottom nav, mobile only */}
