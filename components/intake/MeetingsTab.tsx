@@ -449,7 +449,7 @@ export function MeetingsTab({ sessions, serviceId, canRecord }: MeetingsTabProps
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-32">
       {/* Tab-level header with recorder */}
       {canRecord && (
         <div className="flex justify-end">
