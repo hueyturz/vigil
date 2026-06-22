@@ -36,8 +36,14 @@ export async function updateSession(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const { pathname } = request.nextUrl
-  // /auth/* must be reachable without a session so the code-exchange can run
+  // /auth/* must be reachable without a session so the code-exchange can run.
+  // Marketing routes (/, /pricing, /demo, /privacy, /terms) are public to everyone.
   const isPublicPath =
+    pathname === '/' ||
+    pathname === '/pricing' ||
+    pathname === '/demo' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
     pathname === '/login' ||
     pathname === '/onboarding' ||
     pathname === '/forgot-password' ||
