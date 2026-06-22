@@ -192,10 +192,10 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
       {modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
           <div
-            className="relative w-full max-w-md rounded-2xl p-6 shadow-xl overflow-y-auto"
+            className="relative w-full max-w-md rounded-2xl p-6 pb-28 sm:pb-6 shadow-xl overflow-y-auto"
             style={{ backgroundColor: '#FFFFFF', maxHeight: '90vh' }}
           >
             {/* Close button — always visible except during active processing */}
