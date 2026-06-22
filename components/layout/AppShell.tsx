@@ -15,7 +15,7 @@ export function AppShell({ profile, redAlert = false, children }: AppShellProps)
       {/* Sidebar hidden on mobile, visible on md+ */}
       <Sidebar profile={profile} redAlert={redAlert} />
       {/* Bottom padding on mobile leaves room for the taller fixed bottom nav */}
-      <main className="flex-1 overflow-auto pb-24 md:pb-0">
+      <main className="flex-1 overflow-auto pb-28 md:pb-0">
         {children}
       </main>
       {/* Icons-only bottom nav, mobile only */}
