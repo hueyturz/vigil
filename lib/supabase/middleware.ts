@@ -37,13 +37,14 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   // /auth/* must be reachable without a session so the code-exchange can run.
-  // Marketing routes (/, /pricing, /demo, /privacy, /terms) are public to everyone.
+  // Marketing routes (/, /pricing, /demo, /privacy, /terms, /sms-policy) are public to everyone.
   const isPublicPath =
     pathname === '/' ||
     pathname === '/pricing' ||
     pathname === '/demo' ||
     pathname === '/privacy' ||
     pathname === '/terms' ||
+    pathname === '/sms-policy' ||
     pathname === '/sitemap.xml' ||
     pathname === '/robots.txt' ||
     pathname === '/login' ||

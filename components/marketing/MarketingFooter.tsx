@@ -50,6 +50,9 @@ export function MarketingFooter() {
             <li>
               <Link href="/terms" className={LINK_CLASS}>Terms of Service</Link>
             </li>
+            <li>
+              <Link href="/sms-policy" className={LINK_CLASS}>SMS Policy</Link>
+            </li>
           </ul>
         </div>
       </div>
