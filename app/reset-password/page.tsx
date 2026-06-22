@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: '#0D6E68' }}>Vigil</h1>
+          <h1 className="text-3xl font-bold" style={{ color: '#0D6E68' }}>Vauter</h1>
           <p className="mt-2 text-sm" style={{ color: '#475569' }}>
             Choose a new password
           </p>

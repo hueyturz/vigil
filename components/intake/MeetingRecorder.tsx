@@ -222,7 +222,7 @@ export function MeetingRecorder({ serviceId }: MeetingRecorderProps) {
                 </div>
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#0F172A' }}>Record Arrangement Conference</h2>
                 <p className="text-sm mb-6" style={{ color: '#64748B' }}>
-                  Vigil will transcribe the conversation and automatically populate tasks from the decisions made.
+                  Vauter will transcribe the conversation and automatically populate tasks from the decisions made.
                 </p>
                 {!isRecordingSupported() || !getSupportedMimeType() ? (
                   <div

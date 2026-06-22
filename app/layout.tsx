@@ -3,13 +3,13 @@ import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Vigil',
-  description: 'Funeral service task confirmation platform',
+  title: 'Vauter',
+  description: 'Funeral home service operations',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Vigil',
+    title: 'Vauter',
   },
   icons: {
     apple: '/icon-192.png',

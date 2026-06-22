@@ -1,15 +1,15 @@
-# Vigil — Project Context & Handoff Summary
+# Vauter — Project Context & Handoff Summary
 
 Paste this at the start of any new Claude chat to provide full project context.
 
 ---
 
-## What Is Vigil
+## What Is Vauter
 
-Vigil is a multi-tenant SaaS platform for funeral home service operations. It solves a specific problem: funeral directors can't trust that service tasks have been completed without verifying them personally. The solution is a confirmation layer — staff don't just check a box, they provide specifics (vendor name, order number, contact name) when completing a task. This gives the FD documented proof without triple-checking.
+Vauter is a multi-tenant SaaS platform for funeral home service operations. It solves a specific problem: funeral directors can't trust that service tasks have been completed without verifying them personally. The solution is a confirmation layer — staff don't just check a box, they provide specifics (vendor name, order number, contact name) when completing a task. This gives the FD documented proof without triple-checking.
 
-**Live URL:** https://vigil-three-theta.vercel.app
-**GitHub:** https://github.com/hueyturz/vigil
+**Live URL:** https://getvauter.com (once domain is connected)
+**GitHub:** https://github.com/hueyturz/vigil (repo name unchanged — this is the Vauter codebase)
 **Primary design partner:** Houston's brother, a funeral director
 
 ---

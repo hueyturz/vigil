@@ -15,7 +15,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const { error } = await resend.emails.send({
-      from:    'Vigil <onboarding@resend.dev>',
+      from:    'Vauter <onboarding@resend.dev>',
       to:      opts.to,
       subject: opts.subject,
       html:    opts.html,

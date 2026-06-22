@@ -1,6 +1,6 @@
 {
-  "name": "Vigil",
-  "short_name": "Vigil",
+  "name": "Vauter",
+  "short_name": "Vauter",
   "description": "Funeral home service operations",
   "start_url": "/dashboard",
   "display": "standalone",

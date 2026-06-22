@@ -6,7 +6,7 @@ function baseLayout(content: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vigil</title>
+  <title>Vauter</title>
 </head>
 <body style="margin:0;padding:0;background:#F7F8FA;font-family:system-ui,-apple-system,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 16px;">
@@ -16,7 +16,7 @@ function baseLayout(content: string): string {
           <!-- Header -->
           <tr>
             <td style="padding:0 0 24px 0;">
-              <span style="font-size:20px;font-weight:700;color:#0F172A;letter-spacing:-0.5px;">Vigil</span>
+              <span style="font-size:20px;font-weight:700;color:#0F172A;letter-spacing:-0.5px;">Vauter</span>
             </td>
           </tr>
           <!-- Card -->
@@ -29,7 +29,7 @@ function baseLayout(content: string): string {
           <tr>
             <td style="padding:20px 0 0 0;text-align:center;">
               <p style="margin:0;font-size:12px;color:#94A3B8;">
-                Vigil — Funeral Service Management
+                Vauter — Funeral Service Management
               </p>
             </td>
           </tr>
@@ -133,7 +133,7 @@ export function taskAssignedEmail(data: TaskAssignedData): { subject: string; ht
     <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.6;">
       <strong style="color:#0F172A;">${data.actorName}</strong> assigned you this task
       on the <strong style="color:#0F172A;">${data.familyName}</strong> service.
-      Log in to Vigil to view it.
+      Log in to Vauter to view it.
     </p>
     ${ctaButton(serviceUrl, 'View service →')}
   `)

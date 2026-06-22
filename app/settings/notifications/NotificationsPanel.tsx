@@ -51,7 +51,7 @@ export function NotificationsPanel({ initial }: { initial: Prefs }) {
       <div className="mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Notifications</h1>
         <p className="text-sm mt-1" style={{ color: '#64748B' }}>
-          Choose when Vigil sends you email and SMS alerts.
+          Choose when Vauter sends you email and SMS alerts.
         </p>
       </div>
 

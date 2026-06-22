@@ -109,7 +109,7 @@ export default async function AdminPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: '#0D6E68' }}>Vigil Admin</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#0D6E68' }}>Vauter Admin</h1>
           <p className="mt-1 text-sm" style={{ color: '#475569' }}>
             All customer accounts · internal use only
           </p>
