@@ -16,7 +16,10 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
 export function ServiceCard({ service }: { service: ServiceWithTasks }) {
   const { tasks } = service
   const serviceDate = service.service_date ?? ''
-  const status      = computeServiceStatus(tasks, serviceDate)
+  // Completed services get a dedicated badge; computeServiceStatus is only meaningful
+  // for active services and isn't called here when the service is already complete.
+  const isCompleted = service.status === 'completed'
+  const status      = isCompleted ? 'green' : computeServiceStatus(tasks, serviceDate)
   const completed   = tasks.filter(t => t.status === 'complete').length
   const total       = tasks.length
   const progressPct = total > 0 ? (completed / total) * 100 : 0
@@ -47,7 +50,7 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
             ? (SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type)
             : ''}
         </span>
-        <Badge status={status} />
+        <Badge status={isCompleted ? 'completed' : status} />
       </div>
 
       {/* Family / deceased names */}
