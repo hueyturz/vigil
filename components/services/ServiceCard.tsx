@@ -63,12 +63,14 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
       {/* Date + days chip */}
       <div className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
         <span>{serviceDate ? formatDate(serviceDate) : 'Date TBD'}</span>
-        <span
-          className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-          style={{ backgroundColor: dayChipColor }}
-        >
-          {dayLabel}
-        </span>
+        {!isCompleted && (
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            style={{ backgroundColor: dayChipColor }}
+          >
+            {dayLabel}
+          </span>
+        )}
       </div>
 
       {/* Location */}
