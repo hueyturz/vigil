@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExtractionData, Priority } from '@/lib/types'
 
 interface ExtractionResultsProps {
@@ -341,6 +341,15 @@ function ReviewCard({
   priority, onPriorityChange, meta,
 }: ReviewCardProps) {
   const dim = !readOnly && !accepted
+  const notesRef = useRef<HTMLTextAreaElement>(null)
+
+  // Size the notes textarea to fit any pre-filled extracted detail on mount.
+  useEffect(() => {
+    const el = notesRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [])
 
   return (
     <div
@@ -442,11 +451,17 @@ function ReviewCard({
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: '#475569' }}>Notes</label>
           <textarea
+            ref={notesRef}
             value={notes}
             onChange={e => onNotesChange(e.target.value)}
+            onInput={e => {
+              const el = e.currentTarget
+              el.style.height = 'auto'
+              el.style.height = `${el.scrollHeight}px`
+            }}
             disabled={!accepted}
-            rows={2}
-            className="w-full rounded-lg border px-3 py-2 text-sm outline-none resize-none disabled:opacity-50"
+            rows={4}
+            className="w-full rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-50"
             style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FAFAFA' }}
             placeholder="Add notes from this meeting…"
           />

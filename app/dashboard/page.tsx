@@ -64,7 +64,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell profile={profile} redAlert={needsAttentionCount > 0}>
-      <div className="px-4 pt-4 pb-24 md:px-8 md:pt-8 md:pb-20 max-w-7xl mx-auto">
+      <div className="px-4 py-4 md:px-8 md:py-8 max-w-7xl mx-auto">
         <div className="mb-8 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>Dashboard</h1>

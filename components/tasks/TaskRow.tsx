@@ -492,7 +492,7 @@ export function TaskRow({
   return (
     <>
       <div
-        className="rounded-lg border overflow-hidden"
+        className="rounded-lg border"
         style={{
           backgroundColor: '#FFFFFF',
           borderColor: complete ? '#A7F3D0' : overdue ? '#FECACA' : '#E2E8F0',
