@@ -340,7 +340,8 @@ export function TaskRow({
   const [deleting,     setDeleting]     = useState(false)
   const [expanded,     setExpanded]     = useState(false)
   const [mounted,      setMounted]      = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const menuRef  = useRef<HTMLDivElement>(null)
+  const notesRef = useRef<HTMLTextAreaElement>(null)
 
   // Date-derived UI (overdue state, relative labels, formatted timestamps) must
   // only render after mount — computing them during SSR/hydration produces
@@ -351,6 +352,16 @@ export function TaskRow({
   const complete = task.status === 'complete'
 
   useEffect(() => { setMounted(true) }, [])
+
+  // When the row expands, size the notes textarea to fit any existing content
+  // (same auto-grow logic as the textarea's onInput handler).
+  useEffect(() => {
+    if (!expanded) return
+    const el = notesRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [expanded])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -644,6 +655,7 @@ export function TaskRow({
               <p className="text-xs font-medium mb-1" style={{ color: '#94A3B8' }}>Notes</p>
               <div className="relative">
                 <textarea
+                  ref={notesRef}
                   value={editNotes}
                   onChange={e => setEditNotes(e.target.value)}
                   onBlur={handleBlurNotes}
