@@ -11,7 +11,7 @@ interface AppShellProps {
 
 export function AppShell({ profile, redAlert = false, children }: AppShellProps) {
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F7F8FA' }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F8F5F0' }}>
       {/* Sidebar hidden on mobile, visible on md+ */}
       <Sidebar profile={profile} redAlert={redAlert} />
       {/* Bottom padding on mobile leaves room for the taller fixed bottom nav */}

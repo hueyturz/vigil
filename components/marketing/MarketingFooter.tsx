@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-const TEAL = '#4A7C8C'
+const GOLD = '#F4C95D'
 const LINK_CLASS = 'text-sm text-gray-400 hover:text-white transition-colors'
 
 const PRODUCT_LINKS = [
@@ -12,11 +12,11 @@ const PRODUCT_LINKS = [
 
 export function MarketingFooter() {
   return (
-    <footer className="py-16 px-6" style={{ backgroundColor: '#0F172A' }}>
+    <footer className="py-16 px-6" style={{ backgroundColor: '#0A2540' }}>
       <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Column 1 — brand */}
         <div>
-          <span className="text-xl font-bold" style={{ color: TEAL }}>Vigilight</span>
+          <span className="text-xl font-bold" style={{ color: GOLD }}>Vigilight</span>
           <p className="text-sm text-gray-400 mt-2">
             Accountability for funeral home operations.
           </p>

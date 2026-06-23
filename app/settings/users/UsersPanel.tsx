@@ -175,8 +175,8 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={pending}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#4A7C8C' }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
             >
               {pending ? 'Sending…' : 'Send invite'}
             </button>
@@ -315,8 +315,8 @@ function EditProfileModal({ user, onClose }: { user: UserRow; onClose: () => voi
             <button
               type="submit"
               disabled={pending}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#4A7C8C' }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
             >
               {pending ? 'Saving…' : 'Save changes'}
             </button>
@@ -569,8 +569,8 @@ export function UsersPanel({ users, currentUserId }: { users: UserRow[]; current
         </div>
         <button
           onClick={() => setInviteOpen(true)}
-          className="flex-shrink-0 rounded-full sm:rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ backgroundColor: '#4A7C8C' }}
+          className="flex-shrink-0 rounded-full sm:rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-semibold transition hover:opacity-90"
+          style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
         >
           + Invite<span className="hidden sm:inline"> User</span>
         </button>

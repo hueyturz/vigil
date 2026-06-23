@@ -149,8 +149,8 @@ export function AddTaskModal({
               Cancel
             </button>
             <button type="submit" disabled={loading || !title.trim()}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#4A7C8C' }}>
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>
               {loading ? 'Adding…' : 'Add task'}
             </button>
           </div>

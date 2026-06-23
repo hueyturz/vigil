@@ -122,8 +122,8 @@ export function ContactCard({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              style={{ backgroundColor: '#4A7C8C' }}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

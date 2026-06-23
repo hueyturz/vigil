@@ -395,8 +395,8 @@ export function TaskRow({
             className="rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50"
             style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
           <button type="button" onClick={handleSave} disabled={saving || !editTitle.trim()}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: '#4A7C8C' }}>{saving ? 'Saving…' : 'Save'}</button>
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     )

@@ -138,7 +138,7 @@ export function DemoForm() {
 
       <button
         type="submit" disabled={loading}
-        className="w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity disabled:opacity-60"
+        className="w-full bg-[#E8B923] text-[#0A2540] font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity disabled:opacity-60"
       >
         {loading ? 'Sending…' : 'Request Demo →'}
       </button>

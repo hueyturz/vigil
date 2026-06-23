@@ -10,8 +10,8 @@ export function NewServiceButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-        style={{ backgroundColor: '#4A7C8C' }}
+        className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+        style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
       >
         + New Service
       </button>

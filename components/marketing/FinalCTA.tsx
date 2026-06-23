@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function FinalCTA() {
   return (
-    <div className="py-24 px-6" style={{ backgroundColor: '#4A7C8C' }}>
+    <div className="py-24 px-6" style={{ backgroundColor: '#0A2540' }}>
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
           Ready to run your funeral home with confidence?
@@ -15,7 +15,7 @@ export default function FinalCTA() {
         <div className="flex gap-4 justify-center flex-wrap">
           <Link
             href="/demo"
-            className="bg-white text-[#4A7C8C] font-semibold px-8 py-4 rounded-full text-lg hover:bg-gray-50 transition-colors"
+            className="bg-[#E8B923] text-[#0A2540] font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial →
           </Link>

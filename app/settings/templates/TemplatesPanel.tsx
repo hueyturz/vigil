@@ -247,8 +247,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
             <p className="text-xs mt-0.5" style={{ color: '#92400E' }}>Customize it to match your workflow.</p>
           </div>
           <button type="button" onClick={handleCustomize} disabled={busy}
-            className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: '#4A7C8C' }}>
+            className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>
             {busy ? 'Copying…' : 'Customize This Template'}
           </button>
         </div>
@@ -264,8 +264,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
             <p className="text-xs hidden sm:block" style={{ color: '#0F766E' }}>Changes save automatically.</p>
           </div>
           <button type="button" onClick={exitEditing}
-            className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: '#4A7C8C' }}>
+            className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+            style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>
             Done Editing
           </button>
         </div>
@@ -428,8 +428,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
               className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-gray-50"
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
             <button type="submit" disabled={busy}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: '#4A7C8C' }}>{busy ? 'Adding…' : 'Add task'}</button>
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>{busy ? 'Adding…' : 'Add task'}</button>
           </div>
         </form>
       )}
@@ -647,8 +647,8 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
                   type="button"
                   onClick={handleAddStep}
                   disabled={addingStep || !newStep.trim()}
-                  className="rounded px-2.5 py-1.5 text-sm font-semibold text-white disabled:opacity-50 transition hover:opacity-90"
-                  style={{ backgroundColor: '#4A7C8C' }}
+                  className="rounded px-2.5 py-1.5 text-sm font-semibold disabled:opacity-50 transition hover:opacity-90"
+                  style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
                 >+</button>
               </div>
             </div>
@@ -658,8 +658,8 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
               className="flex-1 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50"
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>Close</button>
             <button type="submit" disabled={busy || !title.trim()}
-              className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#4A7C8C' }}>{busy ? 'Saving…' : 'Save changes'}</button>
+              className="flex-1 rounded-lg py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>{busy ? 'Saving…' : 'Save changes'}</button>
           </div>
         </form>
       </div>

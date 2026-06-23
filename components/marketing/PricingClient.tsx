@@ -77,7 +77,7 @@ export function PricingClient() {
 
         <Link
           href="/demo"
-          className="block w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+          className="block w-full bg-[#E8B923] text-[#0A2540] font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
         >
           Start Free Trial
         </Link>

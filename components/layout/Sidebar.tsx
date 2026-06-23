@@ -36,11 +36,11 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
   return (
     <aside
       className="hidden md:flex h-screen w-[220px] flex-shrink-0 flex-col"
-      style={{ backgroundColor: '#0F172A' }}
+      style={{ backgroundColor: '#0A2540' }}
     >
       {/* Logo */}
-      <div className="px-6 py-5 border-b" style={{ borderColor: '#1E293B' }}>
-        <span className="text-xl font-bold tracking-tight text-white">Vigilight</span>
+      <div className="px-6 py-5 border-b" style={{ borderColor: 'rgba(248,245,240,0.08)' }}>
+        <span className="text-xl font-bold tracking-tight" style={{ color: '#F4C95D' }}>Vigilight</span>
       </div>
 
       {/* Nav */}
@@ -53,8 +53,8 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
               href={item.href}
               className="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition"
               style={{
-                backgroundColor: active ? '#1E293B' : 'transparent',
-                color: active ? '#FFFFFF' : '#94A3B8',
+                backgroundColor: active ? 'rgba(244,201,93,0.12)' : 'transparent',
+                color: active ? '#F4C95D' : 'rgba(248,245,240,0.55)',
               }}
             >
               {item.label}
@@ -64,15 +64,15 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
       </nav>
 
       {/* User info + sign out */}
-      <div className="px-4 py-4 border-t" style={{ borderColor: '#1E293B' }}>
+      <div className="px-4 py-4 border-t" style={{ borderColor: 'rgba(248,245,240,0.08)' }}>
         <p className="text-xs font-medium text-white truncate">{profile.full_name}</p>
-        <p className="text-xs capitalize mt-0.5" style={{ color: '#475569' }}>
+        <p className="text-xs capitalize mt-0.5" style={{ color: 'rgba(248,245,240,0.55)' }}>
           {profile.role === 'fd' ? 'Funeral Director' : profile.role}
         </p>
         <button
           onClick={handleSignOut}
           className="mt-3 text-xs hover:text-white transition"
-          style={{ color: '#475569' }}
+          style={{ color: 'rgba(248,245,240,0.55)' }}
         >
           Sign out →
         </button>

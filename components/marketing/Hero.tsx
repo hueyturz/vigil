@@ -12,7 +12,7 @@ export default function Hero() {
       className="relative min-h-screen flex flex-col items-center justify-center pt-32 md:pt-40 px-6 text-center overflow-hidden"
       style={{
         background:
-          'radial-gradient(ellipse at center, rgba(230,244,243,0.3) 0%, #FFFFFF 60%)',
+          'radial-gradient(ellipse at center, #12375A 0%, #0A2540 60%)',
       }}
     >
       <div className="max-w-4xl mx-auto w-full">
@@ -26,14 +26,14 @@ export default function Hero() {
         </span>
 
         {/* Headline */}
-        <h1 className="mt-8 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#0F172A' }}>
+        <h1 className="mt-8 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#F8F5F0' }}>
           Nothing slips
           <br />
           through the cracks.
         </h1>
 
         {/* Subheadline */}
-        <p className="mt-6 text-xl max-w-2xl mx-auto leading-relaxed" style={{ color: '#475569' }}>
+        <p className="mt-6 text-xl max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(248,245,240,0.75)' }}>
           Vigilight keeps funeral home staff accountable so directors never have to
           triple-check anything again. Automatic reminders. Confirmed tasks.
           Complete peace of mind.
@@ -43,20 +43,20 @@ export default function Hero() {
         <div className="mt-10 flex gap-4 justify-center flex-wrap">
           <Link
             href="/demo"
-            className="bg-[#4A7C8C] text-white font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+            className="bg-[#E8B923] text-[#0A2540] font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial →
           </Link>
           <Link
             href="/#features"
-            className="border-2 border-[#4A7C8C] text-[#4A7C8C] font-semibold px-8 py-4 rounded-full text-lg hover:bg-[#E6F4F3] transition-colors"
+            className="border-2 border-[rgba(248,245,240,0.4)] text-[#F8F5F0] font-semibold px-8 py-4 rounded-full text-lg hover:bg-[rgba(248,245,240,0.1)] transition-colors"
           >
             See how it works
           </Link>
         </div>
 
         {/* Trust line */}
-        <p className="mt-4 text-sm" style={{ color: '#94A3B8' }}>
+        <p className="mt-4 text-sm" style={{ color: 'rgba(248,245,240,0.6)' }}>
           14-day free trial · No credit card required · Cancel anytime
         </p>
 

@@ -58,7 +58,7 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <div id="features" className="py-24 px-6" style={{ backgroundColor: '#F7F8FA' }}>
+    <div id="features" className="py-24 px-6" style={{ backgroundColor: '#F8F5F0' }}>
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center mb-16">
         <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>

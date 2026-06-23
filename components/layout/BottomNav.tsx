@@ -8,8 +8,8 @@ interface BottomNavProps {
   profile: Pick<Profile, 'role'>
 }
 
-const TEAL = '#4A7C8C'
-const GRAY = '#94A3B8'
+const GOLD = '#F4C95D'
+const MUTED = 'rgba(248,245,240,0.55)'
 
 type IconProps = { color: string; strong: boolean }
 
@@ -29,7 +29,7 @@ export function BottomNav({ profile }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch border-t border-gray-200 bg-white"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch border-t border-[rgba(248,245,240,0.08)] bg-[#0A2540]"
       style={{
         // 64px (h-16) of icon area + the iOS home-indicator inset below it
         minHeight: 'calc(4rem + env(safe-area-inset-bottom))',
@@ -38,7 +38,7 @@ export function BottomNav({ profile }: BottomNavProps) {
     >
       {items.map(item => {
         const active = pathname.startsWith(item.href)
-        const color  = active ? TEAL : GRAY
+        const color  = active ? GOLD : MUTED
         return (
           <Link
             key={item.href}

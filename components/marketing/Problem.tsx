@@ -47,16 +47,16 @@ const CARDS = [
 
 export default function Problem() {
   return (
-    <div id="problem" className="py-24 px-6" style={{ backgroundColor: '#0F172A' }}>
+    <div id="problem" className="py-24 px-6" style={{ backgroundColor: '#F8F5F0' }}>
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center">
         <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           The Problem
         </p>
-        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
+        <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ color: '#0F172A' }}>
           Funeral directors spend more time checking on tasks than serving families.
         </h2>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+        <p className="text-xl max-w-2xl mx-auto" style={{ color: '#475569' }}>
           The shared note. The group text. The follow-up call. None of them give you
           proof that anything was actually done.
         </p>
@@ -67,11 +67,11 @@ export default function Problem() {
         {CARDS.map(({ Icon, title, body }) => (
           <div
             key={title}
-            className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-colors"
+            className="bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow"
           >
             <Icon />
-            <h3 className="font-semibold text-white text-lg mb-3 mt-4">{title}</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">{body}</p>
+            <h3 className="font-semibold text-lg mb-3 mt-4" style={{ color: '#0F172A' }}>{title}</h3>
+            <p className="text-sm leading-relaxed" style={{ color: '#475569' }}>{body}</p>
           </div>
         ))}
       </div>

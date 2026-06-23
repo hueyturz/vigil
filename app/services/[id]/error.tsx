@@ -30,8 +30,8 @@ export default function ServiceDetailError({
         </p>
         <button
           onClick={reset}
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#4A7C8C' }}
+          className="rounded-lg px-4 py-2 text-sm font-semibold"
+          style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
         >
           Try again
         </button>

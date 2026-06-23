@@ -23,16 +23,16 @@ function CheckCircle() {
 
 export default function PricingPreview() {
   return (
-    <div id="pricing" className="py-24 px-6" style={{ backgroundColor: '#0F172A' }}>
+    <div id="pricing" className="py-24 px-6" style={{ backgroundColor: '#F8F5F0' }}>
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center">
         <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           Pricing
         </p>
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: '#0F172A' }}>
           Simple, transparent pricing.
         </h2>
-        <p className="text-xl text-gray-400 mb-16">
+        <p className="text-xl mb-16" style={{ color: '#475569' }}>
           One plan. Everything included. No hidden fees.
         </p>
       </div>
@@ -70,7 +70,7 @@ export default function PricingPreview() {
           {/* CTA */}
           <Link
             href="/demo"
-            className="mt-8 block w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+            className="mt-8 block w-full bg-[#E8B923] text-[#0A2540] font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial
           </Link>
@@ -79,7 +79,7 @@ export default function PricingPreview() {
           </p>
         </div>
 
-        <p className="text-gray-400 text-sm mt-8">
+        <p className="text-sm mt-8" style={{ color: '#475569' }}>
           Need multiple locations?{' '}
           <a href="mailto:hello@getvigilight.com" className="hover:underline" style={{ color: '#4A7C8C' }}>
             Contact us

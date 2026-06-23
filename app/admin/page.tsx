@@ -105,7 +105,7 @@ export default async function AdminPage() {
   const totalConfirmedTasks = accounts.reduce((sum, a) => sum + a.confirmedTasks, 0)
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-10" style={{ backgroundColor: '#F7F8FA' }}>
+    <div className="min-h-screen px-4 py-8 md:px-10" style={{ backgroundColor: '#F8F5F0' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">

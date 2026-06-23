@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F7F8FA' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F8F5F0' }}>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -107,8 +107,8 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              style={{ backgroundColor: '#4A7C8C' }}
+              className="w-full rounded-lg py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
             >
               {loading ? 'Updating…' : 'Update password'}
             </button>

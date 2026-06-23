@@ -80,7 +80,7 @@ export default async function ImpersonatePage({
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-10" style={{ backgroundColor: '#F7F8FA' }}>
+    <div className="min-h-screen px-4 py-8 md:px-10" style={{ backgroundColor: '#F8F5F0' }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <Link
