@@ -8,7 +8,7 @@ import { AddTaskModal }     from '@/components/tasks/AddTaskModal'
 import { MultiContactCard } from '@/components/services/MultiContactCard'
 import { CaseNotes }        from '@/components/services/CaseNotes'
 import { useRouter }        from 'next/navigation'
-import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
+import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote } from '@/lib/types'
 
 interface ServiceDetailTabsProps {
   tasks:          TaskWithProfile[]
@@ -20,7 +20,7 @@ interface ServiceDetailTabsProps {
   actorName:      string
   intakeSessions: IntakeSession[]
   contacts:       ServiceContact[]
-  notes:          string | null
+  notes:          ServiceNote[]
   canRecord:      boolean
   canManage:      boolean
   applyBanner:    React.ReactNode
@@ -134,6 +134,7 @@ export function ServiceDetailTabs({
           sessions={intakeSessions}
           serviceId={serviceId}
           canRecord={canRecord}
+          notes={notes}
         />
       )}
 

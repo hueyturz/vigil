@@ -54,6 +54,16 @@ export interface ServiceContact {
   created_at: string
 }
 
+export interface ServiceNote {
+  id: string
+  service_id: string
+  funeral_home_id: string
+  author_id: string | null
+  author_name: string
+  content: string
+  created_at: string
+}
+
 export interface Task {
   id: string
   service_id: string

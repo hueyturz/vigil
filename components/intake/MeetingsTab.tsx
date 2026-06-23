@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { MeetingRecorder } from './MeetingRecorder'
-import type { IntakeSession } from '@/lib/types'
+import type { IntakeSession, ServiceNote } from '@/lib/types'
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -217,10 +217,9 @@ function TranscriptSection({ session }: { session: IntakeSession }) {
   )
 }
 
-// ── Chat section ──────────────────────────────────────────────────────────────
+// ── Service-level case chat ─────────────────────────────────────────────────────
 
-function ChatSection({ session }: { session: IntakeSession }) {
-  const [open,     setOpen]     = useState(false)
+function CaseChat({ sessions, notes }: { sessions: IntakeSession[]; notes: ServiceNote[] }) {
   const [history,  setHistory]  = useState<ChatMsg[]>([])
   const [input,    setInput]    = useState('')
   const [thinking, setThinking] = useState(false)
@@ -228,8 +227,8 @@ function ChatSection({ session }: { session: IntakeSession }) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [history, thinking, open])
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [history, thinking])
 
   async function handleSend() {
     const msg = input.trim()
@@ -237,27 +236,37 @@ function ChatSection({ session }: { session: IntakeSession }) {
     setInput('')
     setError(null)
 
-    const userMsg: ChatMsg = { role: 'user', content: msg }
-    const newHistory = [...history, userMsg]
+    const newHistory: ChatMsg[] = [...history, { role: 'user', content: msg }]
     setHistory(newHistory)
     setThinking(true)
+
+    // All completed transcripts, oldest first.
+    const transcripts = sessions
+      .filter(s => s.status === 'complete' && s.transcript)
+      .slice()
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map(s => ({ date: s.created_at, transcript: s.transcript as string }))
+
+    // Internal notes, oldest first.
+    const notesPayload = notes
+      .slice()
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map(n => ({ date: n.created_at, author: n.author_name, content: n.content }))
 
     try {
       const res = await fetch('/api/intake/chat', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          intake_session_id:    session.id,
+          transcripts,
+          notes:                notesPayload,
           message:              msg,
           conversation_history: history,
         }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'Something went wrong. Please try again.')
-      } else {
-        setHistory(prev => [...prev, { role: 'assistant', content: data.reply }])
-      }
+      if (!res.ok) setError(data.error ?? 'Something went wrong. Please try again.')
+      else setHistory(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -270,87 +279,68 @@ function ChatSection({ session }: { session: IntakeSession }) {
   }
 
   return (
-    <div className="border-t" style={{ borderColor: '#E2E8F0' }}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center justify-between w-full px-5 py-3 text-sm font-medium transition hover:opacity-70"
-        style={{ color: '#475569' }}
-      >
-        <span>Ask a Question</span>
-        <ChevronIcon open={open} />
-      </button>
+    <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+      <div className="px-5 py-4 border-b" style={{ borderColor: '#E2E8F0' }}>
+        <h3 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Ask about this case</h3>
+        <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
+          Answers draw on every meeting transcript and internal note for this case.
+        </p>
+      </div>
 
-      {open && (
-        <div className="px-5 pb-5 flex flex-col gap-3">
-          {/* Chat history */}
-          {(history.length > 0 || thinking) && (
-            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
-              {history.map((m, i) => (
+      <div className="px-5 py-4 flex flex-col gap-3">
+        {(history.length > 0 || thinking) && (
+          <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
+            {history.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  key={i}
-                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
+                  style={
+                    m.role === 'user'
+                      ? { backgroundColor: '#0A2540', color: '#FFFFFF' }
+                      : { backgroundColor: '#F1F5F9', color: '#0F172A' }
+                  }
                 >
-                  <div
-                    className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
-                    style={
-                      m.role === 'user'
-                        ? { backgroundColor: '#4A7C8C', color: '#FFFFFF' }
-                        : { backgroundColor: '#F1F5F9', color: '#0F172A' }
-                    }
-                  >
-                    {m.content}
-                  </div>
+                  {m.content}
                 </div>
-              ))}
-              {thinking && (
-                <div className="flex justify-start">
-                  <div
-                    className="rounded-2xl px-4 py-3 flex items-center gap-1.5"
-                    style={{ backgroundColor: '#F1F5F9' }}
-                  >
-                    <TypingDot delay="0ms" />
-                    <TypingDot delay="150ms" />
-                    <TypingDot delay="300ms" />
-                  </div>
+              </div>
+            ))}
+            {thinking && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl px-4 py-3 flex items-center gap-1.5" style={{ backgroundColor: '#F1F5F9' }}>
+                  <TypingDot delay="0ms" />
+                  <TypingDot delay="150ms" />
+                  <TypingDot delay="300ms" />
                 </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
-          )}
-
-          {error && (
-            <p className="text-xs" style={{ color: '#EF4444' }}>{error}</p>
-          )}
-
-          {/* Input row */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={thinking}
-              placeholder="Ask anything about this meeting…"
-              className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-50"
-              style={{
-                borderColor:     '#E2E8F0',
-                backgroundColor: '#FAFAFA',
-                color:           '#0F172A',
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!input.trim() || thinking}
-              className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
-            >
-              Send
-            </button>
+              </div>
+            )}
+            <div ref={bottomRef} />
           </div>
+        )}
+
+        {error && <p className="text-xs" style={{ color: '#EF4444' }}>{error}</p>}
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={thinking}
+            placeholder="Ask anything about this case…"
+            className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none disabled:opacity-50"
+            style={{ borderColor: '#E2E8F0', backgroundColor: '#FAFAFA', color: '#0F172A' }}
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!input.trim() || thinking}
+            className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
+          >
+            Send
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -401,11 +391,6 @@ function MeetingCard({ session }: { session: IntakeSession }) {
 
       {/* Transcript — collapsible */}
       <TranscriptSection session={session} />
-
-      {/* Chat — collapsible */}
-      {session.status === 'complete' && session.transcript && (
-        <ChatSection session={session} />
-      )}
     </div>
   )
 }
@@ -416,9 +401,11 @@ interface MeetingsTabProps {
   sessions:  IntakeSession[]
   serviceId: string
   canRecord: boolean
+  notes:     ServiceNote[]
 }
 
-export function MeetingsTab({ sessions, serviceId, canRecord }: MeetingsTabProps) {
+export function MeetingsTab({ sessions, serviceId, canRecord, notes }: MeetingsTabProps) {
+  const hasTranscript = sessions.some(s => s.status === 'complete' && s.transcript)
   if (sessions.length === 0) {
     return (
       <div
@@ -461,6 +448,9 @@ export function MeetingsTab({ sessions, serviceId, canRecord }: MeetingsTabProps
           <MeetingCard key={s.id} session={s} />
         ))}
       </div>
+
+      {/* Service-level chat — spans all transcripts + notes for this case */}
+      {hasTranscript && <CaseChat sessions={sessions} notes={notes} />}
     </div>
   )
 }

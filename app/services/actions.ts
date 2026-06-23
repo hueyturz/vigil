@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import type { Priority, ServiceType } from '@/lib/types'
+import type { Priority, ServiceType, ServiceNote } from '@/lib/types'
 
 interface CreateServiceInput {
   family_name:       string
@@ -174,6 +174,88 @@ export async function updateServiceNotes(
     .eq('id', serviceId)
     .eq('funeral_home_id', profile.funeral_home_id)
 
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── Service notes (authored, dated rows in service_notes) ─────────────────
+
+export async function addServiceNote(
+  serviceId: string,
+  content:   string,
+): Promise<{ data?: ServiceNote; error?: string }> {
+  const trimmed = content.trim()
+  if (!trimmed) return { error: 'Note cannot be empty.' }
+
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role, full_name')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { data: service } = await serviceRole
+    .from('services')
+    .select('id')
+    .eq('id', serviceId)
+    .eq('funeral_home_id', profile.funeral_home_id)
+    .single()
+
+  if (!service) return { error: 'Service not found.' }
+
+  const { data: inserted, error } = await serviceRole
+    .from('service_notes')
+    .insert({
+      service_id:      serviceId,
+      funeral_home_id: profile.funeral_home_id,
+      author_id:       session.user.id,
+      author_name:     profile.full_name,
+      content:         trimmed,
+    })
+    .select('*')
+    .single()
+
+  if (error || !inserted) return { error: error?.message ?? 'Failed to save note.' }
+
+  return { data: inserted as ServiceNote }
+}
+
+export async function deleteServiceNote(
+  noteId: string,
+): Promise<{ error?: string }> {
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { data: note } = await serviceRole
+    .from('service_notes')
+    .select('funeral_home_id')
+    .eq('id', noteId)
+    .single()
+
+  if (!note || note.funeral_home_id !== profile.funeral_home_id)
+    return { error: 'Note not found.' }
+
+  const { error } = await serviceRole.from('service_notes').delete().eq('id', noteId)
   if (error) return { error: error.message }
   return {}
 }

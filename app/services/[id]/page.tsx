@@ -10,7 +10,7 @@ import { EditServiceButton }     from '@/components/services/EditServiceButton'
 import { ServiceActionsMenu }    from '@/components/services/ServiceActionsMenu'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
-import type { IntakeSession, TaskWithProfile, ServiceContact } from '@/lib/types'
+import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote } from '@/lib/types'
 
 // Always render fresh — contact data changes via client mutations and we never
 // want a cached/stale snapshot of the service detail page.
@@ -84,6 +84,14 @@ export default async function ServiceDetailPage({
     .order('created_at', { ascending: true })
 
   const contacts: ServiceContact[] = (contactsRaw ?? []) as ServiceContact[]
+
+  const { data: notesRaw } = await db
+    .from('service_notes')
+    .select('*')
+    .eq('service_id', params.id)
+    .order('created_at', { ascending: true })
+
+  const serviceNotes: ServiceNote[] = (notesRaw ?? []) as ServiceNote[]
 
   const status      = computeServiceStatus(tasks, service.service_date ?? '')
   const completed   = tasks.filter(t => t.status === 'complete').length
@@ -211,7 +219,7 @@ export default async function ServiceDetailPage({
           actorName={actorName}
           intakeSessions={intakeSessions}
           contacts={contacts}
-          notes={service.notes ?? null}
+          notes={serviceNotes}
           canRecord={canRecord}
           canManage={canManage}
           applyBanner={
