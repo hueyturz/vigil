@@ -46,7 +46,7 @@ function AssigneeChip({ name }: { name: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs">
       <span className="inline-flex items-center justify-center rounded-full text-white font-semibold flex-shrink-0"
-        style={{ width: 18, height: 18, fontSize: 9, backgroundColor: '#0D6E68' }}>
+        style={{ width: 18, height: 18, fontSize: 9, backgroundColor: '#4A7C8C' }}>
         {initials}
       </span>
       <span style={{ color: '#64748B' }}>{name}</span>
@@ -118,7 +118,7 @@ function AssignDropdown({
           className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition hover:bg-gray-50"
           style={{ color: '#0F172A' }}>
           <span className="inline-flex items-center justify-center rounded-full text-white font-semibold flex-shrink-0"
-            style={{ width: 20, height: 20, fontSize: 10, backgroundColor: '#0D6E68' }}>
+            style={{ width: 20, height: 20, fontSize: 10, backgroundColor: '#4A7C8C' }}>
             {p.full_name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
           </span>
           {p.full_name}
@@ -214,8 +214,8 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
           <button type="button" onClick={() => toggleComplete(s.id, s.is_complete)}
             className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition"
             style={{
-              borderColor:     s.is_complete ? '#0D6E68' : '#CBD5E1',
-              backgroundColor: s.is_complete ? '#0D6E68' : '#FFFFFF',
+              borderColor:     s.is_complete ? '#4A7C8C' : '#CBD5E1',
+              backgroundColor: s.is_complete ? '#4A7C8C' : '#FFFFFF',
             }}>
             {s.is_complete && (
               <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
@@ -274,7 +274,7 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
         {newTitle.trim() && (
           <button type="button" onClick={addStep} disabled={addingStep}
             className="text-xs font-semibold transition hover:opacity-70"
-            style={{ color: '#0D6E68' }}>
+            style={{ color: '#4A7C8C' }}>
             {addingStep ? '…' : '+'}
           </button>
         )}
@@ -396,7 +396,7 @@ export function TaskRow({
             style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
           <button type="button" onClick={handleSave} disabled={saving || !editTitle.trim()}
             className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: '#0D6E68' }}>{saving ? 'Saving…' : 'Save'}</button>
+            style={{ backgroundColor: '#4A7C8C' }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     )
@@ -534,7 +534,7 @@ export function TaskRow({
             <div onClick={e => e.stopPropagation()} className="flex-shrink-0">
               <button type="button" onClick={() => setModalOpen(true)}
                 className="hidden md:block rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: overdue ? '#EF4444' : '#0D6E68' }}>
+                style={{ backgroundColor: overdue ? '#EF4444' : '#4A7C8C' }}>
                 Mark Complete
               </button>
             </div>
@@ -594,7 +594,7 @@ export function TaskRow({
             {!complete && (
               <button type="button" onClick={() => setModalOpen(true)}
                 className="md:hidden w-full rounded-lg py-2 text-xs font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: overdue ? '#EF4444' : '#0D6E68' }}>
+                style={{ backgroundColor: overdue ? '#EF4444' : '#4A7C8C' }}>
                 Mark Complete
               </button>
             )}

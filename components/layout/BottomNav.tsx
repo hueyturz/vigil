@@ -8,7 +8,7 @@ interface BottomNavProps {
   profile: Pick<Profile, 'role'>
 }
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 const GRAY = '#94A3B8'
 
 type IconProps = { color: string; strong: boolean }

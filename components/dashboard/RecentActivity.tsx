@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { ActivityLog } from '@/lib/types'
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 
 const ACTION_LABELS: Record<string, string> = {
   task_completed:    'Task confirmed',
@@ -36,7 +36,7 @@ function getDotColor(actionType: string): string {
     case 'task_assigned':
       return '#3B82F6'
     case 'task_added':
-      return '#0D6E68'
+      return '#4A7C8C'
     case 'task_deleted':
       return '#EF4444'
     case 'service_reopened':

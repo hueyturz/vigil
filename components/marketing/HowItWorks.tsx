@@ -2,7 +2,7 @@ const STEPS = [
   {
     n: '1',
     title: 'Create a service',
-    body: 'Add the family name, service type, and date. Vauter automatically generates the task checklist based on the service type.',
+    body: 'Add the family name, service type, and date. Vigilight automatically generates the task checklist based on the service type.',
   },
   {
     n: '2',
@@ -12,7 +12,7 @@ const STEPS = [
   {
     n: '3',
     title: 'Nothing gets missed',
-    body: 'Vauter sends automatic reminders for incomplete tasks. The activity log gives you proof that everything was handled.',
+    body: 'Vigilight sends automatic reminders for incomplete tasks. The activity log gives you proof that everything was handled.',
   },
 ]
 
@@ -21,7 +21,7 @@ export default function HowItWorks() {
     <div id="how-it-works" className="bg-white py-24 px-6">
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center mb-16">
-        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           How It Works
         </p>
         <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ color: '#0F172A' }}>
@@ -42,7 +42,7 @@ export default function HowItWorks() {
           <div key={step.n} className="text-center relative">
             <div
               className="w-14 h-14 rounded-full text-white font-bold text-xl flex items-center justify-center mx-auto mb-6"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {step.n}
             </div>

@@ -5,7 +5,7 @@ import { useState } from 'react'
 const FAQS = [
   {
     q: 'Is there really a free trial?',
-    a: "Yes — 14 days, no credit card required. You get full access to every feature from day one. If you decide Vauter isn't right for you, just don't add a payment method and your account will pause automatically.",
+    a: "Yes — 14 days, no credit card required. You get full access to every feature from day one. If you decide Vigilight isn't right for you, just don't add a payment method and your account will pause automatically.",
   },
   {
     q: 'How many staff members can I add?',
@@ -16,8 +16,8 @@ const FAQS = [
     a: "You'll receive an email reminder before your trial expires. To continue, simply add a payment method. If you don't, your account will be paused — your data is preserved and you can reactivate anytime.",
   },
   {
-    q: 'Does Vauter work with Passare or other software?',
-    a: "Vauter works alongside your existing tools — it doesn't replace them. Think of it as the accountability layer that sits on top of whatever system you're already using.",
+    q: 'Does Vigilight work with Passare or other software?',
+    a: "Vigilight works alongside your existing tools — it doesn't replace them. Think of it as the accountability layer that sits on top of whatever system you're already using.",
   },
   {
     q: 'Can I cancel anytime?',

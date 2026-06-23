@@ -11,7 +11,7 @@ function CheckCircle() {
   return (
     <span
       className="w-5 h-5 flex-shrink-0 mt-0.5 rounded-full flex items-center justify-center"
-      style={{ backgroundColor: '#0D6E68' }}
+      style={{ backgroundColor: '#4A7C8C' }}
     >
       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="2 6 5 9 10 3" />
@@ -26,14 +26,14 @@ export default function Solution() {
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Left — text */}
         <div>
-          <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+          <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
             The Solution
           </p>
           <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ color: '#0F172A' }}>
             Accountability built for funeral operations.
           </h2>
           <p className="text-lg leading-relaxed mb-8" style={{ color: '#475569' }}>
-            Vauter gives every task an owner, a deadline, and a confirmation requirement.
+            Vigilight gives every task an owner, a deadline, and a confirmation requirement.
             Staff don&apos;t just check a box — they provide proof. Directors get peace of mind
             without making a single follow-up call.
           </p>
@@ -47,7 +47,7 @@ export default function Solution() {
             ))}
           </ul>
 
-          <Link href="/#features" className="font-semibold hover:underline" style={{ color: '#0D6E68' }}>
+          <Link href="/#features" className="font-semibold hover:underline" style={{ color: '#4A7C8C' }}>
             See all features →
           </Link>
         </div>
@@ -57,7 +57,7 @@ export default function Solution() {
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xl p-6 max-w-sm ml-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-semibold tracking-wider" style={{ color: '#0D6E68' }}>
+              <span className="text-xs font-semibold tracking-wider" style={{ color: '#4A7C8C' }}>
                 TASK CONFIRMED
               </span>
               <span className="w-6 h-6 rounded-full flex items-center justify-center bg-green-100 text-green-600">
@@ -93,7 +93,7 @@ export default function Solution() {
 
             <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
               <p className="text-xs" style={{ color: '#94A3B8' }}>
-                This confirmation is logged in the Vauter activity trail and cannot be edited.
+                This confirmation is logged in the Vigilight activity trail and cannot be edited.
               </p>
             </div>
           </div>

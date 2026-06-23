@@ -12,7 +12,7 @@ const PRIORITY_RANK: Record<Priority, number> = {
   standard:      1,
   informational: 2,
 }
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 const MAX  = 8
 
 interface ActionItem {
@@ -58,7 +58,7 @@ export function TodaysActions({ services }: { services: ServiceWithTasks[] }) {
       <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>Today&apos;s Actions</h2>
       <div className="rounded-xl border p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
         {shown.length === 0 ? (
-          <p className="text-sm font-medium" style={{ color: '#0D6E68' }}>
+          <p className="text-sm font-medium" style={{ color: '#4A7C8C' }}>
             All caught up for the next 2 days ✓
           </p>
         ) : (

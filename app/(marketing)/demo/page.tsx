@@ -1,8 +1,8 @@
 import { DemoForm } from '@/components/marketing/DemoForm'
 
 export const metadata = {
-  title: 'Request a Demo — Vauter',
-  description: 'See how Vauter helps funeral directors run their operations without missing a beat. Schedule a 20-minute demo.',
+  title: 'Request a Demo — Vigilight',
+  description: 'See how Vigilight helps funeral directors run their operations without missing a beat. Schedule a 20-minute demo.',
 }
 
 const BULLETS = [
@@ -13,7 +13,7 @@ const BULLETS = [
 
 function CheckCircle() {
   return (
-    <span className="w-5 h-5 flex-shrink-0 mt-0.5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D6E68' }}>
+    <span className="w-5 h-5 flex-shrink-0 mt-0.5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#4A7C8C' }}>
       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="2 6 5 9 10 3" />
       </svg>
@@ -26,14 +26,14 @@ export default function DemoPage() {
     <div className="max-w-5xl mx-auto py-24 px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
       {/* Left column */}
       <div>
-        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           Request a Demo
         </p>
         <h1 className="text-4xl font-bold mb-4" style={{ color: '#0F172A' }}>
-          See Vauter in action.
+          See Vigilight in action.
         </h1>
         <p className="text-lg mb-8" style={{ color: '#475569' }}>
-          We&apos;ll walk you through how Vauter works for your funeral home in a 20-minute call.
+          We&apos;ll walk you through how Vigilight works for your funeral home in a 20-minute call.
           No pressure, no hard sell.
         </p>
 

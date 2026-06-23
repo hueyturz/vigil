@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --vl-navy:     #0A2540;
+  --vl-gold:     #E8B923;
+  --vl-amber:    #F4C95D;
+  --vl-charcoal: #2C3E50;
+  --vl-cream:    #F8F5F0;
+  --vl-teal:     #4A7C8C;
+}
+
 /* Eliminate the 300ms tap delay on iOS Safari across the app */
 * {
   touch-action: manipulation;

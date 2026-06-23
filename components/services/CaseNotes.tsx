@@ -75,7 +75,7 @@ export function CaseNotes({ serviceId, funeralHomeId, actorId, actorName, initia
           onClick={handleSave}
           disabled={saving}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           {saving ? 'Saving…' : 'Save Notes'}
         </button>

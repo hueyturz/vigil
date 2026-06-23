@@ -1,12 +1,12 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'SMS Messaging Policy — Vauter',
+  title: 'SMS Messaging Policy — Vigilight',
   description:
-    'How Vauter uses SMS to notify funeral home staff, including message frequency, opt-in and opt-out instructions, and rates disclosure.',
+    'How Vigilight uses SMS to notify funeral home staff, including message frequency, opt-in and opt-out instructions, and rates disclosure.',
 }
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 const DARK = '#0F172A'
 const BODY = '#475569'
 
@@ -35,12 +35,12 @@ export default function SmsPolicyPage() {
           SMS Messaging Policy
         </h1>
         <p className="text-lg" style={{ color: BODY }}>
-          This policy describes how Vauter uses SMS text messaging to support funeral home operations.
+          This policy describes how Vigilight uses SMS text messaging to support funeral home operations.
         </p>
 
         <Section title="Program description">
           <p>
-            Vauter sends automated SMS notifications to funeral home staff, including task reminders,
+            Vigilight sends automated SMS notifications to funeral home staff, including task reminders,
             overdue alerts, and service updates. These messages help teams stay accountable for
             time-sensitive work across active cases.
           </p>
@@ -71,8 +71,8 @@ export default function SmsPolicyPage() {
         <Section title="Support">
           <p>
             Questions about this policy or your notifications? Contact us at{' '}
-            <a href="mailto:support@getvauter.com" className="font-medium hover:underline" style={{ color: TEAL }}>
-              support@getvauter.com
+            <a href="mailto:support@getvigilight.com" className="font-medium hover:underline" style={{ color: TEAL }}>
+              support@getvigilight.com
             </a>
             .
           </p>

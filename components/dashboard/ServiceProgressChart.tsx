@@ -3,7 +3,7 @@ import { formatDate } from '@/lib/utils/date-helpers'
 import type { ServiceWithTasks } from '@/lib/types'
 
 const COLORS = {
-  confirmed: '#0D6E68',
+  confirmed: '#4A7C8C',
   onTrack:   '#94A3B8',
   atRisk:    '#F59E0B',
   overdue:   '#EF4444',

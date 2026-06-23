@@ -13,7 +13,7 @@ const FEATURES = [
 
 function CheckCircle() {
   return (
-    <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D6E68' }}>
+    <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center" style={{ backgroundColor: '#4A7C8C' }}>
       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="2 6 5 9 10 3" />
       </svg>
@@ -26,7 +26,7 @@ export default function PricingPreview() {
     <div id="pricing" className="py-24 px-6" style={{ backgroundColor: '#0F172A' }}>
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center">
-        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           Pricing
         </p>
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -39,7 +39,7 @@ export default function PricingPreview() {
 
       {/* Card */}
       <div className="max-w-sm mx-auto text-center">
-        <span className="inline-block bg-[#0D6E68] text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-4">
+        <span className="inline-block bg-[#4A7C8C] text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-4">
           Most Popular
         </span>
 
@@ -51,7 +51,7 @@ export default function PricingPreview() {
             <span className="text-xl self-end mb-2" style={{ color: '#94A3B8' }}>/mo</span>
           </div>
           <p className="text-sm mb-1" style={{ color: '#94A3B8' }}>per funeral home</p>
-          <p className="text-sm font-medium mb-8" style={{ color: '#0D6E68' }}>
+          <p className="text-sm font-medium mb-8" style={{ color: '#4A7C8C' }}>
             Save $158 with annual billing
           </p>
 
@@ -70,7 +70,7 @@ export default function PricingPreview() {
           {/* CTA */}
           <Link
             href="/demo"
-            className="mt-8 block w-full bg-[#0D6E68] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+            className="mt-8 block w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial
           </Link>
@@ -81,7 +81,7 @@ export default function PricingPreview() {
 
         <p className="text-gray-400 text-sm mt-8">
           Need multiple locations?{' '}
-          <a href="mailto:hello@getvauter.com" className="hover:underline" style={{ color: '#0D6E68' }}>
+          <a href="mailto:hello@getvigilight.com" className="hover:underline" style={{ color: '#4A7C8C' }}>
             Contact us
           </a>{' '}
           for enterprise pricing.

@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: '#0D6E68' }}>Vauter</h1>
+          <h1 className="text-3xl font-bold" style={{ color: '#4A7C8C' }}>Vigilight</h1>
           <p className="mt-2 text-sm" style={{ color: '#475569' }}>
             Sign in to your funeral home account
           </p>
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 <Link
                   href="/forgot-password"
                   className="text-xs font-medium hover:underline"
-                  style={{ color: '#0D6E68' }}
+                  style={{ color: '#4A7C8C' }}
                 >
                   Forgot password?
                 </Link>
@@ -114,7 +114,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
         <p className="text-center mt-6 text-sm" style={{ color: '#475569' }}>
           Setting up a new funeral home?{' '}
-          <Link href="/onboarding" className="font-medium hover:underline" style={{ color: '#0D6E68' }}>
+          <Link href="/onboarding" className="font-medium hover:underline" style={{ color: '#4A7C8C' }}>
             Get started
           </Link>
         </p>

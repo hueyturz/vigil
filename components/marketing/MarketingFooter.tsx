@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 const LINK_CLASS = 'text-sm text-gray-400 hover:text-white transition-colors'
 
 const PRODUCT_LINKS = [
@@ -16,12 +16,12 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Column 1 — brand */}
         <div>
-          <span className="text-xl font-bold" style={{ color: TEAL }}>Vauter</span>
+          <span className="text-xl font-bold" style={{ color: TEAL }}>Vigilight</span>
           <p className="text-sm text-gray-400 mt-2">
             Accountability for funeral home operations.
           </p>
           <p className="text-xs text-gray-500 mt-4">
-            © 2026 Vauter. All rights reserved.
+            © 2026 Vigilight. All rights reserved.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export function MarketingFooter() {
           <h3 className="text-sm font-semibold text-white mb-3">Company</h3>
           <ul className="space-y-2">
             <li>
-              <a href="mailto:hello@getvauter.com" className={LINK_CLASS}>Contact</a>
+              <a href="mailto:hello@getvigilight.com" className={LINK_CLASS}>Contact</a>
             </li>
             <li>
               <Link href="/privacy" className={LINK_CLASS}>Privacy Policy</Link>

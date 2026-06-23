@@ -17,7 +17,7 @@ const EMPTY: FormState = {
 }
 
 const inputClass =
-  'w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[#0D6E68]'
+  'w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[#4A7C8C]'
 const inputStyle = { borderColor: '#E2E8F0', color: '#0F172A' } as const
 
 export function DemoForm() {
@@ -138,7 +138,7 @@ export function DemoForm() {
 
       <button
         type="submit" disabled={loading}
-        className="w-full bg-[#0D6E68] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity disabled:opacity-60"
+        className="w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity disabled:opacity-60"
       >
         {loading ? 'Sending…' : 'Request Demo →'}
       </button>

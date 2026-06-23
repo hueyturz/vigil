@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard', '/api/'],
     },
-    sitemap: 'https://www.getvauter.com/sitemap.xml',
+    sitemap: 'https://www.getvigilight.com/sitemap.xml',
   }
 }

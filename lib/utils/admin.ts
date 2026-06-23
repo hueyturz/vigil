@@ -50,7 +50,7 @@ export function timeAgo(iso: string): string {
 }
 
 export function completionColor(pct: number): string {
-  if (pct > 70) return '#0D6E68'
+  if (pct > 70) return '#4A7C8C'
   if (pct >= 30) return '#F59E0B'
   return '#EF4444'
 }
@@ -70,9 +70,9 @@ export const ACTION_LABELS: Record<string, string> = {
 }
 
 export function actionColor(action: string): string {
-  return action === 'service_completed' ? '#0D6E68'
+  return action === 'service_completed' ? '#4A7C8C'
     : action === 'service_reopened'  ? '#475569'
-    : action === 'task_completed'    ? '#0D6E68'
+    : action === 'task_completed'    ? '#4A7C8C'
     : action === 'task_deleted'      ? '#EF4444'
     : '#64748B'
 }

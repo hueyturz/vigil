@@ -69,7 +69,7 @@ export function ContactCard({
             type="button"
             onClick={() => setEditing(true)}
             className="text-xs font-medium transition hover:opacity-70"
-            style={{ color: '#0D6E68' }}
+            style={{ color: '#4A7C8C' }}
           >
             {hasContact ? 'Edit' : '+ Add Contact'}
           </button>
@@ -123,7 +123,7 @@ export function ContactCard({
               onClick={handleSave}
               disabled={saving}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -148,7 +148,7 @@ export function ContactCard({
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.21 13.5a19.79 19.79 0 0 1-3-8.68A2 2 0 0 1 3.22 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 18v.92z" />
                 </svg>
               </span>
-              <a href={`tel:${savedContact.phone}`} className="text-sm hover:underline" style={{ color: '#0D6E68' }}>
+              <a href={`tel:${savedContact.phone}`} className="text-sm hover:underline" style={{ color: '#4A7C8C' }}>
                 {formatPhone(savedContact.phone)}
               </a>
             </div>
@@ -161,7 +161,7 @@ export function ContactCard({
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </span>
-              <a href={`mailto:${savedContact.email}`} className="text-sm hover:underline" style={{ color: '#0D6E68' }}>
+              <a href={`mailto:${savedContact.email}`} className="text-sm hover:underline" style={{ color: '#4A7C8C' }}>
                 {savedContact.email}
               </a>
             </div>

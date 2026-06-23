@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       submittedAt,
     })
 
-    const result = await sendEmail({ to: 'houston@getvauter.com', subject, html })
+    const result = await sendEmail({ to: 'houston@getvigilight.com', subject, html })
 
     if (!result.success) {
       return NextResponse.json({ error: result.error ?? 'Failed to send request.' }, { status: 500 })

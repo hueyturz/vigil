@@ -638,7 +638,7 @@ export interface TaskWithProfile extends Task {
 Apply these consistently across all Tailwind classes. Do not deviate without a reason.
 
 ```
-Primary teal:       #0D6E68   (teal-700 equivalent — primary buttons, links, active states)
+Primary teal:       #4A7C8C   (teal-700 equivalent — primary buttons, links, active states)
 Sidebar bg:         #0F172A   (slate-900)
 Sidebar active:     #1E293B   (slate-800)
 App background:     #F7F8FA

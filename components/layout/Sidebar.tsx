@@ -40,7 +40,7 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
     >
       {/* Logo */}
       <div className="px-6 py-5 border-b" style={{ borderColor: '#1E293B' }}>
-        <span className="text-xl font-bold tracking-tight text-white">Vauter</span>
+        <span className="text-xl font-bold tracking-tight text-white">Vigilight</span>
       </div>
 
       {/* Nav */}

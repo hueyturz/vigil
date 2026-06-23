@@ -82,7 +82,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: '#0D6E68' }}>Vauter</h1>
+          <h1 className="text-3xl font-bold" style={{ color: '#4A7C8C' }}>Vigilight</h1>
           <p className="mt-2 text-sm" style={{ color: '#475569' }}>
             Set up your funeral home account
           </p>
@@ -91,7 +91,7 @@ export default function OnboardingPage() {
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <StepDot active={step === 1} done={step > 1} label="Funeral Home" />
-          <div className="h-px w-8" style={{ backgroundColor: step > 1 ? '#0D6E68' : '#E2E8F0' }} />
+          <div className="h-px w-8" style={{ backgroundColor: step > 1 ? '#4A7C8C' : '#E2E8F0' }} />
           <StepDot active={step === 2} done={false} label="Owner Account" />
         </div>
 
@@ -130,11 +130,11 @@ export default function OnboardingPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium hover:underline"
-                      style={{ color: '#0D6E68' }}
+                      style={{ color: '#4A7C8C' }}
                     >
                       SMS
                     </Link>{' '}
-                    task reminders and service notifications from Vauter. Message and
+                    task reminders and service notifications from Vigilight. Message and
                     data rates may apply. Reply STOP to unsubscribe.
                   </p>
                 }
@@ -153,7 +153,7 @@ export default function OnboardingPage() {
                 type="submit"
                 disabled={loading || !homeName.trim()}
                 className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                style={{ backgroundColor: '#0D6E68' }}
+                style={{ backgroundColor: '#4A7C8C' }}
               >
                 {loading ? 'Saving…' : 'Continue →'}
               </button>
@@ -208,7 +208,7 @@ export default function OnboardingPage() {
                 type="submit"
                 disabled={loading || !fullName.trim() || !email.trim() || !password}
                 className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                style={{ backgroundColor: '#0D6E68' }}
+                style={{ backgroundColor: '#4A7C8C' }}
               >
                 {loading ? 'Creating account…' : 'Create account & sign in'}
               </button>
@@ -218,7 +218,7 @@ export default function OnboardingPage() {
 
         <p className="text-center mt-6 text-sm" style={{ color: '#475569' }}>
           Already have an account?{' '}
-          <Link href="/login" className="font-medium hover:underline" style={{ color: '#0D6E68' }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: '#4A7C8C' }}>
             Sign in
           </Link>
         </p>
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StepDot({ active, done, label }: { active: boolean; done: boolean; label: string }) {
-  const bg = done ? '#0D6E68' : active ? '#0D6E68' : '#E2E8F0'
+  const bg = done ? '#4A7C8C' : active ? '#4A7C8C' : '#E2E8F0'
   const textColor = done || active ? '#FFFFFF' : '#94A3B8'
   return (
     <div className="flex flex-col items-center gap-1">

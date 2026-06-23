@@ -202,7 +202,7 @@ export function ExtractionResults({
                 key={c.taskTitle}
                 title={c.taskTitle}
                 badge="Updates existing task"
-                badgeColor="#0D6E68"
+                badgeColor="#4A7C8C"
                 badgeBg="#F0FDFA"
                 notes={c.notes}
                 accepted={c.accepted}
@@ -285,7 +285,7 @@ export function ExtractionResults({
             onClick={handleSave}
             disabled={saving}
             className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: '#0D6E68' }}
+            style={{ backgroundColor: '#4A7C8C' }}
           >
             {saving ? 'Saving…' : 'Save to Service'}
           </button>
@@ -306,7 +306,7 @@ export function ExtractionResults({
           type="button"
           onClick={onDone}
           className="w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           Done
         </button>
@@ -381,8 +381,8 @@ function ReviewCard({
             onClick={onToggle}
             className="flex-shrink-0 rounded-full w-8 h-8 flex items-center justify-center border transition"
             style={{
-              backgroundColor: accepted ? '#0D6E68' : '#FFFFFF',
-              borderColor:     accepted ? '#0D6E68' : '#CBD5E1',
+              backgroundColor: accepted ? '#4A7C8C' : '#FFFFFF',
+              borderColor:     accepted ? '#4A7C8C' : '#CBD5E1',
               color:           accepted ? '#FFFFFF'  : '#94A3B8',
             }}
             title={accepted ? 'Accepted — click to reject' : 'Rejected — click to accept'}

@@ -89,18 +89,18 @@ export default async function PrintServicePage({
           .task-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
           .task-row:last-child { border-bottom: none; }
           .checkbox { flex-shrink: 0; width: 16px; height: 16px; border: 1.5px solid #cbd5e1; border-radius: 4px; margin-top: 1px; display: flex; align-items: center; justify-content: center; background: #fff; }
-          .checkbox.checked { background: #0d6e68; border-color: #0d6e68; }
+          .checkbox.checked { background: #4A7C8C; border-color: #4A7C8C; }
           .checkmark { color: #fff; font-size: 11px; line-height: 1; }
           .task-title { flex: 1; font-size: 13px; color: #0f172a; }
           .task-title.done { color: #94a3b8; text-decoration: line-through; }
           .task-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-          .summary { display: inline-block; background: #f0fdfa; color: #0d6e68; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+          .summary { display: inline-block; background: #f0fdfa; color: #4A7C8C; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; margin-left: 8px; }
           .contacts { margin-top: 12px; }
           .contact { margin-bottom: 8px; }
           .contact-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
           .contact-name { font-size: 13px; font-weight: 600; color: #0f172a; }
           .contact-detail { font-size: 12px; color: #475569; }
-          .print-btn { display: inline-block; margin-top: 24px; padding: 8px 20px; background: #0d6e68; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+          .print-btn { display: inline-block; margin-top: 24px; padding: 8px 20px; background: #4A7C8C; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         `}</style>
       </head>
       <body>

@@ -73,8 +73,8 @@ export function ServiceDetailTabs({
                 onClick={() => setActiveTab(tab.key)}
                 className="flex-shrink-0 pb-3 text-sm font-semibold capitalize transition"
                 style={{
-                  color:        active ? '#0D6E68' : '#94A3B8',
-                  borderBottom: active ? '2px solid #0D6E68' : '2px solid transparent',
+                  color:        active ? '#4A7C8C' : '#94A3B8',
+                  borderBottom: active ? '2px solid #4A7C8C' : '2px solid transparent',
                 }}
               >
                 {tab.label}
@@ -83,7 +83,7 @@ export function ServiceDetailTabs({
                     className="ml-2 rounded-full px-1.5 py-0.5 text-xs font-bold"
                     style={{
                       backgroundColor: active ? '#F0FDFA' : '#F1F5F9',
-                      color:           active ? '#0D6E68' : '#94A3B8',
+                      color:           active ? '#4A7C8C' : '#94A3B8',
                     }}
                   >
                     {intakeSessions.length}
@@ -105,7 +105,7 @@ export function ServiceDetailTabs({
                 type="button"
                 onClick={() => setAddOpen(true)}
                 className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: '#0D6E68' }}
+                style={{ backgroundColor: '#4A7C8C' }}
               >
                 + Add Task
               </button>

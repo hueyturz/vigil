@@ -50,7 +50,7 @@ export default function Problem() {
     <div id="problem" className="py-24 px-6" style={{ backgroundColor: '#0F172A' }}>
       {/* Header */}
       <div className="max-w-3xl mx-auto text-center">
-        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+        <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
           The Problem
         </p>
         <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">

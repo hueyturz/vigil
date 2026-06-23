@@ -3,37 +3,37 @@ import type { MetadataRoute } from 'next'
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: 'https://www.getvauter.com',
+      url: 'https://www.getvigilight.com',
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 1,
     },
     {
-      url: 'https://www.getvauter.com/pricing',
+      url: 'https://www.getvigilight.com/pricing',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: 'https://www.getvauter.com/demo',
+      url: 'https://www.getvigilight.com/demo',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.9,
     },
     {
-      url: 'https://www.getvauter.com/privacy',
+      url: 'https://www.getvigilight.com/privacy',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: 'https://www.getvauter.com/terms',
+      url: 'https://www.getvigilight.com/terms',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: 'https://www.getvauter.com/sms-policy',
+      url: 'https://www.getvigilight.com/sms-policy',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,

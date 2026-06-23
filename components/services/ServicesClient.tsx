@@ -73,7 +73,7 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
         <button
           onClick={() => setModalOpen(true)}
           className="flex-shrink-0 rounded-full sm:rounded-lg px-3 py-1.5 sm:px-4 sm:py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           + New<span className="hidden sm:inline"> Service</span>
         </button>
@@ -121,12 +121,12 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
               onClick={() => setStatusFilter(tab.key)}
               className="pb-2.5 px-3 text-sm font-medium transition"
               style={{
-                color:        active ? '#0D6E68' : '#94A3B8',
-                borderBottom: active ? '2px solid #0D6E68' : '2px solid transparent',
+                color:        active ? '#4A7C8C' : '#94A3B8',
+                borderBottom: active ? '2px solid #4A7C8C' : '2px solid transparent',
               }}
             >
               {tab.label}
-              <span className="ml-1.5 text-xs" style={{ color: active ? '#0D6E68' : '#CBD5E1' }}>
+              <span className="ml-1.5 text-xs" style={{ color: active ? '#4A7C8C' : '#CBD5E1' }}>
                 {count}
               </span>
             </button>
@@ -154,7 +154,7 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
             <button
               onClick={() => setModalOpen(true)}
               className="mt-4 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               + New Service
             </button>

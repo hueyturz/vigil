@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { daysUntil } from '@/lib/utils/date-helpers'
 import type { ServiceWithTasks } from '@/lib/types'
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 const MAX  = 7
 
 function shortDate(iso: string): string {

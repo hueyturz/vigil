@@ -33,9 +33,9 @@ function timeAgo(dateStr: string): string {
 }
 
 function ActionIcon({ action }: { action: string }) {
-  const color = action === 'service_completed' ? '#0D6E68'
+  const color = action === 'service_completed' ? '#4A7C8C'
     : action === 'service_reopened'  ? '#475569'
-    : action === 'task_completed'    ? '#0D6E68'
+    : action === 'task_completed'    ? '#4A7C8C'
     : action === 'task_deleted'      ? '#EF4444'
     : '#64748B'
 
@@ -75,7 +75,7 @@ export function ActivityLog({ serviceId }: ActivityLogProps) {
   if (loading) {
     return (
       <div className="flex justify-center py-16">
-        <div className="vigil-spin w-6 h-6 rounded-full border-2" style={{ borderColor: '#E2E8F0', borderTopColor: '#0D6E68' }} />
+        <div className="vigil-spin w-6 h-6 rounded-full border-2" style={{ borderColor: '#E2E8F0', borderTopColor: '#4A7C8C' }} />
       </div>
     )
   }

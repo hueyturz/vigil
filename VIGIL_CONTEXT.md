@@ -1,15 +1,15 @@
-# Vauter — Project Context & Handoff Summary
+# Vigilight — Project Context & Handoff Summary
 
 Paste this at the start of any new Claude chat to provide full project context.
 
 ---
 
-## What Is Vauter
+## What Is Vigilight
 
-Vauter is a multi-tenant SaaS platform for funeral home service operations. It solves a specific problem: funeral directors can't trust that service tasks have been completed without verifying them personally. The solution is a confirmation layer — staff don't just check a box, they provide specifics (vendor name, order number, contact name) when completing a task. This gives the FD documented proof without triple-checking.
+Vigilight is a multi-tenant SaaS platform for funeral home service operations. It solves a specific problem: funeral directors can't trust that service tasks have been completed without verifying them personally. The solution is a confirmation layer — staff don't just check a box, they provide specifics (vendor name, order number, contact name) when completing a task. This gives the FD documented proof without triple-checking.
 
-**Live URL:** https://getvauter.com (once domain is connected)
-**GitHub:** https://github.com/hueyturz/vigil (repo name unchanged — this is the Vauter codebase)
+**Live URL:** https://getvigilight.com (once domain is connected)
+**GitHub:** https://github.com/hueyturz/vigil (repo name unchanged — this is the Vigilight codebase)
 **Primary design partner:** Houston's brother, a funeral director
 
 ---
@@ -283,7 +283,7 @@ NEXT_PUBLIC_APP_URL=https://vigil-three-theta.vercel.app
 ## Design Tokens
 
 ```
-Primary teal:    #0D6E68
+Primary teal:    #4A7C8C
 Sidebar:         #0F172A
 Background:      #F7F8FA
 Card:            #FFFFFF

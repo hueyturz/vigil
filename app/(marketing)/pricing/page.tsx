@@ -3,7 +3,7 @@ import { PricingFAQ } from '@/components/marketing/PricingFAQ'
 import FinalCTA from '@/components/marketing/FinalCTA'
 
 export const metadata = {
-  title: 'Pricing — Vauter',
+  title: 'Pricing — Vigilight',
   description: 'Simple, transparent pricing for funeral homes. $79/month includes unlimited services, staff accounts, and all features. 14-day free trial.',
 }
 
@@ -13,7 +13,7 @@ export default function PricingPage() {
       <div className="bg-white py-24 px-6">
         {/* Hero */}
         <div className="max-w-3xl mx-auto text-center mb-20">
-          <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#0D6E68' }}>
+          <p className="text-sm font-semibold tracking-widest uppercase mb-4" style={{ color: '#4A7C8C' }}>
             Pricing
           </p>
           <h1 className="text-5xl font-bold mb-4" style={{ color: '#0F172A' }}>

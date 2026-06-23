@@ -163,7 +163,7 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
             type="button"
             onClick={openAdd}
             className="text-xs font-medium transition hover:opacity-70"
-            style={{ color: '#0D6E68' }}
+            style={{ color: '#4A7C8C' }}
           >
             + Add Contact
           </button>
@@ -246,7 +246,7 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
               onClick={handleSave}
               disabled={saving}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -293,7 +293,7 @@ function ContactRow({
           {contact.is_primary && (
             <span
               className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: '#E6F4F3', color: '#0D6E68' }}
+              style={{ backgroundColor: '#E6F4F3', color: '#4A7C8C' }}
             >
               Primary
             </span>
@@ -302,14 +302,14 @@ function ContactRow({
 
         {/* Phone */}
         {contact.phone && (
-          <a href={`tel:${contact.phone}`} className="block text-sm mt-1 hover:underline" style={{ color: '#0D6E68' }}>
+          <a href={`tel:${contact.phone}`} className="block text-sm mt-1 hover:underline" style={{ color: '#4A7C8C' }}>
             {formatPhone(contact.phone)}
           </a>
         )}
 
         {/* Email */}
         {contact.email && (
-          <a href={`mailto:${contact.email}`} className="block text-sm mt-0.5 break-all hover:underline" style={{ color: '#0D6E68' }}>
+          <a href={`mailto:${contact.email}`} className="block text-sm mt-0.5 break-all hover:underline" style={{ color: '#4A7C8C' }}>
             {contact.email}
           </a>
         )}

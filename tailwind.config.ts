@@ -9,8 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        teal: {
-          700: '#0D6E68',
+        vl: {
+          navy:     '#0A2540',
+          gold:     '#E8B923',
+          amber:    '#F4C95D',
+          charcoal: '#2C3E50',
+          cream:    '#F8F5F0',
+          teal:     '#4A7C8C',
         },
       },
       fontFamily: {

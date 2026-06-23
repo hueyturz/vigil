@@ -82,7 +82,7 @@ export function TaskList({
           type="button"
           onClick={() => setAddOpen(true)}
           className="flex items-center gap-2 text-sm font-medium transition hover:opacity-70"
-          style={{ color: '#0D6E68' }}
+          style={{ color: '#4A7C8C' }}
         >
           <span className="text-lg leading-none">+</span> Add Task
         </button>

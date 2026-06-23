@@ -22,7 +22,7 @@ export default function DashboardError({
         <button
           onClick={reset}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           Try again
         </button>

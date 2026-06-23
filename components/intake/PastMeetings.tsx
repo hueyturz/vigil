@@ -82,7 +82,7 @@ export function PastMeetings({ sessions }: PastMeetingsProps) {
                       type="button"
                       onClick={() => setExpandedId(isOpen ? null : s.id)}
                       className="text-xs font-semibold hover:underline"
-                      style={{ color: '#0D6E68' }}
+                      style={{ color: '#4A7C8C' }}
                     >
                       {isOpen ? 'Hide Summary ▲' : 'View Summary ▼'}
                     </button>

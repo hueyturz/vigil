@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const TEAL = '#0D6E68'
+const TEAL = '#4A7C8C'
 
 const NAV_LINKS = [
   { label: 'Features', href: '/#features' },
@@ -22,7 +22,7 @@ export function MarketingNav() {
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         {/* Wordmark */}
         <Link href="/" className="text-xl font-bold" style={{ color: TEAL }}>
-          Vauter
+          Vigilight
         </Link>
 
         {/* Center nav — desktop only */}
@@ -45,7 +45,7 @@ export function MarketingNav() {
           </Link>
           <Link
             href="/demo"
-            className="bg-[#0D6E68] text-white text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
+            className="bg-[#4A7C8C] text-white text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
           >
             Start Free Trial
           </Link>
@@ -95,7 +95,7 @@ export function MarketingNav() {
             <Link
               href="/demo"
               onClick={() => setOpen(false)}
-              className="mt-3 mb-1 bg-[#0D6E68] text-white text-sm px-4 py-2 rounded-full text-center hover:opacity-90 transition"
+              className="mt-3 mb-1 bg-[#4A7C8C] text-white text-sm px-4 py-2 rounded-full text-center hover:opacity-90 transition"
             >
               Start Free Trial
             </Link>

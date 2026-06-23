@@ -51,7 +51,7 @@ export function NotificationsPanel({ initial }: { initial: Prefs }) {
       <div className="mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Notifications</h1>
         <p className="text-sm mt-1" style={{ color: '#64748B' }}>
-          Choose when Vauter sends you email and SMS alerts.
+          Choose when Vigilight sends you email and SMS alerts.
         </p>
       </div>
 
@@ -122,7 +122,7 @@ export function NotificationsPanel({ initial }: { initial: Prefs }) {
           onClick={handleSave}
           disabled={saving}
           className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           {saving ? 'Saving…' : 'Save preferences'}
         </button>
@@ -142,7 +142,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       aria-checked={checked}
       onClick={onChange}
       className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none"
-      style={{ backgroundColor: checked ? '#0D6E68' : '#CBD5E1' }}
+      style={{ backgroundColor: checked ? '#4A7C8C' : '#CBD5E1' }}
     >
       <span
         className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 mt-0.5"

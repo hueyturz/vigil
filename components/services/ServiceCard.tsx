@@ -84,7 +84,7 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
       <Link
         href={`/services/${service.id}`}
         className="mt-1 text-sm font-medium hover:underline"
-        style={{ color: '#0D6E68' }}
+        style={{ color: '#4A7C8C' }}
       >
         View service →
       </Link>

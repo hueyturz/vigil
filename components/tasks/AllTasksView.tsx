@@ -178,7 +178,7 @@ export function AllTasksView({
           className="flex flex-col items-center justify-center rounded-xl border py-20 text-center"
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
         >
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0D6E68" strokeWidth="1.5"
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="1.5"
             strokeLinecap="round" strokeLinejoin="round" className="mb-3 opacity-60">
             <polyline points="20 6 9 17 4 12"/>
           </svg>

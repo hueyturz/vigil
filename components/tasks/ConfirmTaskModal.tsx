@@ -201,7 +201,7 @@ export function ConfirmTaskModal({ task, open, onClose, onSuccess }: ConfirmTask
               type="submit"
               disabled={!isValid || loading}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {loading ? 'Saving…' : 'Confirm task'}
             </button>

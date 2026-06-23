@@ -225,8 +225,8 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
           <button key={st.value} type="button" onClick={() => handleTabChange(st.value)}
             className="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition"
             style={{
-              borderBottomColor: activeTab === st.value ? '#0D6E68' : 'transparent',
-              color: activeTab === st.value ? '#0D6E68' : '#475569',
+              borderBottomColor: activeTab === st.value ? '#4A7C8C' : 'transparent',
+              color: activeTab === st.value ? '#4A7C8C' : '#475569',
             }}>{st.label}</button>
         ))}
       </div>
@@ -248,7 +248,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
           </div>
           <button type="button" onClick={handleCustomize} disabled={busy}
             className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: '#0D6E68' }}>
+            style={{ backgroundColor: '#4A7C8C' }}>
             {busy ? 'Copying…' : 'Customize This Template'}
           </button>
         </div>
@@ -259,13 +259,13 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
         <div className="mb-6 rounded-xl border p-4 flex items-center justify-between gap-3"
              style={{ backgroundColor: '#F0FDF9', borderColor: '#99F6E4' }}>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#0D6E68' }} />
-            <p className="text-sm font-semibold" style={{ color: '#0D6E68' }}>Editing Template</p>
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#4A7C8C' }} />
+            <p className="text-sm font-semibold" style={{ color: '#4A7C8C' }}>Editing Template</p>
             <p className="text-xs hidden sm:block" style={{ color: '#0F766E' }}>Changes save automatically.</p>
           </div>
           <button type="button" onClick={exitEditing}
             className="flex-shrink-0 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: '#0D6E68' }}>
+            style={{ backgroundColor: '#4A7C8C' }}>
             Done Editing
           </button>
         </div>
@@ -390,7 +390,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
       {panelState === 'editing' && !addOpen && (
         <button type="button" onClick={() => setAddOpen(true)}
           className="flex items-center gap-2 text-sm font-medium hover:opacity-70 transition mb-6"
-          style={{ color: '#0D6E68' }}>
+          style={{ color: '#4A7C8C' }}>
           <span className="text-lg leading-none">+</span>Add task
         </button>
       )}
@@ -429,7 +429,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>Cancel</button>
             <button type="submit" disabled={busy}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Adding…' : 'Add task'}</button>
+              style={{ backgroundColor: '#4A7C8C' }}>{busy ? 'Adding…' : 'Add task'}</button>
           </div>
         </form>
       )}
@@ -600,7 +600,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
                     <input
                       autoFocus
                       className="flex-1 rounded border px-2 py-1 text-sm outline-none"
-                      style={{ borderColor: '#0D6E68', color: '#0F172A' }}
+                      style={{ borderColor: '#4A7C8C', color: '#0F172A' }}
                       value={editStepVal}
                       onChange={e => setEditStepVal(e.target.value)}
                       onBlur={() => handleSaveStepEdit(step.id)}
@@ -612,7 +612,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
                   ) : (
                     <>
                       <span
-                        className="flex-1 text-sm cursor-pointer hover:text-teal-700"
+                        className="flex-1 text-sm cursor-pointer hover:text-vl-teal"
                         style={{ color: '#0F172A' }}
                         onClick={() => { setEditingStep(step.id); setEditStepVal(step.title) }}
                       >
@@ -648,7 +648,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
                   onClick={handleAddStep}
                   disabled={addingStep || !newStep.trim()}
                   className="rounded px-2.5 py-1.5 text-sm font-semibold text-white disabled:opacity-50 transition hover:opacity-90"
-                  style={{ backgroundColor: '#0D6E68' }}
+                  style={{ backgroundColor: '#4A7C8C' }}
                 >+</button>
               </div>
             </div>
@@ -659,7 +659,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
               style={{ borderColor: '#E2E8F0', color: '#475569' }}>Close</button>
             <button type="submit" disabled={busy || !title.trim()}
               className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}>{busy ? 'Saving…' : 'Save changes'}</button>
+              style={{ backgroundColor: '#4A7C8C' }}>{busy ? 'Saving…' : 'Save changes'}</button>
           </div>
         </form>
       </div>

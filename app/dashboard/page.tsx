@@ -92,7 +92,7 @@ export default async function DashboardPage() {
           <Link
             href="/services"
             className="inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70"
-            style={{ color: '#0D6E68' }}
+            style={{ color: '#4A7C8C' }}
           >
             View all services →
           </Link>

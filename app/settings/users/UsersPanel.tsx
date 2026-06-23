@@ -176,7 +176,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
               type="submit"
               disabled={pending}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {pending ? 'Sending…' : 'Send invite'}
             </button>
@@ -316,7 +316,7 @@ function EditProfileModal({ user, onClose }: { user: UserRow; onClose: () => voi
               type="submit"
               disabled={pending}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               {pending ? 'Saving…' : 'Save changes'}
             </button>
@@ -362,7 +362,7 @@ function RoleBadge({ role }: { role: Role }) {
   return (
     <span
       className="inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-      style={{ backgroundColor: '#E6F4F3', color: '#0D6E68' }}
+      style={{ backgroundColor: '#E6F4F3', color: '#4A7C8C' }}
     >
       {ROLE_LABELS[role]}
     </span>
@@ -428,7 +428,7 @@ function UserCard({
             <button
               onClick={() => onEditProfile(user)}
               className="text-sm font-medium hover:underline transition"
-              style={{ color: '#0D6E68' }}
+              style={{ color: '#4A7C8C' }}
             >
               Edit
             </button>
@@ -438,7 +438,7 @@ function UserCard({
               onClick={handleToggleActive}
               disabled={activePending}
               className="text-sm font-medium hover:underline transition disabled:opacity-50"
-              style={{ color: user.is_active ? '#EF4444' : '#0D6E68' }}
+              style={{ color: user.is_active ? '#EF4444' : '#4A7C8C' }}
             >
               {activePending ? '…' : user.is_active ? 'Deactivate' : 'Reactivate'}
             </button>
@@ -521,7 +521,7 @@ function UserTableRow({
           <button
             onClick={() => onEditProfile(user)}
             className="text-xs font-medium hover:underline transition"
-            style={{ color: '#0D6E68' }}
+            style={{ color: '#4A7C8C' }}
           >
             Edit
           </button>
@@ -531,7 +531,7 @@ function UserTableRow({
               onClick={handleToggleActive}
               disabled={activePending}
               className="text-xs font-medium hover:underline transition disabled:opacity-50"
-              style={{ color: user.is_active ? '#EF4444' : '#0D6E68' }}
+              style={{ color: user.is_active ? '#EF4444' : '#4A7C8C' }}
             >
               {activePending
                 ? '…'
@@ -570,7 +570,7 @@ export function UsersPanel({ users, currentUserId }: { users: UserRow[]; current
         <button
           onClick={() => setInviteOpen(true)}
           className="flex-shrink-0 rounded-full sm:rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ backgroundColor: '#0D6E68' }}
+          style={{ backgroundColor: '#4A7C8C' }}
         >
           + Invite<span className="hidden sm:inline"> User</span>
         </button>

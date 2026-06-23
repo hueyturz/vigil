@@ -52,10 +52,10 @@ export function ServiceCompletionFlow({
           className="flex items-center gap-3 rounded-xl border px-5 py-4 mb-6"
           style={{ backgroundColor: '#F0FDFA', borderColor: '#99F6E4' }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0D6E68" strokeWidth="2.5" width="18" height="18">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="2.5" width="18" height="18">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
           </svg>
-          <p className="text-sm font-medium" style={{ color: '#0D6E68' }}>
+          <p className="text-sm font-medium" style={{ color: '#4A7C8C' }}>
             This service has been marked complete.
           </p>
         </div>
@@ -77,7 +77,7 @@ export function ServiceCompletionFlow({
             type="button"
             onClick={() => setConfirming(true)}
             className="w-full md:w-auto rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: '#0D6E68' }}
+            style={{ backgroundColor: '#4A7C8C' }}
           >
             Mark Service Complete
           </button>
@@ -121,7 +121,7 @@ export function ServiceCompletionFlow({
                 onClick={handleConfirm}
                 disabled={loading}
                 className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                style={{ backgroundColor: isCompleted ? '#475569' : '#0D6E68' }}
+                style={{ backgroundColor: isCompleted ? '#475569' : '#4A7C8C' }}
               >
                 {loading ? 'Saving…' : isCompleted ? 'Yes, Reopen' : 'Yes, Complete'}
               </button>

@@ -19,7 +19,7 @@ export default function Hero() {
         {/* Badge */}
         <span
           className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm"
-          style={{ backgroundColor: '#E6F4F3', color: '#0D6E68' }}
+          style={{ backgroundColor: '#E6F4F3', color: '#4A7C8C' }}
         >
           <span className="w-2 h-2 rounded-full bg-green-500" />
           Built for independent funeral homes
@@ -34,7 +34,7 @@ export default function Hero() {
 
         {/* Subheadline */}
         <p className="mt-6 text-xl max-w-2xl mx-auto leading-relaxed" style={{ color: '#475569' }}>
-          Vauter keeps funeral home staff accountable so directors never have to
+          Vigilight keeps funeral home staff accountable so directors never have to
           triple-check anything again. Automatic reminders. Confirmed tasks.
           Complete peace of mind.
         </p>
@@ -43,13 +43,13 @@ export default function Hero() {
         <div className="mt-10 flex gap-4 justify-center flex-wrap">
           <Link
             href="/demo"
-            className="bg-[#0D6E68] text-white font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+            className="bg-[#4A7C8C] text-white font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial →
           </Link>
           <Link
             href="/#features"
-            className="border-2 border-[#0D6E68] text-[#0D6E68] font-semibold px-8 py-4 rounded-full text-lg hover:bg-[#E6F4F3] transition-colors"
+            className="border-2 border-[#4A7C8C] text-[#4A7C8C] font-semibold px-8 py-4 rounded-full text-lg hover:bg-[#E6F4F3] transition-colors"
           >
             See how it works
           </Link>
@@ -84,7 +84,7 @@ function DashboardMockup() {
         </div>
         <div className="flex-1 flex justify-center">
           <div className="rounded bg-white border border-[#E2E8F0] px-3 py-1 text-xs text-gray-400">
-            app.getvauter.com/dashboard
+            app.getvigilight.com/dashboard
           </div>
         </div>
         {/* spacer to keep URL bar centered */}

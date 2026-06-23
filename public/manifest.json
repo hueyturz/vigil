@@ -1,11 +1,11 @@
 {
-  "name": "Vauter",
-  "short_name": "Vauter",
+  "name": "Vigilight",
+  "short_name": "Vigilight",
   "description": "Funeral home service operations",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F7F8FA",
-  "theme_color": "#0D6E68",
+  "background_color": "#F8F5F0",
+  "theme_color": "#0A2540",
   "orientation": "portrait",
   "icons": [
     {

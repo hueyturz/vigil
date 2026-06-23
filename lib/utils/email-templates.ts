@@ -6,7 +6,7 @@ function baseLayout(content: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vauter</title>
+  <title>Vigilight</title>
 </head>
 <body style="margin:0;padding:0;background:#F7F8FA;font-family:system-ui,-apple-system,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 16px;">
@@ -16,7 +16,7 @@ function baseLayout(content: string): string {
           <!-- Header -->
           <tr>
             <td style="padding:0 0 24px 0;">
-              <span style="font-size:20px;font-weight:700;color:#0F172A;letter-spacing:-0.5px;">Vauter</span>
+              <span style="font-size:20px;font-weight:700;color:#0F172A;letter-spacing:-0.5px;">Vigilight</span>
             </td>
           </tr>
           <!-- Card -->
@@ -29,7 +29,7 @@ function baseLayout(content: string): string {
           <tr>
             <td style="padding:20px 0 0 0;text-align:center;">
               <p style="margin:0;font-size:12px;color:#94A3B8;">
-                Vauter — Funeral Service Management
+                Vigilight — Funeral Service Management
               </p>
             </td>
           </tr>
@@ -43,7 +43,7 @@ function baseLayout(content: string): string {
 
 function ctaButton(href: string, label: string): string {
   return `<a href="${href}"
-     style="display:inline-block;background:#0D6E68;color:#FFFFFF;text-decoration:none;
+     style="display:inline-block;background:#4A7C8C;color:#FFFFFF;text-decoration:none;
             font-size:14px;font-weight:600;padding:10px 20px;border-radius:8px;margin-top:24px;">
     ${label}
   </a>`
@@ -73,7 +73,7 @@ export function demoRequestEmail(data: DemoRequestData): { subject: string; html
 
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#0F172A;line-height:1.7;">
-      <p style="margin:0 0 16px 0;">New demo request from the Vauter website.</p>
+      <p style="margin:0 0 16px 0;">New demo request from the Vigilight website.</p>
       <p style="margin:0;">
         <strong>Name:</strong> ${escapeHtml(data.name)}<br/>
         <strong>Funeral Home:</strong> ${escapeHtml(data.funeralHome)}<br/>
@@ -107,7 +107,7 @@ export function taskConfirmedEmail(data: TaskConfirmedData): { subject: string; 
 
   const html = baseLayout(`
     <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;text-transform:uppercase;
-              letter-spacing:0.05em;color:#0D6E68;">Task Confirmed</p>
+              letter-spacing:0.05em;color:#4A7C8C;">Task Confirmed</p>
     <h1 style="margin:0 0 24px 0;font-size:22px;font-weight:700;color:#0F172A;line-height:1.3;">
       ${data.taskTitle}
     </h1>
@@ -165,14 +165,14 @@ export function taskAssignedEmail(data: TaskAssignedData): { subject: string; ht
 
   const html = baseLayout(`
     <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;text-transform:uppercase;
-              letter-spacing:0.05em;color:#0D6E68;">Task Assignment</p>
+              letter-spacing:0.05em;color:#4A7C8C;">Task Assignment</p>
     <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#0F172A;line-height:1.3;">
       ${data.taskTitle}
     </h1>
     <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.6;">
       <strong style="color:#0F172A;">${data.actorName}</strong> assigned you this task
       on the <strong style="color:#0F172A;">${data.familyName}</strong> service.
-      Log in to Vauter to view it.
+      Log in to Vigilight to view it.
     </p>
     ${ctaButton(serviceUrl, 'View service →')}
   `)

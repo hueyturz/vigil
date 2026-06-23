@@ -103,7 +103,7 @@ export default async function ServiceDetailPage({
         <Link
           href="/services"
           className="inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium shadow-sm transition hover:shadow mb-3 md:mb-0 md:fixed md:top-4 md:left-[236px] md:z-40"
-          style={{ color: '#0D6E68', borderColor: '#E2E8F0' }}
+          style={{ color: '#4A7C8C', borderColor: '#E2E8F0' }}
         >
           ← Services
         </Link>
@@ -162,7 +162,7 @@ export default async function ServiceDetailPage({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-                    style={{ borderColor: '#0D6E68', color: '#0D6E68', backgroundColor: 'transparent' }}
+                    style={{ borderColor: '#4A7C8C', color: '#4A7C8C', backgroundColor: 'transparent' }}
                   >
                     Print Checklist
                   </a>

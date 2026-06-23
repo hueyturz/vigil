@@ -76,7 +76,7 @@ function SummarySection({ session }: { session: IntakeSession }) {
     return (
       <div className="flex items-center gap-2">
         <svg className="vigil-spin" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="#0D6E68" strokeWidth="2.5" strokeLinecap="round">
+          stroke="#4A7C8C" strokeWidth="2.5" strokeLinecap="round">
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
         <span className="text-sm" style={{ color: '#94A3B8' }}>Generating summary…</span>
@@ -96,7 +96,7 @@ function SummarySection({ session }: { session: IntakeSession }) {
 const FAMILY_MEMBER_COLORS = ['#475569', '#64748B', '#334155', '#5B6A7A']
 
 function speakerColor(label: string): string {
-  if (/funeral director/i.test(label)) return '#0D6E68'
+  if (/funeral director/i.test(label)) return '#4A7C8C'
   const match = label.match(/family member (\d+)/i)
   if (match) {
     const idx = (parseInt(match[1], 10) - 1) % FAMILY_MEMBER_COLORS.length
@@ -295,7 +295,7 @@ function ChatSection({ session }: { session: IntakeSession }) {
                     className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
                     style={
                       m.role === 'user'
-                        ? { backgroundColor: '#0D6E68', color: '#FFFFFF' }
+                        ? { backgroundColor: '#4A7C8C', color: '#FFFFFF' }
                         : { backgroundColor: '#F1F5F9', color: '#0F172A' }
                     }
                   >
@@ -344,7 +344,7 @@ function ChatSection({ session }: { session: IntakeSession }) {
               onClick={handleSend}
               disabled={!input.trim() || thinking}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#0D6E68' }}
+              style={{ backgroundColor: '#4A7C8C' }}
             >
               Send
             </button>
@@ -429,7 +429,7 @@ export function MeetingsTab({ sessions, serviceId, canRecord }: MeetingsTabProps
           className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
           style={{ backgroundColor: '#F0FDFA' }}
         >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0D6E68" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
             <line x1="12" y1="19" x2="12" y2="23" />

@@ -13,7 +13,7 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
 
 const SERVICE_STATUS_STYLE: Record<string, { label: string; bg: string; color: string }> = {
   active:    { label: 'In progress', bg: '#FFFBEB', color: '#F59E0B' },
-  completed: { label: 'Completed',   bg: '#ECFDF5', color: '#0D6E68' },
+  completed: { label: 'Completed',   bg: '#ECFDF5', color: '#4A7C8C' },
   archived:  { label: 'Archived',    bg: '#F1F5F9', color: '#475569' },
 }
 
@@ -86,7 +86,7 @@ export default async function ImpersonatePage({
         <Link
           href="/admin"
           className="inline-block text-sm font-medium mb-4 hover:underline"
-          style={{ color: '#0D6E68' }}
+          style={{ color: '#4A7C8C' }}
         >
           ← Back to Admin
         </Link>
@@ -151,7 +151,7 @@ export default async function ImpersonatePage({
                   <Link
                     href={`/services/${s.id}`}
                     className="text-xs font-semibold hover:underline"
-                    style={{ color: '#0D6E68' }}
+                    style={{ color: '#4A7C8C' }}
                   >
                     View →
                   </Link>
@@ -195,7 +195,7 @@ export default async function ImpersonatePage({
                         className="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
                         style={
                           p.is_active
-                            ? { backgroundColor: '#ECFDF5', color: '#0D6E68' }
+                            ? { backgroundColor: '#ECFDF5', color: '#4A7C8C' }
                             : { backgroundColor: '#F1F5F9', color: '#94A3B8' }
                         }
                       >

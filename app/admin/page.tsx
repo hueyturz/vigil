@@ -15,7 +15,7 @@ type AccountStatus = 'New' | 'Active' | 'Stale'
 
 const STATUS_STYLE: Record<AccountStatus, { bg: string; color: string }> = {
   New:    { bg: '#EFF6FF', color: '#2563EB' },
-  Active: { bg: '#ECFDF5', color: '#0D6E68' },
+  Active: { bg: '#ECFDF5', color: '#4A7C8C' },
   Stale:  { bg: '#FFFBEB', color: '#F59E0B' },
 }
 
@@ -109,7 +109,7 @@ export default async function AdminPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: '#0D6E68' }}>Vauter Admin</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#4A7C8C' }}>Vigilight Admin</h1>
           <p className="mt-1 text-sm" style={{ color: '#475569' }}>
             All customer accounts · internal use only
           </p>
@@ -174,7 +174,7 @@ export default async function AdminPage() {
                       <Link
                         href={`/admin/impersonate/${a.id}`}
                         className="inline-block rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-                        style={{ borderColor: '#0D6E68', color: '#0D6E68' }}
+                        style={{ borderColor: '#4A7C8C', color: '#4A7C8C' }}
                       >
                         View Account →
                       </Link>
@@ -214,7 +214,7 @@ export default async function AdminPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className="inline-block rounded-full border px-2 py-0.5 text-xs font-medium"
-                          style={{ borderColor: '#0D6E68', color: '#0D6E68' }}
+                          style={{ borderColor: '#4A7C8C', color: '#4A7C8C' }}
                         >
                           {entry.homeName}
                         </span>

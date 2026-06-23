@@ -17,7 +17,7 @@ const FEATURES = [
 
 function CheckCircle() {
   return (
-    <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D6E68' }}>
+    <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center" style={{ backgroundColor: '#4A7C8C' }}>
       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="2 6 5 9 10 3" />
       </svg>
@@ -40,7 +40,7 @@ export function PricingClient() {
             className="px-5 py-2 rounded-full text-sm font-semibold transition-colors"
             style={annual
               ? { backgroundColor: '#FFFFFF', color: '#475569' }
-              : { backgroundColor: '#0D6E68', color: '#FFFFFF' }}
+              : { backgroundColor: '#4A7C8C', color: '#FFFFFF' }}
           >
             Monthly
           </button>
@@ -49,7 +49,7 @@ export function PricingClient() {
             onClick={() => setAnnual(true)}
             className="px-5 py-2 rounded-full text-sm font-semibold transition-colors"
             style={annual
-              ? { backgroundColor: '#0D6E68', color: '#FFFFFF' }
+              ? { backgroundColor: '#4A7C8C', color: '#FFFFFF' }
               : { backgroundColor: '#FFFFFF', color: '#475569' }}
           >
             Annual
@@ -77,7 +77,7 @@ export function PricingClient() {
 
         <Link
           href="/demo"
-          className="block w-full bg-[#0D6E68] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
+          className="block w-full bg-[#4A7C8C] text-white font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
         >
           Start Free Trial
         </Link>

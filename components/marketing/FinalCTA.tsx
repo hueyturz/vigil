@@ -2,20 +2,20 @@ import Link from 'next/link'
 
 export default function FinalCTA() {
   return (
-    <div className="py-24 px-6" style={{ backgroundColor: '#0D6E68' }}>
+    <div className="py-24 px-6" style={{ backgroundColor: '#4A7C8C' }}>
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
           Ready to run your funeral home with confidence?
         </h2>
         <p className="text-xl text-white/80 mb-10">
-          Join funeral directors who trust Vauter to keep their teams accountable
+          Join funeral directors who trust Vigilight to keep their teams accountable
           and their families well-served.
         </p>
 
         <div className="flex gap-4 justify-center flex-wrap">
           <Link
             href="/demo"
-            className="bg-white text-[#0D6E68] font-semibold px-8 py-4 rounded-full text-lg hover:bg-gray-50 transition-colors"
+            className="bg-white text-[#4A7C8C] font-semibold px-8 py-4 rounded-full text-lg hover:bg-gray-50 transition-colors"
           >
             Start Free Trial →
           </Link>

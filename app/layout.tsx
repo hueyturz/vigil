@@ -3,13 +3,14 @@ import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Vauter',
+  metadataBase: new URL('https://getvigilight.com'),
+  title: 'Vigilight',
   description: 'Funeral home service operations',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Vauter',
+    title: 'Vigilight',
   },
   icons: {
     apple: '/icon-192.png',
@@ -22,7 +23,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#0D6E68',
+  themeColor: '#0A2540',
 }
 
 export default function RootLayout({
@@ -45,10 +46,10 @@ export default function RootLayout({
             },
             success: {
               style: {
-                background: '#0D6E68',
+                background: '#4A7C8C',
                 color: '#fff',
               },
-              iconTheme: { primary: '#fff', secondary: '#0D6E68' },
+              iconTheme: { primary: '#fff', secondary: '#4A7C8C' },
             },
             error: {
               style: {
