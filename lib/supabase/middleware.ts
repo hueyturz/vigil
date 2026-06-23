@@ -31,9 +31,9 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Use getSession() for middleware — reads from cookie without a network call.
-  // Actual token verification happens inside each server component via getUser().
-  const { data: { session } } = await supabase.auth.getSession()
+  // Use getUser() so the token is verified against the auth server and refreshed
+  // when expired; the cookie adapter's setAll propagates the refreshed token.
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
   // /auth/* must be reachable without a session so the code-exchange can run.
@@ -55,7 +55,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/demo-request')
 
-  if (!session && !isPublicPath) {
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
