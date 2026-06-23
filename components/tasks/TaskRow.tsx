@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
 import { isTaskOverdue } from '@/lib/utils/service-status'
-import { deleteServiceTask, updateServiceTask, updateTaskNotes, reassignTask } from '@/app/services/task-actions'
+import { deleteServiceTask, updateServiceTask, updateTaskNotes, reassignTask, updateTaskDueDays } from '@/app/services/task-actions'
 import { logActivity } from '@/lib/utils/activity'
 import { createClient } from '@/lib/supabase/client'
 import type { Priority, TaskWithProfile, TaskSubtask, Profile } from '@/lib/types'
@@ -37,6 +37,32 @@ function dueDateLabel(serviceDate: string, dueDaysBefore: number): { text: strin
   if (days === 0) return { text: 'Due today',    color: '#F59E0B' }
   if (days === 1) return { text: 'Due tomorrow', color: '#F59E0B' }
   return { text: `Due in ${days} days`, color: '#94A3B8' }
+}
+
+// ── Due-date ⇄ offset helpers ──────────────────────────────────────────────────
+// Tasks store a relative `due_days_before` (days before the service date), not an
+// absolute date. The inline picker shows/edits an absolute date and converts to
+// and from the offset so the existing relative model (and its color coding) holds.
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+// Absolute due date (YYYY-MM-DD, local) = service date − due_days_before.
+function computeDueDateISO(serviceDate: string, dueDaysBefore: number): string | null {
+  if (!serviceDate) return null
+  const d = new Date(serviceDate + 'T00:00:00')
+  d.setDate(d.getDate() - dueDaysBefore)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+// Inverse: a picked absolute date → due_days_before offset.
+function offsetFromDueDate(serviceDate: string, dueISO: string): number {
+  const svc    = new Date(serviceDate + 'T00:00:00').getTime()
+  const picked = new Date(dueISO + 'T00:00:00').getTime()
+  return Math.round((svc - picked) / MS_PER_DAY)
 }
 
 // ── Assignee chip ──────────────────────────────────────────────────────────────
@@ -307,6 +333,8 @@ export function TaskRow({
   const [editHint,     setEditHint]     = useState(task.confirmation_hint)
   const [editNotes,    setEditNotes]    = useState(task.notes ?? '')
   const [confirmDel,   setConfirmDel]   = useState(false)
+  const [editingDue,   setEditingDue]   = useState(false)
+  const [savingDue,    setSavingDue]    = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [savingNotes,  setSavingNotes]  = useState(false)
   const [deleting,     setDeleting]     = useState(false)
@@ -364,6 +392,34 @@ export function TaskRow({
     setTask(updated)
     onTaskUpdate?.(updated)
     toast.success('Notes saved')
+  }
+
+  async function handleDueChange(dueISO: string) {
+    // Cleared the field, or no anchor to convert against → just close.
+    if (!dueISO || !serviceDate) { setEditingDue(false); return }
+    const newOffset = offsetFromDueDate(serviceDate, dueISO)
+    // No real change → close without hitting the server.
+    if (newOffset === task.due_days_before) { setEditingDue(false); return }
+
+    setSavingDue(true)
+    const result = await updateTaskDueDays(task.id, newOffset)
+    setSavingDue(false)
+
+    if (result.error) {
+      // Leave `task` untouched so the original date is restored on close.
+      toast.error(result.error || 'Failed to update due date')
+      setEditingDue(false)
+      return
+    }
+
+    const updated: TaskWithProfile = { ...task, due_days_before: newOffset }
+    setTask(updated)
+    onTaskUpdate?.(updated)
+    setEditingDue(false)
+    toast.success('Due date updated')
+    if (funeralHomeId && actorId && actorName) {
+      logActivity({ funeral_home_id: funeralHomeId, service_id: serviceId, task_id: task.id, actor_id: actorId, actor_name: actorName, action_type: 'task_edited', description: `Task "${task.title}" due date changed` })
+    }
   }
 
   async function handleDelete() {
@@ -462,7 +518,35 @@ export function TaskRow({
               )
             )}
             {!complete && urgency && (
-              <p className="text-xs font-medium mt-0.5" style={{ color: urgency.color }}>{urgency.text}</p>
+              editingDue ? (
+                <span
+                  className="inline-flex items-center gap-1.5 mt-0.5"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <input
+                    type="date"
+                    autoFocus
+                    disabled={savingDue}
+                    defaultValue={computeDueDateISO(serviceDate, task.due_days_before) ?? undefined}
+                    onChange={e => handleDueChange(e.target.value)}
+                    onBlur={() => { if (!savingDue) setEditingDue(false) }}
+                    onClick={e => e.stopPropagation()}
+                    className="text-xs rounded border px-1.5 py-0.5 outline-none"
+                    style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF', opacity: savingDue ? 0.6 : 1 }}
+                  />
+                  {savingDue && <span className="text-xs" style={{ color: '#94A3B8' }}>Saving…</span>}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); setEditingDue(true) }}
+                  className="block text-xs font-medium mt-0.5 text-left hover:underline"
+                  style={{ color: urgency.color }}
+                  title="Click to change the due date"
+                >
+                  {urgency.text}
+                </button>
+              )
             )}
             {complete && (
               <p className="text-xs mt-0.5" style={{ color: '#065F46' }}>

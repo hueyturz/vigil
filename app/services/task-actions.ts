@@ -186,6 +186,51 @@ export async function updateServiceTask(
   return {}
 }
 
+// ── Update the due offset (days before service) on a not-started task ─────
+
+export async function updateTaskDueDays(
+  taskId:        string,
+  dueDaysBefore: number,
+): Promise<{ error?: string }> {
+  if (!Number.isInteger(dueDaysBefore)) return { error: 'Invalid due date.' }
+
+  const supabase    = createClient()
+  const serviceRole = createServiceRoleClient()
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await serviceRole
+    .from('profiles')
+    .select('funeral_home_id, role, full_name')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !['owner', 'fd'].includes(profile.role))
+    return { error: 'Insufficient permissions.' }
+
+  const { data: task } = await serviceRole
+    .from('tasks')
+    .select('funeral_home_id, status')
+    .eq('id', taskId)
+    .single()
+
+  if (!task || task.funeral_home_id !== profile.funeral_home_id)
+    return { error: 'Task not found.' }
+
+  if (task.status === 'complete')
+    return { error: 'Cannot edit a completed task.' }
+
+  const { error } = await serviceRole
+    .from('tasks')
+    .update({ due_days_before: dueDaysBefore })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+
+  return {}
+}
+
 // ── Update notes on any task (all statuses allowed) ───────────────────────
 
 export async function updateTaskNotes(
