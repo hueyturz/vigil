@@ -533,8 +533,8 @@ export function TaskRow({
           {!complete && (
             <div onClick={e => e.stopPropagation()} className="flex-shrink-0">
               <button type="button" onClick={() => setModalOpen(true)}
-                className="hidden md:block rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: overdue ? '#EF4444' : '#4A7C8C' }}>
+                className="hidden md:block rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: overdue ? '#EF4444' : '#0A2540', color: overdue ? '#FFFFFF' : '#F4C95D' }}>
                 Mark Complete
               </button>
             </div>
@@ -593,8 +593,8 @@ export function TaskRow({
             {/* Mobile mark complete */}
             {!complete && (
               <button type="button" onClick={() => setModalOpen(true)}
-                className="md:hidden w-full rounded-lg py-2 text-xs font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: overdue ? '#EF4444' : '#4A7C8C' }}>
+                className="md:hidden w-full rounded-lg py-2 text-xs font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: overdue ? '#EF4444' : '#0A2540', color: overdue ? '#FFFFFF' : '#F4C95D' }}>
                 Mark Complete
               </button>
             )}

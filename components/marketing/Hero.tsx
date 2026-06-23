@@ -12,7 +12,7 @@ export default function Hero() {
       className="relative min-h-screen flex flex-col items-center justify-center pt-32 md:pt-40 px-6 text-center overflow-hidden"
       style={{
         background:
-          'radial-gradient(ellipse at center, #12375A 0%, #0A2540 60%)',
+          'radial-gradient(ellipse at center, #0A2540 0%, #0A2540 60%)',
       }}
     >
       <div className="max-w-4xl mx-auto w-full">

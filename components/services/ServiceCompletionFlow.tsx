@@ -120,8 +120,11 @@ export function ServiceCompletionFlow({
                 type="button"
                 onClick={handleConfirm}
                 disabled={loading}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                style={{ backgroundColor: isCompleted ? '#475569' : '#4A7C8C' }}
+                className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 disabled:opacity-60"
+                style={{
+                  backgroundColor: isCompleted ? '#475569' : '#0A2540',
+                  color: isCompleted ? '#FFFFFF' : '#F4C95D',
+                }}
               >
                 {loading ? 'Saving…' : isCompleted ? 'Yes, Reopen' : 'Yes, Complete'}
               </button>

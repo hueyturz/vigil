@@ -43,7 +43,7 @@ function baseLayout(content: string): string {
 
 function ctaButton(href: string, label: string): string {
   return `<a href="${href}"
-     style="display:inline-block;background:#4A7C8C;color:#FFFFFF;text-decoration:none;
+     style="display:inline-block;background:#0A2540;color:#F4C95D;text-decoration:none;
             font-size:14px;font-weight:600;padding:10px 20px;border-radius:8px;margin-top:24px;">
     ${label}
   </a>`
@@ -107,7 +107,7 @@ export function taskConfirmedEmail(data: TaskConfirmedData): { subject: string; 
 
   const html = baseLayout(`
     <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;text-transform:uppercase;
-              letter-spacing:0.05em;color:#4A7C8C;">Task Confirmed</p>
+              letter-spacing:0.05em;color:#0A2540;">Task Confirmed</p>
     <h1 style="margin:0 0 24px 0;font-size:22px;font-weight:700;color:#0F172A;line-height:1.3;">
       ${data.taskTitle}
     </h1>
@@ -165,7 +165,7 @@ export function taskAssignedEmail(data: TaskAssignedData): { subject: string; ht
 
   const html = baseLayout(`
     <p style="margin:0 0 4px 0;font-size:12px;font-weight:600;text-transform:uppercase;
-              letter-spacing:0.05em;color:#4A7C8C;">Task Assignment</p>
+              letter-spacing:0.05em;color:#0A2540;">Task Assignment</p>
     <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#0F172A;line-height:1.3;">
       ${data.taskTitle}
     </h1>
