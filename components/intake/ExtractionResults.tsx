@@ -138,6 +138,7 @@ export function ExtractionResults({
           priority:          t.priority,
           notes:             t.notes,
         })),
+      service_notes: extraction.service_notes ?? [],
     }
 
     try {

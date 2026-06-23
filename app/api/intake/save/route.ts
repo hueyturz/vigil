@@ -16,6 +16,11 @@ interface SaveNewTask {
   notes:             string
 }
 
+interface SaveServiceNote {
+  note:             string
+  confidence_score: number
+}
+
 export async function POST(request: NextRequest) {
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
@@ -37,6 +42,7 @@ export async function POST(request: NextRequest) {
     service_id:        string
     confirmations:     SaveConfirmation[]
     new_tasks:         SaveNewTask[]
+    service_notes?:    SaveServiceNote[]
   }
 
   try {
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 })
   }
 
-  const { intake_session_id, service_id, confirmations = [], new_tasks = [] } = body
+  const { intake_session_id, service_id, confirmations = [], new_tasks = [], service_notes = [] } = body
 
   if (!intake_session_id || !service_id)
     return NextResponse.json({ error: 'intake_session_id and service_id are required.' }, { status: 400 })
@@ -124,5 +130,38 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ notesUpdated, tasksCreated })
+  // Persist AI-extracted family notes into service_notes. Best-effort: a failure
+  // here must not fail the whole save — saving the tasks is the priority.
+  let familyNotesAdded = 0
+  const familyNotes = service_notes.filter(n => n?.note?.trim())
+  if (familyNotes.length > 0) {
+    try {
+      // Dedupe: meeting-extracted notes are only persisted once per service.
+      // If any 'Meeting Notes' rows already exist for this service, skip the insert
+      // (e.g. re-opening/re-saving the same extraction won't duplicate them).
+      const { data: existing } = await serviceRole
+        .from('service_notes')
+        .select('id')
+        .eq('service_id', service_id)
+        .eq('author_name', 'Meeting Notes')
+        .limit(1)
+
+      if (!existing || existing.length === 0) {
+        const rows = familyNotes.map(n => ({
+          service_id:      service_id,
+          funeral_home_id: profile.funeral_home_id,
+          author_id:       null,            // AI-generated — no human author
+          author_name:     'Meeting Notes', // labels these in the Notes tab
+          content:         n.note.trim(),
+        }))
+        const { error } = await serviceRole.from('service_notes').insert(rows)
+        if (error) throw error
+        familyNotesAdded = rows.length
+      }
+    } catch (err) {
+      console.error('[intake/save] family notes insert failed:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  return NextResponse.json({ notesUpdated, tasksCreated, familyNotesAdded })
 }
