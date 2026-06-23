@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -32,6 +33,7 @@ interface StaffOption { id: string; full_name: string }
 interface CreateServiceModalProps { open: boolean; onClose: () => void }
 
 export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
+  const router = useRouter()
   const [deceasedName,    setDeceasedName]     = useState('')
   const [serviceType,     setServiceType]      = useState<ServiceType | ''>('')
   const [serviceDate,     setServiceDate]      = useState('')
@@ -106,8 +108,8 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
     })
     setLoading(false)
 
-    if (result.error) { setError(result.error); return }
-    handleClose()
+    if (result.error || !result.data) { setError(result.error ?? 'Failed to create service.'); return }
+    router.push('/services/' + result.data.id)
   }
 
   useEffect(() => { setMounted(true) }, [])

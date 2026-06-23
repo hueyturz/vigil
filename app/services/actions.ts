@@ -16,7 +16,7 @@ interface CreateServiceInput {
   contact_email?:    string | null
 }
 
-export async function createService(input: CreateServiceInput): Promise<{ error?: string }> {
+export async function createService(input: CreateServiceInput): Promise<{ data?: { id: string }; error?: string }> {
   const supabase    = createClient()
   const serviceRole = createServiceRoleClient()
 
@@ -73,7 +73,7 @@ export async function createService(input: CreateServiceInput): Promise<{ error?
   }
 
   revalidatePath('/dashboard')
-  return {}
+  return { data: { id: service.id } }
 }
 
 // ── Update service fields (Edit Service modal) ────────────────────────────
