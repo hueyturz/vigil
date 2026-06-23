@@ -35,7 +35,7 @@ export default async function ServicesPage() {
 
   return (
     <AppShell profile={profile}>
-      <div className="px-4 py-4 md:px-8 md:py-8 max-w-7xl mx-auto">
+      <div className="px-4 pt-4 pb-24 md:px-8 md:pt-8 md:pb-20 max-w-7xl mx-auto">
         <ServicesClient services={services} />
       </div>
     </AppShell>

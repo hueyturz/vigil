@@ -1,18 +1,26 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CreateServiceModal } from './CreateServiceModal'
 import { ServiceCard } from './ServiceCard'
+import { computeServiceStatus } from '@/lib/utils/service-status'
 import type { ServiceWithTasks } from '@/lib/types'
 
-type StatusFilter = 'all' | 'active' | 'completed'
+type StatusFilter = 'all' | 'active' | 'completed' | 'needs-attention'
 type SortKey = 'date_asc' | 'date_desc' | 'name_asc'
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
-  { key: 'all',       label: 'All'       },
-  { key: 'active',    label: 'Active'    },
-  { key: 'completed', label: 'Completed' },
+  { key: 'all',             label: 'All'             },
+  { key: 'active',          label: 'Active'          },
+  { key: 'needs-attention', label: 'Needs Attention' },
+  { key: 'completed',       label: 'Completed'       },
 ]
+
+// A service "needs attention" when it's active and its computed health is red.
+function needsAttention(s: ServiceWithTasks): boolean {
+  return s.status === 'active' && computeServiceStatus(s.tasks, s.service_date ?? '') === 'red'
+}
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'date_asc',  label: 'Soonest Service Date' },
@@ -30,17 +38,26 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
+  const searchParams = useSearchParams()
+
   const [modalOpen,    setModalOpen]    = useState(false)
   const [searchRaw,    setSearchRaw]    = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active')
   const [sortKey,      setSortKey]      = useState<SortKey>('date_asc')
+
+  // Apply the ?filter= query param on mount (e.g. dashboard "Needs Attention" card).
+  useEffect(() => {
+    if (searchParams.get('filter') === 'needs-attention') setStatusFilter('needs-attention')
+  }, [searchParams])
 
   const search = useDebounce(searchRaw, 200)
 
   const filtered = useMemo(() => {
     let list = [...services]
 
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'needs-attention') {
+      list = list.filter(needsAttention)
+    } else if (statusFilter !== 'all') {
       list = list.filter(s => s.status === statusFilter)
     }
 
@@ -113,6 +130,8 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
           const active = statusFilter === tab.key
           const count  = tab.key === 'all'
             ? services.length
+            : tab.key === 'needs-attention'
+            ? services.filter(needsAttention).length
             : services.filter(s => s.status === tab.key).length
           return (
             <button

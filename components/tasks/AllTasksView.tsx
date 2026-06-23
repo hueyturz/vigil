@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { TaskRow } from './TaskRow'
 import type { TaskForAllView, StaffOption } from '@/app/tasks/page'
 import type { TaskWithProfile } from '@/lib/types'
@@ -52,12 +52,19 @@ export function AllTasksView({
   actorName,
 }: AllTasksViewProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [tasks,          setTasks]          = useState<TaskForAllView[]>(initialTasks)
   const [searchRaw,      setSearchRaw]      = useState('')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [serviceFilter,  setServiceFilter]  = useState('all')
+  const [urgencyFilter,  setUrgencyFilter]  = useState<'all' | UrgencyKey>('all')
+
+  // Apply the ?filter= query param on mount (e.g. dashboard "Overdue Tasks" card).
+  useEffect(() => {
+    if (searchParams.get('filter') === 'overdue') setUrgencyFilter('overdue')
+  }, [searchParams])
 
   const serviceOptions = useMemo(() => {
     const seen = new Map<string, string>()
@@ -72,9 +79,10 @@ export function AllTasksView({
       if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false
       if (assigneeFilter !== 'all' && (t.assigned_to?.id ?? 'unassigned') !== assigneeFilter) return false
       if (serviceFilter  !== 'all' && t.service.id !== serviceFilter) return false
+      if (urgencyFilter  !== 'all' && getUrgency(t) !== urgencyFilter) return false
       return true
     })
-  }, [tasks, searchRaw, priorityFilter, assigneeFilter, serviceFilter])
+  }, [tasks, searchRaw, priorityFilter, assigneeFilter, serviceFilter, urgencyFilter])
 
   const grouped = useMemo(() => {
     const buckets: Record<UrgencyKey, TaskForAllView[]> = {
@@ -168,6 +176,18 @@ export function AllTasksView({
           <option value="all">All Services</option>
           {serviceOptions.map(([id, name]) => (
             <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
+
+        <select
+          value={urgencyFilter}
+          onChange={e => setUrgencyFilter(e.target.value as 'all' | UrgencyKey)}
+          className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
+          style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
+        >
+          <option value="all">All Urgency</option>
+          {URGENCY_ORDER.map(key => (
+            <option key={key} value={key}>{URGENCY_META[key].label}</option>
           ))}
         </select>
       </div>
