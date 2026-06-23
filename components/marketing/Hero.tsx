@@ -3,13 +3,19 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+const CALLOUTS = [
+  { Icon: MessageIcon,  label: 'Automatic SMS notifications to staff' },
+  { Icon: MicIcon,      label: 'AI meeting transcription and task extraction' },
+  { Icon: CheckboxIcon, label: 'Real-time task accountability per service' },
+]
+
 export default function Hero() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center pt-32 md:pt-40 px-6 text-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center pt-24 md:pt-28 pb-16 px-6 text-center overflow-hidden"
       style={{
         background:
           'radial-gradient(ellipse at center, #0A2540 0%, #0A2540 60%)',
@@ -26,17 +32,17 @@ export default function Hero() {
         </span>
 
         {/* Headline */}
-        <h1 className="mt-8 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#F8F5F0' }}>
-          Nothing slips
+        <h1 className="mt-6 text-5xl md:text-7xl font-bold leading-tight tracking-tight" style={{ color: '#F8F5F0' }}>
+          Every task confirmed.
           <br />
-          through the cracks.
+          Every service prepared.
         </h1>
 
         {/* Subheadline */}
         <p className="mt-6 text-xl max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(248,245,240,0.75)' }}>
-          Vigilight keeps funeral home staff accountable so directors never have to
-          triple-check anything again. Automatic reminders. Confirmed tasks.
-          Complete peace of mind.
+          Vigilight gives funeral directors a real-time task board, automatic SMS reminders
+          to staff, and AI-powered meeting notes — so every detail is tracked, every person
+          is accountable, and no family is ever let down.
         </p>
 
         {/* CTAs */}
@@ -60,6 +66,30 @@ export default function Hero() {
           14-day free trial · No credit card required · Cancel anytime
         </p>
 
+        {/* Feature callouts */}
+        <div className="mt-12 flex flex-col md:flex-row md:items-center md:justify-center gap-4 md:gap-0 max-w-3xl mx-auto">
+          {CALLOUTS.map(({ Icon, label }, i) => (
+            <div
+              key={label}
+              className={`flex items-center justify-center gap-2.5 md:px-6 ${i > 0 ? 'md:border-l md:border-[rgba(248,245,240,0.15)]' : ''}`}
+            >
+              <span className="flex-shrink-0"><Icon /></span>
+              <span className="text-sm" style={{ color: 'rgba(248,245,240,0.8)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Testimonial */}
+        <figure className="mt-12 mx-auto max-w-[600px] text-left border-l-4 pl-5" style={{ borderColor: '#E8B923' }}>
+          <blockquote className="italic text-base md:text-lg leading-relaxed" style={{ color: 'rgba(248,245,240,0.9)' }}>
+            “Vigilight is the first tool that actually fits how a funeral home runs. My staff
+            knows exactly what to do and when — I don’t have to chase anyone.”
+          </blockquote>
+          <figcaption className="mt-3 text-sm" style={{ color: '#F4C95D' }}>
+            — Licensed Funeral Director, Utah
+          </figcaption>
+        </figure>
+
         {/* Dashboard mockup */}
         <div
           className="mt-16 transition-opacity duration-[800ms] delay-300"
@@ -69,6 +99,35 @@ export default function Hero() {
         </div>
       </div>
     </section>
+  )
+}
+
+// ── Feature callout icons (teal, inline SVG — no icon-font dependency) ──────────
+
+function MessageIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
+  )
+}
+
+function MicIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2" width="6" height="12" rx="3" />
+      <path d="M19 10a7 7 0 0 1-14 0" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  )
+}
+
+function CheckboxIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
   )
 }
 
