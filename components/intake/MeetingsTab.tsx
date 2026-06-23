@@ -443,14 +443,15 @@ export function MeetingsTab({ sessions, serviceId, canRecord, notes }: MeetingsT
           <MeetingRecorder serviceId={serviceId} />
         </div>
       )}
+
+      {/* Service-level chat — spans all transcripts + notes for this case */}
+      {hasTranscript && <CaseChat sessions={sessions} notes={notes} />}
+
       <div className="space-y-4">
         {sessions.map(s => (
           <MeetingCard key={s.id} session={s} />
         ))}
       </div>
-
-      {/* Service-level chat — spans all transcripts + notes for this case */}
-      {hasTranscript && <CaseChat sessions={sessions} notes={notes} />}
     </div>
   )
 }
