@@ -122,6 +122,22 @@ export default function OnboardingPage() {
                 value={homePhone}
                 onChange={setHomePhone}
                 placeholder="(555) 000-0000"
+                hint={
+                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+                    By providing your phone number, you consent to receive{' '}
+                    <Link
+                      href="/sms-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:underline"
+                      style={{ color: '#0D6E68' }}
+                    >
+                      SMS
+                    </Link>{' '}
+                    task reminders and service notifications from Vauter. Message and
+                    data rates may apply. Reply STOP to unsubscribe.
+                  </p>
+                }
               />
               <Field
                 id="homeAddress"
@@ -239,6 +255,7 @@ function Field({
   value,
   onChange,
   placeholder,
+  hint,
 }: {
   id: string
   label: string
@@ -247,6 +264,7 @@ function Field({
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  hint?: React.ReactNode
 }) {
   return (
     <div>
@@ -264,6 +282,7 @@ function Field({
         className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2"
         style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
       />
+      {hint}
     </div>
   )
 }
