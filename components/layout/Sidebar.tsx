@@ -39,9 +39,10 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
       style={{ backgroundColor: '#0A2540' }}
     >
       {/* Logo */}
-      <div className="px-6 py-5 border-b flex items-center gap-2" style={{ borderColor: 'rgba(248,245,240,0.08)' }}>
+      <div className="px-6 py-5 border-b flex" style={{ borderColor: 'rgba(248,245,240,0.08)', alignItems: 'center', gap: 8 }}>
+        {/* mark inverted to white for the dark sidebar (brightness(0) invert(1)) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/vigilight-appicon.svg" alt="Vigilight" height={36} style={{ height: 36, width: 'auto' }} />
+        <img src="/vigilight-mark.svg" alt="" style={{ height: 44, width: 44, filter: 'brightness(0) invert(1)' }} />
         <span className="text-xl font-bold tracking-tight" style={{ color: '#F4C95D' }}>Vigilight</span>
       </div>
 
