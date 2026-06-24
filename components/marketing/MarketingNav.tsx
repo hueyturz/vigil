@@ -21,7 +21,8 @@ export function MarketingNav() {
         {/* Wordmark */}
         <Link href="/" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/vigilight-lockup.svg" alt="Vigilight" height={36} />
+          {/* height set via inline style (not the attr) so it beats Tailwind preflight's `img { height: auto }` */}
+          <img src="/vigilight-lockup.svg" alt="Vigilight" height={32} style={{ height: 32, width: 'auto' }} />
         </Link>
 
         {/* Center nav — desktop only */}
