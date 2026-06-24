@@ -18,11 +18,13 @@ export function MarketingNav() {
       style={{ borderColor: '#E2E8F0' }}
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        {/* Wordmark */}
-        <Link href="/" className="flex items-center">
+        {/* Wordmark — appicon + styled text (lockup SVG's system-font text didn't match the site) */}
+        <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* height set via inline style (not the attr) so it beats Tailwind preflight's `img { height: auto }` */}
-          <img src="/vigilight-lockup.svg" alt="Vigilight" height={32} style={{ height: 32, width: 'auto' }} />
+          <img src="/vigilight-appicon.svg" alt="" style={{ height: 32, width: 'auto' }} />
+          <span style={{ color: '#0A2540', fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em' }}>
+            Vigilight
+          </span>
         </Link>
 
         {/* Center nav — desktop only */}
