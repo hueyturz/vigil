@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const NAVY = '#0A2540'
-
 const NAV_LINKS = [
   { label: 'Features', href: '/#features' },
   { label: 'Pricing',  href: '/pricing'   },
@@ -21,8 +19,9 @@ export function MarketingNav() {
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         {/* Wordmark */}
-        <Link href="/" className="text-xl font-bold" style={{ color: NAVY }}>
-          Vigilight
+        <Link href="/" className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/vigilight-lockup.svg" alt="Vigilight" height={36} />
         </Link>
 
         {/* Center nav — desktop only */}

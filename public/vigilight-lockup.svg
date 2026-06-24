@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="280" viewBox="0 0 900 280">
+  <defs></defs>
+  <g transform="translate(40 56) scale(3.5)" fill="none">
+    <path d="M24 3 L25.4 5.6 L24 7.9 L22.6 5.6 Z" fill="#0A2540"></path>
+    <path d="M24 7.9 V9.6" stroke="#0A2540" stroke-width="2"></path>
+    <path d="M24 9.4 L35.6 17.6 L39.2 15.3 L33.5 19.6 L14.5 19.6 L8.8 15.3 L12.4 17.6 Z" stroke="#0A2540" stroke-width="2.2" stroke-linejoin="round"></path>
+    <path d="M14.8 19.6 L33.2 19.6 L31.2 37.4 L16.8 37.4 Z" stroke="#0A2540" stroke-width="2.2" stroke-linejoin="round"></path>
+    <path d="M16.4 37.4 Q24 43.6 31.6 37.4" stroke="#0A2540" stroke-width="2.2" stroke-linecap="round"></path>
+    <path d="M20 28 L22.8 30.8 L28.2 24.4" stroke="#E4A23C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <text x="210" y="172" font-size="116" letter-spacing="-3" fill="#0A2540">Vigilight</text>
+</svg>
