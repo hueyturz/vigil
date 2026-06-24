@@ -66,12 +66,15 @@ function buildReminderMessage(tasks: ReminderTask[]): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Auth: QStash is configured to send Authorization: Bearer <CRON_SECRET>
-  // (or the x-cron-secret header for manual testing).
+  // Auth: accept QStash's native bearer token, or the CRON_SECRET
+  // (Bearer or x-cron-secret header) as a fallback for manual testing.
   const cronSecret   = process.env.CRON_SECRET
+  const qstashToken  = process.env.QSTASH_TOKEN
   const headerSecret = request.headers.get('x-cron-secret')
   const bearer       = request.headers.get('authorization')
-  const authorized   = !!cronSecret && (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)
+  const authorized =
+    (!!cronSecret  && (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)) ||
+    (!!qstashToken && bearer === `Bearer ${qstashToken}`)
   if (!authorized) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
   const db = createServiceRoleClient()
