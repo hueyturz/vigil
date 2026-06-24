@@ -27,7 +27,7 @@ export function AddTaskModal({
   const [title,            setTitle]            = useState('')
   const [category,         setCategory]         = useState(TASK_CATEGORIES[0])
   const [confirmationHint, setConfirmationHint] = useState('')
-  const [daysBefore,       setDaysBefore]       = useState(1)
+  const [daysBefore,       setDaysBefore]       = useState('1')   // string while editing; parsed on submit
   const [assignedToId,     setAssignedToId]     = useState('')
   const [profiles,         setProfiles]         = useState<Pick<Profile, 'id' | 'full_name'>[]>([])
   const [loading,          setLoading]          = useState(false)
@@ -43,7 +43,7 @@ export function AddTaskModal({
 
   function reset() {
     setTitle(''); setCategory(TASK_CATEGORIES[0])
-    setConfirmationHint(''); setDaysBefore(1)
+    setConfirmationHint(''); setDaysBefore('1')
     setAssignedToId(''); setError(null)
   }
 
@@ -54,11 +54,14 @@ export function AddTaskModal({
     if (!title.trim()) return
     setLoading(true); setError(null)
 
+    const parsed  = parseInt(daysBefore, 10)
+    const dueDays = Number.isNaN(parsed) ? 0 : Math.min(60, Math.max(0, parsed))
+
     const result = await addTaskToService(serviceId, {
       title:             title.trim(),
       category,
       confirmation_hint: '',
-      due_days_before:   daysBefore,
+      due_days_before:   dueDays,
       assigned_to_id:    assignedToId || null,
     })
 
@@ -123,8 +126,22 @@ export function AddTaskModal({
             <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
               Due (days before service) <span style={{ color: '#EF4444' }}>*</span>
             </label>
-            <input type="number" required min={0} max={60} value={daysBefore}
-              onChange={e => setDaysBefore(Number(e.target.value))} style={inputStyle} />
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={daysBefore}
+              onChange={e =>
+                // strip non-digits and leading zeros; allow empty while editing
+                setDaysBefore(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, ''))
+              }
+              onBlur={() => {
+                const n = parseInt(daysBefore, 10)
+                const v = Number.isNaN(n) ? 0 : Math.min(60, Math.max(0, n))
+                setDaysBefore(String(v))
+              }}
+              style={inputStyle}
+            />
           </div>
 
           <div>
