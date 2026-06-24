@@ -108,6 +108,15 @@ export interface NotificationPreferences {
   informational_sms: boolean
   overdue_email: boolean
   overdue_sms: boolean
+  // SMS reminder preferences (migration 026)
+  sms_task_assigned: boolean
+  sms_task_completed_on_my_service: boolean
+  sms_my_tasks_overdue: boolean
+  sms_staff_tasks_overdue: boolean
+  sms_task_approaching_deadline: boolean
+  sms_new_service_created: boolean
+  preferred_sms_hour: number
+  timezone: string
   created_at: string
   updated_at: string
 }

@@ -10,6 +10,10 @@ export async function saveNotificationPreferences(
     | 'standard_email' | 'standard_sms'
     | 'informational_email' | 'informational_sms'
     | 'overdue_email' | 'overdue_sms'
+    | 'sms_task_assigned' | 'sms_task_completed_on_my_service'
+    | 'sms_my_tasks_overdue' | 'sms_staff_tasks_overdue'
+    | 'sms_task_approaching_deadline' | 'sms_new_service_created'
+    | 'preferred_sms_hour' | 'timezone'
   >
 ): Promise<{ error?: string }> {
   const supabase    = createClient()

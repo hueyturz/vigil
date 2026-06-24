@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { buildSmsMessage, sendSMS } from '@/lib/utils/sms'
+import { buildSmsMessage, sendSMS, normalizePhone, sendAndLogSms } from '@/lib/utils/sms'
 import { sendEmail } from '@/lib/utils/email'
 import { taskConfirmedEmail } from '@/lib/utils/email-templates'
 import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
@@ -9,14 +9,6 @@ import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
 const CompleteTaskSchema = z.object({
   confirmation_value: z.string().min(10, 'Confirmation detail must be at least 10 characters.'),
 })
-
-// Normalize a free-text phone number to E.164 for Twilio.
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 10) return '+1' + digits
-  if (digits.length === 11 && digits.startsWith('1')) return '+' + digits
-  return '+' + digits
-}
 
 export async function POST(
   request: NextRequest,
@@ -80,7 +72,7 @@ async function handleComplete(
 
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('*, services(id, deceased_name, service_date, location)')
+    .select('*, services(id, deceased_name, service_date, location, assigned_staff_id)')
     .eq('id', params.id)
     .eq('funeral_home_id', profile.funeral_home_id)
     .single()
@@ -113,7 +105,7 @@ async function handleComplete(
     .maybeSingle()
 
   const service = task.services as {
-    id: string; deceased_name: string; service_date: string; location: string
+    id: string; deceased_name: string; service_date: string; location: string; assigned_staff_id: string | null
   } | null
 
   try {
@@ -204,6 +196,51 @@ async function handleComplete(
     }
   } catch (notifyErr) {
     console.error('[notifications] error — continuing to activity log:', notifyErr)
+  }
+
+  // "Task completed on my service" SMS — notify users who opted in and either
+  // own the funeral home (owner/fd) or are the staff assigned to this service.
+  // Never notifies the person who just confirmed the task. Best-effort.
+  try {
+    if (service) {
+      const { data: members } = await serviceRole
+        .from('profiles')
+        .select('id, phone, role')
+        .eq('funeral_home_id', profile.funeral_home_id)
+        .eq('is_active', true)
+
+      const memberIds = (members ?? []).map(m => m.id)
+      if (memberIds.length > 0) {
+        const { data: prefRows } = await serviceRole
+          .from('notification_preferences')
+          .select('user_id, sms_task_completed_on_my_service')
+          .in('user_id', memberIds)
+
+        const optedIn = new Set(
+          (prefRows ?? []).filter(p => p.sms_task_completed_on_my_service).map(p => p.user_id)
+        )
+        const message = `Vigilight: ${profile.full_name} confirmed '${task.title}' for the ${service.deceased_name} service (${formatDate(service.service_date)}). Txt STOP to opt out.`
+
+        for (const m of members ?? []) {
+          if (m.id === session.user.id) continue                 // not the confirmer
+          if (!optedIn.has(m.id) || !m.phone) continue
+          const ownsOrAssigned =
+            m.role === 'owner' || m.role === 'fd' || m.id === service.assigned_staff_id
+          if (!ownsOrAssigned) continue
+
+          await sendAndLogSms(serviceRole, {
+            funeralHomeId: profile.funeral_home_id,
+            serviceId:     service.id,
+            taskId:        task.id,
+            recipientId:   m.id,
+            phone:         m.phone,
+            message,
+          })
+        }
+      }
+    }
+  } catch (smsErr) {
+    console.error('[task-completed-sms] error:', smsErr instanceof Error ? smsErr.message : smsErr)
   }
 
   // Activity log (use service role — no browser session in API route)

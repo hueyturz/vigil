@@ -1,125 +1,182 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { sendEmail } from '@/lib/utils/email'
-import { taskOverdueEmail } from '@/lib/utils/email-templates'
+import { sendAndLogSms } from '@/lib/utils/sms'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
 
-export async function GET(request: NextRequest) {
-  // Verify cron secret. Vercel's native cron sends `Authorization: Bearer
-  // ${CRON_SECRET}` automatically; manual/external callers may use the custom
-  // `x-cron-secret` header. Accept either.
-  const cronSecret = process.env.CRON_SECRET
-  const headerSecret = request.headers.get('x-cron-secret')
-  const bearer = request.headers.get('authorization')
-  const authorized =
-    !!cronSecret &&
-    (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)
-  if (!authorized) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+// Hourly cron (QStash). Each invocation sends the daily SMS reminder only to
+// users whose local time currently equals their preferred reminder hour, so a
+// single hourly job covers every timezone.
+
+type Timing = 'overdue' | 'today' | 'tomorrow'
+
+const TIMING_LABEL: Record<Timing, string> = {
+  overdue:  'overdue',
+  today:    'due today',
+  tomorrow: 'due tomorrow',
+}
+const TIMING_ORDER: Record<Timing, number> = { overdue: 0, today: 1, tomorrow: 2 }
+
+// Current wall-clock hour (0-23) in the given IANA timezone.
+function localHour(tz: string): number {
+  try {
+    const h = parseInt(
+      new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date()),
+      10,
+    )
+    return h === 24 ? 0 : h
+  } catch {
+    return new Date().getUTCHours()
+  }
+}
+
+interface ReminderTask {
+  title:         string
+  serviceId:     string
+  serviceName:   string
+  serviceDate:   string | null
+  assignedToId:  string | null
+  funeralHomeId: string
+  timing:        Timing
+}
+
+function buildReminderMessage(tasks: ReminderTask[]): string {
+  const groups = new Map<string, { name: string; date: string | null; items: ReminderTask[] }>()
+  for (const t of tasks) {
+    if (!groups.has(t.serviceId)) groups.set(t.serviceId, { name: t.serviceName, date: t.serviceDate, items: [] })
+    groups.get(t.serviceId)!.items.push(t)
+  }
+  for (const g of Array.from(groups.values())) g.items.sort((a, b) => TIMING_ORDER[a.timing] - TIMING_ORDER[b.timing])
+
+  const fmtDate = (d: string | null) => (d ? formatDate(d) : 'date TBD')
+  const bullets = (items: ReminderTask[]) => {
+    const shown = items.slice(0, 5).map(t => `• ${t.title} (${TIMING_LABEL[t.timing]})`)
+    if (items.length > 5) shown.push(`and ${items.length - 5} more — view at getvigilight.com`)
+    return shown.join('\n')
+  }
+  const STOP = 'Txt STOP to opt out.'
+
+  if (groups.size === 1) {
+    const g = Array.from(groups.values())[0]
+    const n = g.items.length
+    return `Vigilight: ${n} task${n !== 1 ? 's' : ''} need attention for ${g.name} service (${fmtDate(g.date)}):\n${bullets(g.items)}\n${STOP}`
   }
 
-  const serviceRole = createServiceRoleClient()
+  const blocks = Array.from(groups.values()).map(g => `${g.name} (${fmtDate(g.date)}):\n${bullets(g.items)}`)
+  return `Vigilight: Tasks need attention across ${groups.size} services:\n\n${blocks.join('\n\n')}\n\n${STOP}`
+}
 
-  // Fetch all not-started tasks across active services with service info
-  const { data: tasks, error } = await serviceRole
+export async function GET(request: NextRequest) {
+  // Auth: QStash is configured to send Authorization: Bearer <CRON_SECRET>
+  // (or the x-cron-secret header for manual testing).
+  const cronSecret   = process.env.CRON_SECRET
+  const headerSecret = request.headers.get('x-cron-secret')
+  const bearer       = request.headers.get('authorization')
+  const authorized   = !!cronSecret && (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)
+  if (!authorized) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+
+  const db = createServiceRoleClient()
+
+  // Not-started tasks on active services, with service + assignment info.
+  const { data: rawTasks, error } = await db
     .from('tasks')
     .select(`
-      id,
-      title,
-      due_days_before,
-      funeral_home_id,
-      service_id,
-      services!inner (
-        id,
-        deceased_name,
-        service_date,
-        location,
-        status
-      )
+      id, title, due_days_before, funeral_home_id, service_id, assigned_to_id,
+      services!inner ( id, deceased_name, service_date, status )
     `)
     .eq('status', 'not-started')
     .eq('services.status', 'active')
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Classify each task's timing; keep only overdue / due today / due tomorrow.
+  const enriched: ReminderTask[] = []
+  for (const task of rawTasks ?? []) {
+    const raw = task.services as unknown
+    const svc = (Array.isArray(raw) ? raw[0] : raw) as
+      | { id: string; deceased_name: string; service_date: string | null }
+      | null
+    if (!svc || !svc.service_date) continue
+
+    const dueIn = daysUntil(svc.service_date) - task.due_days_before
+    let timing: Timing | null = null
+    if (dueIn < 0) timing = 'overdue'
+    else if (dueIn === 0) timing = 'today'
+    else if (dueIn === 1) timing = 'tomorrow'
+    if (!timing) continue
+
+    enriched.push({
+      title:         task.title,
+      serviceId:     task.service_id,
+      serviceName:   svc.deceased_name,
+      serviceDate:   svc.service_date,
+      assignedToId:  task.assigned_to_id ?? null,
+      funeralHomeId: task.funeral_home_id,
+      timing,
+    })
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  // Active users + their preferences.
+  const { data: profiles } = await db
+    .from('profiles')
+    .select('id, role, phone, funeral_home_id')
+    .eq('is_active', true)
+  const { data: allPrefs } = await db.from('notification_preferences').select('*')
+  const prefsByUser = new Map((allPrefs ?? []).map(p => [p.user_id, p]))
+
   const sent: string[]   = []
   const failed: string[] = []
+  const skipped = { offHour: 0, noTasks: 0, noPhone: 0 }
 
-  type ServiceRow = { id: string; deceased_name: string; service_date: string; location: string; status: string }
+  for (const user of profiles ?? []) {
+    const p = prefsByUser.get(user.id)
+    const tz            = (p?.timezone as string) ?? 'America/Denver'
+    const preferredHour = (p?.preferred_sms_hour as number) ?? 8
+    if (localHour(tz) !== preferredHour) { skipped.offHour++; continue }
+    if (!user.phone) { skipped.noPhone++; continue }
 
-  for (const task of tasks ?? []) {
-    const raw = task.services as unknown
-    const service: ServiceRow | null = Array.isArray(raw) ? (raw[0] ?? null) : (raw as ServiceRow | null)
+    const myOverdue    = p ? !!p.sms_my_tasks_overdue : true
+    const staffOverdue = p ? !!p.sms_staff_tasks_overdue : false
+    const approaching  = p ? !!p.sms_task_approaching_deadline : false
+    const isManager    = user.role === 'owner' || user.role === 'fd'
 
-    if (!service) continue
+    const userTasks = enriched.filter(t => {
+      if (t.funeralHomeId !== user.funeral_home_id) return false
 
-    const days = daysUntil(service.service_date)
+      const own         = t.assignedToId === user.id
+      const unassigned  = t.assignedToId === null
+      const someoneElse = !own && !unassigned
 
-    // Overdue = days until service <= due_days_before
-    if (days > task.due_days_before) continue
+      // Routing: which tasks fall into this user's notification scope.
+      const inScope =
+        own ||
+        (unassigned && isManager && myOverdue) ||
+        (someoneElse && isManager && staffOverdue)
+      if (!inScope) return false
 
-    // Get FD/owner for this funeral home
-    const { data: recipient } = await serviceRole
-      .from('profiles')
-      .select('id, full_name')
-      .eq('funeral_home_id', task.funeral_home_id)
-      .in('role', ['owner', 'fd'])
-      .eq('is_active', true)
-      .limit(1)
-      .single()
-
-    if (!recipient) continue
-
-    // Check recipient's overdue_email preference
-    const { data: recipientPrefs } = await serviceRole
-      .from('notification_preferences')
-      .select('overdue_email')
-      .eq('user_id', recipient.id)
-      .maybeSingle()
-
-    const emailEnabled = recipientPrefs ? recipientPrefs.overdue_email : true
-    if (!emailEnabled) continue
-
-    const { data: { user: recipientUser } } = await serviceRole.auth.admin.getUserById(recipient.id)
-    const recipientEmail = recipientUser?.email
-    if (!recipientEmail) continue
-
-    const { subject, html } = taskOverdueEmail({
-      taskTitle:        task.title,
-      familyName:       service.deceased_name,
-      serviceDate:      formatDate(service.service_date),
-      daysUntilService: days,
-      location:         service.location,
-      serviceId:        service.id,
+      // Timing gate.
+      if (t.timing === 'tomorrow') return approaching      // approaching-deadline opt-in
+      if (own) return myOverdue                            // own overdue/today
+      return true                                          // unassigned/staff already gated above
     })
 
-    const result = await sendEmail({ to: recipientEmail, subject, html })
+    if (userTasks.length === 0) { skipped.noTasks++; continue }
 
-    await serviceRole.from('email_log').insert({
-      funeral_home_id: task.funeral_home_id,
-      service_id:      task.service_id,
-      task_id:         task.id,
-      recipient_id:    recipient.id,
-      recipient_email: recipientEmail,
-      subject,
-      status:          result.success ? 'sent' : 'failed',
-      error_message:   result.error ?? null,
+    const ok = await sendAndLogSms(db, {
+      funeralHomeId: user.funeral_home_id,
+      serviceId:     null,
+      taskId:        null,
+      recipientId:   user.id,
+      phone:         user.phone,
+      message:       buildReminderMessage(userTasks),
     })
-
-    if (result.success) {
-      sent.push(`${task.title} (${service.deceased_name})`)
-    } else {
-      failed.push(`${task.title} (${service.deceased_name}): ${result.error}`)
-    }
+    if (ok) sent.push(user.id)
+    else failed.push(user.id)
   }
 
   return NextResponse.json({
-    sent:   sent.length,
-    failed: failed.length,
-    details: { sent, failed },
-    runAt: today,
+    sent:    sent.length,
+    failed:  failed.length,
+    skipped,
+    runAtUtc: new Date().toISOString(),
   })
 }

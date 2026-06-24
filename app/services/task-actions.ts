@@ -3,7 +3,61 @@
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/utils/email'
 import { taskAssignedEmail } from '@/lib/utils/email-templates'
+import { sendAndLogSms } from '@/lib/utils/sms'
+import { formatDate } from '@/lib/utils/date-helpers'
 import type { TaskWithProfile } from '@/lib/types'
+
+// SMS the newly-assigned user (best-effort) if they've opted in (default on).
+// Never notifies the actor about a self-assignment.
+async function maybeSendAssignmentSms(
+  serviceRole: ReturnType<typeof createServiceRoleClient>,
+  args: {
+    assignedToId:  string
+    actorId:       string
+    taskId:        string
+    funeralHomeId: string
+    serviceId:     string
+    taskTitle:     string
+    familyName:    string
+    serviceDate:   string | null
+    dueDaysBefore: number
+  },
+): Promise<void> {
+  if (args.assignedToId === args.actorId) return
+  try {
+    const { data: assignee } = await serviceRole
+      .from('profiles')
+      .select('phone')
+      .eq('id', args.assignedToId)
+      .single()
+    if (!assignee?.phone) return
+
+    const { data: pref } = await serviceRole
+      .from('notification_preferences')
+      .select('sms_task_assigned')
+      .eq('user_id', args.assignedToId)
+      .maybeSingle()
+    const optedIn = pref ? !!pref.sms_task_assigned : true   // default true
+    if (!optedIn) return
+
+    const dateStr = args.serviceDate ? formatDate(args.serviceDate) : 'date TBD'
+    const due = args.dueDaysBefore === 0
+      ? 'on the day of service'
+      : `${args.dueDaysBefore} day${args.dueDaysBefore !== 1 ? 's' : ''} before service`
+    const message = `Vigilight: You've been assigned '${args.taskTitle}' for the ${args.familyName} service (${dateStr}). Due ${due}. Txt STOP to opt out.`
+
+    await sendAndLogSms(serviceRole, {
+      funeralHomeId: args.funeralHomeId,
+      serviceId:     args.serviceId,
+      taskId:        args.taskId,
+      recipientId:   args.assignedToId,
+      phone:         assignee.phone,
+      message,
+    })
+  } catch (err) {
+    console.error('[assignment sms] failed:', err instanceof Error ? err.message : err)
+  }
+}
 
 async function maybeSendAssignmentEmail(
   serviceRole: ReturnType<typeof createServiceRoleClient>,
@@ -53,7 +107,7 @@ export async function addTaskToService(
 
   const { data: service } = await serviceRole
     .from('services')
-    .select('funeral_home_id, deceased_name')
+    .select('funeral_home_id, deceased_name, service_date')
     .eq('id', serviceId)
     .single()
 
@@ -100,6 +154,17 @@ export async function addTaskToService(
       serviceRole, input.assigned_to_id, session.user.id, profile.full_name,
       input.title, service.deceased_name, serviceId,
     )
+    void maybeSendAssignmentSms(serviceRole, {
+      assignedToId:  input.assigned_to_id,
+      actorId:       session.user.id,
+      taskId:        inserted.id,
+      funeralHomeId: profile.funeral_home_id,
+      serviceId,
+      taskTitle:     input.title,
+      familyName:    service.deceased_name,
+      serviceDate:   service.service_date ?? null,
+      dueDaysBefore: input.due_days_before,
+    })
   }
 
   return { data: newTask }
@@ -294,7 +359,7 @@ export async function reassignTask(
 
   const { data: task } = await serviceRole
     .from('tasks')
-    .select('funeral_home_id, title, service_id, services(deceased_name)')
+    .select('funeral_home_id, title, service_id, due_days_before, services(deceased_name, service_date)')
     .eq('id', taskId)
     .single()
 
@@ -309,11 +374,22 @@ export async function reassignTask(
   if (error) return { error: error.message }
 
   if (assignedToId && task.service_id) {
-    const svc = task.services as unknown as { deceased_name: string } | null
+    const svc = task.services as unknown as { deceased_name: string; service_date: string | null } | null
     void maybeSendAssignmentEmail(
       serviceRole, assignedToId, session.user.id, profile.full_name,
       task.title, svc?.deceased_name ?? '', task.service_id,
     )
+    void maybeSendAssignmentSms(serviceRole, {
+      assignedToId,
+      actorId:       session.user.id,
+      taskId,
+      funeralHomeId: task.funeral_home_id,
+      serviceId:     task.service_id,
+      taskTitle:     task.title,
+      familyName:    svc?.deceased_name ?? '',
+      serviceDate:   svc?.service_date ?? null,
+      dueDaysBefore: task.due_days_before,
+    })
   }
 
   return {}

@@ -2,7 +2,16 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { sendAndLogSms } from '@/lib/utils/sms'
+import { formatDate } from '@/lib/utils/date-helpers'
 import type { Priority, ServiceType, ServiceNote } from '@/lib/types'
+
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  'full-burial': 'Full Burial',
+  'graveside':   'Graveside',
+  'cremation':   'Cremation',
+  'military':    'Military Honors',
+}
 
 interface CreateServiceInput {
   family_name:       string
@@ -70,6 +79,47 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
       p_service_id: service.id,
     })
     if (rpcError) return { error: rpcError.message }
+  }
+
+  // Notify opted-in managers of the new service via SMS (best-effort; never
+  // blocks service creation, and the creator is not notified of their own action).
+  try {
+    const { data: managers } = await serviceRole
+      .from('profiles')
+      .select('id, phone')
+      .eq('funeral_home_id', profile.funeral_home_id)
+      .in('role', ['owner', 'fd'])
+      .eq('is_active', true)
+
+    const managerIds = (managers ?? []).map(m => m.id)
+    if (managerIds.length > 0) {
+      const { data: prefRows } = await serviceRole
+        .from('notification_preferences')
+        .select('user_id, sms_new_service_created')
+        .in('user_id', managerIds)
+
+      const optedIn = new Set((prefRows ?? []).filter(p => p.sms_new_service_created).map(p => p.user_id))
+      const typeLabel = input.service_type
+        ? (SERVICE_TYPE_LABELS[input.service_type] ?? input.service_type)
+        : 'service type TBD'
+      const dateStr = input.service_date ? formatDate(input.service_date) : 'date TBD'
+      const message = `Vigilight: New service created — ${input.family_name} (${typeLabel}, ${dateStr}). Txt STOP to opt out.`
+
+      for (const m of managers ?? []) {
+        if (m.id === session.user.id) continue        // don't notify the creator
+        if (!optedIn.has(m.id) || !m.phone) continue
+        await sendAndLogSms(serviceRole, {
+          funeralHomeId: profile.funeral_home_id,
+          serviceId:     service.id,
+          taskId:        null,
+          recipientId:   m.id,
+          phone:         m.phone,
+          message,
+        })
+      }
+    }
+  } catch (smsErr) {
+    console.error('[createService] new-service SMS failed:', smsErr instanceof Error ? smsErr.message : smsErr)
   }
 
   revalidatePath('/dashboard')
