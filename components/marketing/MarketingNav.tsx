@@ -21,8 +21,8 @@ export function MarketingNav() {
         {/* Wordmark — clean lantern mark (no background box) + styled text */}
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/vigilight-mark.svg" alt="" style={{ height: 40, width: 'auto' }} />
-          <span style={{ color: '#0A2540', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+          <img src="/vigilight-mark.svg" alt="" style={{ height: 48, width: 'auto' }} />
+          <span style={{ color: '#0A2540', fontSize: '24px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
             Vigilight
           </span>
         </Link>
