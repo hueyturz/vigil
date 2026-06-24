@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { buildSmsMessage } from '@/lib/utils/sms'
+import { buildSmsMessage, sendSMS } from '@/lib/utils/sms'
 import { sendEmail } from '@/lib/utils/email'
 import { taskConfirmedEmail } from '@/lib/utils/email-templates'
 import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
@@ -9,6 +9,14 @@ import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
 const CompleteTaskSchema = z.object({
   confirmation_value: z.string().min(10, 'Confirmation detail must be at least 10 characters.'),
 })
+
+// Normalize a free-text phone number to E.164 for Twilio.
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) return '+1' + digits
+  if (digits.length === 11 && digits.startsWith('1')) return '+' + digits
+  return '+' + digits
+}
 
 export async function POST(
   request: NextRequest,
@@ -127,22 +135,41 @@ async function handleComplete(
         ? recipientPrefs[`${taskPriority}_sms` as keyof typeof recipientPrefs] as boolean
         : false
 
-      // SMS log (Twilio stub — status stays 'pending' until wired)
+      // SMS via Twilio: log a pending row, send, then mark sent/failed.
+      // A send failure must never break task completion.
       if (smsEnabled) {
-        await serviceRole.from('sms_log').insert({
-          funeral_home_id: profile.funeral_home_id,
-          service_id:      task.service_id,
-          task_id:         task.id,
-          recipient_id:    recipient.id,
-          message:         buildSmsMessage({
-            completedByName:   profile.full_name,
-            taskTitle:         task.title,
-            familyName:        service.deceased_name,
-            serviceDate:       service.service_date,
-            confirmationValue: confirmation_value,
-          }),
-          status: 'pending',
+        const smsMessage = buildSmsMessage({
+          completedByName:   profile.full_name,
+          taskTitle:         task.title,
+          familyName:        service.deceased_name,
+          serviceDate:       service.service_date,
+          confirmationValue: confirmation_value,
         })
+
+        const { data: smsRow } = await serviceRole
+          .from('sms_log')
+          .insert({
+            funeral_home_id: profile.funeral_home_id,
+            service_id:      task.service_id,
+            task_id:         task.id,
+            recipient_id:    recipient.id,
+            message:         smsMessage,
+            status:          'pending',
+          })
+          .select('id')
+          .single()
+
+        if (smsRow) {
+          try {
+            if (!recipient.phone) throw new Error('Recipient has no phone number on file.')
+            const normalizedPhone = normalizePhone(recipient.phone)
+            await sendSMS(normalizedPhone, smsMessage)
+            await serviceRole.from('sms_log').update({ status: 'sent' }).eq('id', smsRow.id)
+          } catch (smsErr) {
+            console.error('[sms] send failed:', smsErr instanceof Error ? smsErr.message : smsErr)
+            await serviceRole.from('sms_log').update({ status: 'failed' }).eq('id', smsRow.id)
+          }
+        }
       }
 
       if (emailEnabled) {
