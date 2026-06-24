@@ -18,11 +18,11 @@ export function MarketingNav() {
       style={{ borderColor: '#E2E8F0' }}
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        {/* Wordmark — appicon + styled text (lockup SVG's system-font text didn't match the site) */}
-        <Link href="/" className="flex items-center gap-2">
+        {/* Wordmark — clean lantern mark (no background box) + styled text */}
+        <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/vigilight-appicon.svg" alt="" style={{ height: 32, width: 'auto' }} />
-          <span style={{ color: '#0A2540', fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em' }}>
+          <img src="/vigilight-mark.svg" alt="" style={{ height: 40, width: 'auto' }} />
+          <span style={{ color: '#0A2540', fontSize: '22px', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
             Vigilight
           </span>
         </Link>
