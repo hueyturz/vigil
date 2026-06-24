@@ -41,7 +41,7 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
       {/* Logo */}
       <div className="px-6 py-5 border-b flex items-center gap-2" style={{ borderColor: 'rgba(248,245,240,0.08)' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/vigilight-appicon.svg" alt="Vigilight" width={28} height={28} />
+        <img src="/vigilight-appicon.svg" alt="Vigilight" height={36} style={{ height: 36, width: 'auto' }} />
         <span className="text-xl font-bold tracking-tight" style={{ color: '#F4C95D' }}>Vigilight</span>
       </div>
 
