@@ -39,17 +39,19 @@ export async function retrySms(smsLogId: string): Promise<{ error?: string }> {
     .maybeSingle()
 
   if (!recipient?.phone) {
-    await serviceRole.from('sms_log').update({ status: 'failed' }).eq('id', smsLogId)
-    return { error: 'Recipient has no phone number on file.' }
+    const message = 'Recipient has no phone number on file.'
+    await serviceRole.from('sms_log').update({ status: 'failed', error_message: message }).eq('id', smsLogId)
+    return { error: message }
   }
 
   try {
     await sendSMS(normalizePhone(recipient.phone), row.message)
-    await serviceRole.from('sms_log').update({ status: 'sent' }).eq('id', smsLogId)
+    await serviceRole.from('sms_log').update({ status: 'sent', error_message: null }).eq('id', smsLogId)
     return {}
   } catch (err) {
-    await serviceRole.from('sms_log').update({ status: 'failed' }).eq('id', smsLogId)
-    return { error: err instanceof Error ? err.message : 'Send failed.' }
+    const message = err instanceof Error ? err.message : 'Send failed.'
+    await serviceRole.from('sms_log').update({ status: 'failed', error_message: message }).eq('id', smsLogId)
+    return { error: message }
   }
 }
 

@@ -5,11 +5,9 @@ import { getSuperadminSession } from '@/lib/utils/admin'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
 const NAV = [
-  { href: '/admin',                label: 'Overview'       },
-  { href: '/admin/funeral-homes',  label: 'Funeral Homes'  },
-  { href: '/admin/sms',            label: 'SMS Logs'       },
-  { href: '/admin/users',          label: 'Users'          },
-  { href: '/admin/settings',       label: 'Settings'       },
+  { href: '/admin',               label: 'Overview'      },
+  { href: '/admin/funeral-homes', label: 'Funeral Homes' },
+  { href: '/admin/sms',           label: 'SMS Logs'      },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -76,11 +76,12 @@ export async function sendAndLogSms(
   try {
     if (!args.phone) throw new Error('Recipient has no phone number on file.')
     await sendSMS(normalizePhone(args.phone), args.message)
-    await db.from('sms_log').update({ status: 'sent' }).eq('id', row.id)
+    await db.from('sms_log').update({ status: 'sent', error_message: null }).eq('id', row.id)
     return true
   } catch (err) {
-    console.error('[sms] send failed:', err instanceof Error ? err.message : err)
-    await db.from('sms_log').update({ status: 'failed' }).eq('id', row.id)
+    const message = err instanceof Error ? err.message : 'Send failed.'
+    console.error('[sms] send failed:', message)
+    await db.from('sms_log').update({ status: 'failed', error_message: message }).eq('id', row.id)
     return false
   }
 }
