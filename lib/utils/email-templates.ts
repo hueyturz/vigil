@@ -1,4 +1,9 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+// No localhost fallback: a localhost link in a real email is worse than a relative
+// one. If the env var is missing we warn loudly and emit relative links instead.
+if (!process.env.NEXT_PUBLIC_APP_URL) {
+  console.warn('[email-templates] NEXT_PUBLIC_APP_URL is not set — email links will be relative and may not resolve.')
+}
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
 function baseLayout(content: string): string {
   return `<!DOCTYPE html>
