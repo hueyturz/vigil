@@ -53,6 +53,7 @@ export async function updateSession(request: NextRequest) {
     pathname === '/onboarding' ||
     pathname === '/forgot-password' ||
     pathname === '/reset-password' ||
+    pathname === '/accept-invite' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/demo-request')

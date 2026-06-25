@@ -35,6 +35,7 @@ export async function inviteUser(formData: FormData): Promise<{ error?: string }
 
   // inviteUserByEmail sends a magic-link email and creates an auth.users row.
   // Metadata is picked up by the handle_new_user trigger to create the profile.
+  // redirectTo lands the invitee on /accept-invite to set their password.
   const { error: inviteError } = await serviceRole.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name,
@@ -42,6 +43,7 @@ export async function inviteUser(formData: FormData): Promise<{ error?: string }
       funeral_home_id: profile.funeral_home_id,
       phone: phone ?? null,
     },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/accept-invite`,
   })
 
   if (inviteError) return { error: inviteError.message }

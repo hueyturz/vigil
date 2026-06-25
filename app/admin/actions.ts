@@ -114,6 +114,7 @@ export async function inviteUser(
 
   const { error } = await auth.serviceRole.auth.admin.inviteUserByEmail(email.trim(), {
     data: { full_name: name.trim(), role, funeral_home_id: funeralHomeId },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/accept-invite`,
   })
   return error ? { error: error.message } : {}
 }
