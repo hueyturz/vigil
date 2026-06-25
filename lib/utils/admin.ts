@@ -1,23 +1,24 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { ADMIN_EMAILS, isAdminEmail, isSuperadmin } from '@/lib/utils/superadmin'
 
-// Hardcoded allow-list. Anyone else gets a 404 (route existence stays hidden).
-export const ADMIN_EMAILS = ['hueyturz@gmail.com']
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false
-  return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase())
-}
+export { ADMIN_EMAILS, isAdminEmail }
 
 /**
- * Returns the current session if the logged-in user is an admin, otherwise null.
- * Callers should notFound() when this returns null so the route stays hidden.
+ * Returns the current session if the logged-in user is a platform superadmin
+ * (is_superadmin column, or the email allow-list fallback), otherwise null.
+ * The is_superadmin read uses the service-role client, not the user's session.
  */
-export async function getAdminSession() {
+export async function getSuperadminSession() {
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
-  if (!isAdminEmail(session?.user.email)) return null
-  return session
+  if (!session) return null
+  const serviceRole = createServiceRoleClient()
+  const ok = await isSuperadmin(serviceRole, session.user.id, session.user.email ?? null)
+  return ok ? session : null
 }
+
+/** @deprecated use getSuperadminSession — kept for existing callers. */
+export const getAdminSession = getSuperadminSession
 
 // ── Shared time / formatting helpers ─────────────────────────────────────────────
 

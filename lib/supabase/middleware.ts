@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSuperadmin } from '@/lib/utils/superadmin'
 
 type CookieEntry = { name: string; value: string; options: Record<string, unknown> }
 
@@ -59,6 +61,23 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // /admin/* is superadmin-only. Verify via the service-role client (not the
+  // user's session) so a regular user can't bypass it. Non-superadmins → dashboard.
+  if (user && pathname.startsWith('/admin')) {
+    const serviceRole = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    )
+    const ok = await isSuperadmin(serviceRole, user.id, user.email ?? null)
+    if (!ok) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      url.searchParams.set('error', 'admin_only')
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

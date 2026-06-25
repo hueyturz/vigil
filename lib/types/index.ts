@@ -24,6 +24,46 @@ export interface Profile {
   created_at: string
 }
 
+// ── Superadmin / platform-ops view models ──────────────────────────────────────
+
+export interface AdminFuneralHome {
+  id: string
+  name: string
+  address: string | null
+  ownerName: string
+  ownerEmail: string
+  city: string | null
+  userCount: number
+  activeServices: number
+  totalServices: number
+  smsSent: number
+  smsDeliveryRate: number   // 0-100
+  createdAt: string
+  lastActivityAt: string | null
+}
+
+export interface AdminUser {
+  id: string
+  funeralHomeId: string
+  fullName: string
+  email: string
+  role: Role
+  phone: string | null
+  isActive: boolean
+  lastLoginAt: string | null
+}
+
+export interface AdminSmsLog {
+  id: string
+  funeralHomeId: string
+  funeralHomeName: string
+  recipientName: string
+  recipientPhone: string | null
+  messagePreview: string
+  status: SmsStatus
+  createdAt: string
+}
+
 export interface Service {
   id: string
   funeral_home_id: string

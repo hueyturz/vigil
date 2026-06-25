@@ -1,261 +1,144 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import {
-  getAdminSession,
-  daysSince,
-  relativeJoined,
-  timeAgo,
-  completionColor,
-  ACTION_LABELS,
-  actionColor,
-} from '@/lib/utils/admin'
+import { relativeJoined, timeAgo } from '@/lib/utils/admin'
+import { ResendSmsButton } from './_components/ResendSmsButton'
 
-type AccountStatus = 'New' | 'Active' | 'Stale'
-
-const STATUS_STYLE: Record<AccountStatus, { bg: string; color: string }> = {
-  New:    { bg: '#EFF6FF', color: '#2563EB' },
-  Active: { bg: '#ECFDF5', color: '#4A7C8C' },
-  Stale:  { bg: '#FFFBEB', color: '#F59E0B' },
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export default async function AdminPage() {
-  // Gate: must be logged in AND on the admin allow-list — otherwise 404.
-  if (!(await getAdminSession())) notFound()
-
+// Access is gated by middleware + the admin layout (superadmin only).
+export default async function AdminOverviewPage() {
   const db = createServiceRoleClient()
 
-  // Cross-tenant reads (service role bypasses RLS).
   const [
     { data: homes },
+    { data: profiles },
     { data: services },
-    { data: tasks },
-    { data: owners },
-    { data: { users: authUsers } },
-    { data: activity },
+    { count: activeUsers },
+    { count: totalServices },
+    { count: smsSent },
+    { count: smsFailed },
+    { count: tasksConfirmed },
+    { data: failedSms },
   ] = await Promise.all([
     db.from('funeral_homes').select('id, name, created_at'),
-    db.from('services').select('funeral_home_id, status, created_at'),
-    db.from('tasks').select('funeral_home_id, status'),
-    db.from('profiles').select('id, full_name, funeral_home_id').eq('role', 'owner'),
-    db.auth.admin.listUsers({ perPage: 1000 }),
-    db.from('activity_log')
-      .select('id, actor_name, description, action_type, created_at, funeral_home_id')
+    db.from('profiles').select('id, full_name, role, funeral_home_id'),
+    db.from('services').select('funeral_home_id'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    db.from('services').select('id', { count: 'exact', head: true }),
+    db.from('sms_log').select('id', { count: 'exact', head: true }).eq('status', 'sent'),
+    db.from('sms_log').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
+    db.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'complete'),
+    db.from('sms_log')
+      .select('id, recipient_id, funeral_home_id, message, created_at')
+      .eq('status', 'failed')
       .order('created_at', { ascending: false })
-      .limit(30),
+      .limit(10),
   ])
 
-  const emailById: Record<string, string> = {}
-  for (const au of authUsers ?? []) emailById[au.id] = au.email ?? ''
+  const homeName = new Map((homes ?? []).map(h => [h.id, h.name]))
+  const profileName = new Map((profiles ?? []).map(p => [p.id, p.full_name]))
 
-  const homeNameById: Record<string, string> = {}
-  for (const h of homes ?? []) homeNameById[h.id] = h.name
+  const sent = smsSent ?? 0
+  const failed = smsFailed ?? 0
+  const deliveryRate = sent + failed > 0 ? Math.round((sent / (sent + failed)) * 100) : 0
 
-  const recentActivity = (activity ?? []).map(a => ({
-    ...a,
-    homeName: homeNameById[a.funeral_home_id] ?? 'Unknown',
-  }))
+  // Recent signups: last 10 homes with per-home user + service counts.
+  const userCountByHome = new Map<string, number>()
+  for (const p of profiles ?? []) userCountByHome.set(p.funeral_home_id, (userCountByHome.get(p.funeral_home_id) ?? 0) + 1)
+  const serviceCountByHome = new Map<string, number>()
+  for (const s of services ?? []) serviceCountByHome.set(s.funeral_home_id, (serviceCountByHome.get(s.funeral_home_id) ?? 0) + 1)
+  const ownerByHome = new Map<string, string>()
+  for (const p of profiles ?? []) if (p.role === 'owner') ownerByHome.set(p.funeral_home_id, p.full_name)
 
-  const now = Date.now()
+  const recentSignups = [...(homes ?? [])]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10)
 
-  const accounts = (homes ?? []).map(home => {
-    const homeServices = (services ?? []).filter(s => s.funeral_home_id === home.id)
-    const homeTasks    = (tasks ?? []).filter(t => t.funeral_home_id === home.id)
-    const owner        = (owners ?? []).find(o => o.funeral_home_id === home.id) ?? null
-
-    const totalServices  = homeServices.length
-    const activeServices = homeServices.filter(s => s.status === 'active').length
-    const totalTasks     = homeTasks.length
-    const confirmedTasks = homeTasks.filter(t => t.status === 'complete').length
-    const completionRate = totalTasks > 0 ? Math.round((confirmedTasks / totalTasks) * 100) : 0
-    const days           = daysSince(home.created_at)
-
-    const hasRecentService = homeServices.some(
-      s => now - new Date(s.created_at).getTime() <= 30 * 86_400_000
-    )
-
-    const status: AccountStatus =
-      days <= 7          ? 'New'
-      : hasRecentService ? 'Active'
-      : 'Stale'
-
-    return {
-      id:           home.id,
-      name:         home.name,
-      created_at:   home.created_at,
-      ownerName:    owner?.full_name ?? '—',
-      ownerEmail:   owner ? (emailById[owner.id] ?? '—') : '—',
-      totalServices,
-      activeServices,
-      totalTasks,
-      confirmedTasks,
-      completionRate,
-      status,
-    }
-  })
-
-  // Newest first.
-  accounts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-  // Top-line stats.
-  const totalHomes          = accounts.length
-  const totalActiveServices = accounts.reduce((sum, a) => sum + a.activeServices, 0)
-  const totalConfirmedTasks = accounts.reduce((sum, a) => sum + a.confirmedTasks, 0)
+  const METRICS = [
+    { label: 'Funeral homes',  value: (homes ?? []).length },
+    { label: 'Active users',   value: activeUsers ?? 0 },
+    { label: 'Services',       value: totalServices ?? 0 },
+    { label: 'SMS sent',       value: sent },
+    { label: 'SMS delivery',   value: `${deliveryRate}%` },
+    { label: 'Tasks confirmed', value: tasksConfirmed ?? 0 },
+  ]
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-10" style={{ backgroundColor: '#F8F5F0' }}>
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: '#4A7C8C' }}>Vigilight Admin</h1>
-          <p className="mt-1 text-sm" style={{ color: '#475569' }}>
-            All customer accounts · internal use only
-          </p>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <StatCard label="Funeral homes"        value={totalHomes} />
-          <StatCard label="Active services"       value={totalActiveServices} />
-          <StatCard label="Tasks confirmed"       value={totalConfirmedTasks} />
-        </div>
-
-        {/* Accounts table */}
-        <div
-          className="rounded-xl border overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ backgroundColor: '#F7F8FA' }}>
-                  <Th>Funeral home</Th>
-                  <Th>Owner</Th>
-                  <Th>Joined</Th>
-                  <Th className="text-center">Active services</Th>
-                  <Th className="text-center">Completion</Th>
-                  <Th className="text-center">Status</Th>
-                  <Th className="text-right">Account</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center" style={{ color: '#94A3B8' }}>
-                      No funeral homes yet.
-                    </td>
-                  </tr>
-                )}
-                {accounts.map(a => (
-                  <tr key={a.id} className="border-t" style={{ borderColor: '#E2E8F0' }}>
-                    <td className="px-4 py-3 font-medium" style={{ color: '#0F172A' }}>{a.name}</td>
-                    <td className="px-4 py-3">
-                      <div style={{ color: '#0F172A' }}>{a.ownerName}</div>
-                      <div className="text-xs" style={{ color: '#475569' }}>{a.ownerEmail}</div>
-                    </td>
-                    <td className="px-4 py-3" style={{ color: '#475569' }}>{relativeJoined(a.created_at)}</td>
-                    <td className="px-4 py-3 text-center" style={{ color: '#0F172A' }}>{a.activeServices}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="font-semibold" style={{ color: completionColor(a.completionRate) }}>
-                        {a.completionRate}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        style={{ backgroundColor: STATUS_STYLE[a.status].bg, color: STATUS_STYLE[a.status].color }}
-                      >
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/impersonate/${a.id}`}
-                        className="inline-block rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-                        style={{ borderColor: '#4A7C8C', color: '#4A7C8C' }}
-                      >
-                        View Account →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent activity */}
-        <div className="mt-10">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#0F172A' }}>Recent Activity</h2>
-
-          <div
-            className="rounded-xl border p-6"
-            style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
-          >
-            {recentActivity.length === 0 ? (
-              <p className="text-sm text-center py-6" style={{ color: '#94A3B8' }}>
-                No activity recorded yet.
-              </p>
-            ) : (
-              <div className="space-y-5">
-                {recentActivity.map(entry => (
-                  <div key={entry.id} className="flex gap-3 items-start">
-                    {/* Action icon */}
-                    <div
-                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
-                      style={{ backgroundColor: `${actionColor(entry.action_type)}18` }}
-                    >
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: actionColor(entry.action_type) }} />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="inline-block rounded-full border px-2 py-0.5 text-xs font-medium"
-                          style={{ borderColor: '#4A7C8C', color: '#4A7C8C' }}
-                        >
-                          {entry.homeName}
-                        </span>
-                        <p className="text-sm" style={{ color: '#0F172A' }}>
-                          <span className="font-medium">{entry.actor_name}</span>
-                          {' — '}
-                          {entry.description}
-                        </p>
-                      </div>
-                      <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
-                        {ACTION_LABELS[entry.action_type] ?? entry.action_type} · {timeAgo(entry.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="px-6 py-8 md:px-10 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Overview</h1>
+        <p className="mt-1 text-sm" style={{ color: '#475569' }}>Platform-wide operations · internal use only</p>
       </div>
-    </div>
-  )
-}
 
-// ── Small presentational helpers ────────────────────────────────────────────────
+      {/* Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
+        {METRICS.map(m => (
+          <div key={m.label} className="rounded-xl border p-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{m.label}</p>
+            <p className="mt-1.5 text-2xl font-bold" style={{ color: '#0F172A' }}>{m.value}</p>
+          </div>
+        ))}
+      </div>
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{label}</p>
-      <p className="mt-1.5 text-3xl font-bold" style={{ color: '#0F172A' }}>{value}</p>
+      {/* Recent signups */}
+      <h2 className="text-lg font-bold mb-3" style={{ color: '#0F172A' }}>Recent signups</h2>
+      <div className="rounded-xl border overflow-hidden mb-10" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ backgroundColor: '#F8FAFC' }}>
+              <Th>Funeral home</Th><Th>Owner</Th><Th className="text-center">Users</Th>
+              <Th className="text-center">Services</Th><Th>Created</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentSignups.length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-10 text-center" style={{ color: '#94A3B8' }}>No funeral homes yet.</td></tr>
+            )}
+            {recentSignups.map(h => (
+              <tr key={h.id} className="border-t hover:bg-gray-50 transition" style={{ borderColor: '#E2E8F0' }}>
+                <td className="px-4 py-3 font-medium" style={{ color: '#0F172A' }}>
+                  <Link href={`/admin/impersonate/${h.id}`} className="hover:underline">{h.name}</Link>
+                </td>
+                <td className="px-4 py-3" style={{ color: '#475569' }}>{ownerByHome.get(h.id) ?? '—'}</td>
+                <td className="px-4 py-3 text-center" style={{ color: '#0F172A' }}>{userCountByHome.get(h.id) ?? 0}</td>
+                <td className="px-4 py-3 text-center" style={{ color: '#0F172A' }}>{serviceCountByHome.get(h.id) ?? 0}</td>
+                <td className="px-4 py-3" style={{ color: '#475569' }}>{relativeJoined(h.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Recent failed SMS */}
+      <h2 className="text-lg font-bold mb-3" style={{ color: '#0F172A' }}>Recent failed SMS</h2>
+      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ backgroundColor: '#F8FAFC' }}>
+              <Th>Funeral home</Th><Th>Recipient</Th><Th>Message</Th><Th>Failed</Th><Th className="text-right">Action</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {(failedSms ?? []).length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-10 text-center" style={{ color: '#94A3B8' }}>No failed messages.</td></tr>
+            )}
+            {(failedSms ?? []).map(s => (
+              <tr key={s.id} className="border-t" style={{ borderColor: '#E2E8F0' }}>
+                <td className="px-4 py-3" style={{ color: '#0F172A' }}>{homeName.get(s.funeral_home_id) ?? 'Unknown'}</td>
+                <td className="px-4 py-3" style={{ color: '#475569' }}>{profileName.get(s.recipient_id) ?? '—'}</td>
+                <td className="px-4 py-3 max-w-xs truncate" style={{ color: '#475569' }}>{s.message}</td>
+                <td className="px-4 py-3" style={{ color: '#475569' }}>{timeAgo(s.created_at)}</td>
+                <td className="px-4 py-3 text-right"><ResendSmsButton smsLogId={s.id} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <th
-      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${className}`}
-      style={{ color: '#94A3B8' }}
-    >
+    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${className}`} style={{ color: '#94A3B8' }}>
       {children}
     </th>
   )
