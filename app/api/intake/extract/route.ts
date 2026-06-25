@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import { extractFromTranscript } from '@/lib/utils/intake'
 
 const Schema = z.object({
@@ -9,20 +9,12 @@ const Schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('id, role, funeral_home_id')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
+  const ctx = await getActionContext()
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  if (!['owner', 'fd'].includes(ctx.role))
     return NextResponse.json({ error: 'Insufficient permissions.' }, { status: 403 })
+  const serviceRole = ctx.serviceRole
+  const profile = { id: ctx.userId, role: ctx.role, funeral_home_id: ctx.funeralHomeId }
 
   let body: unknown
   try { body = await request.json() } catch {

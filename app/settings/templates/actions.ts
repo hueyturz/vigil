@@ -1,28 +1,20 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import type { ServiceType, TaskTemplate, TaskTemplateSubtask } from '@/lib/types'
 
 // ── Helper: verify caller is owner or fd and return funeral_home_id ──────────
+// Impersonation-aware: a superadmin impersonating a home gets that home's id
+// (role is elevated to 'owner' inside getActiveProfile), so template edits scope
+// to the impersonated tenant.
 
 async function requireFdOrOwner(): Promise<{ funeralHomeId: string } | { error: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
-
-  return { funeralHomeId: profile.funeral_home_id }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  return { funeralHomeId: ctx.funeralHomeId }
 }
 
 // ── Copy system defaults into custom templates for this funeral home ─────────

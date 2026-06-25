@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import { sendAndLogSms } from '@/lib/utils/sms'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { Priority, ServiceType, ServiceNote } from '@/lib/types'
@@ -26,20 +26,12 @@ interface CreateServiceInput {
 }
 
 export async function createService(input: CreateServiceInput): Promise<{ data?: { id: string }; error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile) return { error: 'Profile not found.' }
-  if (!['owner', 'fd'].includes(profile.role)) return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
+  const userId = ctx.userId
 
   const { data: service, error: insertError } = await serviceRole
     .from('services')
@@ -51,7 +43,7 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
       service_date:      input.service_date  || null,
       location:          input.location      || null,
       assigned_staff_id: input.assigned_staff_id || null,
-      created_by_id:     session.user.id,
+      created_by_id:     userId,
       status:            'active',
     })
     .select('id')
@@ -106,7 +98,7 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
       const message = `Vigilight: New service created — ${input.family_name} (${typeLabel}, ${dateStr}). Txt STOP to opt out.`
 
       for (const m of managers ?? []) {
-        if (m.id === session.user.id) continue        // don't notify the creator
+        if (m.id === userId) continue                 // don't notify the creator
         if (!optedIn.has(m.id) || !m.phone) continue
         await sendAndLogSms(serviceRole, {
           funeralHomeId: profile.funeral_home_id,
@@ -147,20 +139,11 @@ export async function updateService(
   serviceId: string,
   input: UpdateServiceInput,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { error } = await serviceRole
     .from('services')
@@ -203,20 +186,11 @@ export async function updateServiceNotes(
   serviceId: string,
   notes: string | null,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { error } = await serviceRole
     .from('services')
@@ -237,20 +211,12 @@ export async function addServiceNote(
   const trimmed = content.trim()
   if (!trimmed) return { error: 'Note cannot be empty.' }
 
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
+  const userId = ctx.userId
 
   const { data: service } = await serviceRole
     .from('services')
@@ -266,7 +232,7 @@ export async function addServiceNote(
     .insert({
       service_id:      serviceId,
       funeral_home_id: profile.funeral_home_id,
-      author_id:       session.user.id,
+      author_id:       userId,
       author_name:     profile.full_name,
       content:         trimmed,
     })
@@ -281,20 +247,11 @@ export async function addServiceNote(
 export async function deleteServiceNote(
   noteId: string,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: note } = await serviceRole
     .from('service_notes')
@@ -316,20 +273,11 @@ export async function updateServiceContact(
   serviceId: string,
   contact: { contact_name: string | null; contact_phone: string | null; contact_email: string | null },
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { error } = await serviceRole
     .from('services')
@@ -351,20 +299,11 @@ export async function updateServiceStatus(
   serviceId: string,
   status: 'active' | 'completed',
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { error } = await serviceRole
     .from('services')
@@ -384,20 +323,11 @@ export async function applyTemplateToService(
   serviceId:   string,
   serviceType: ServiceType,
 ): Promise<{ added: number; skipped: number; error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { added: 0, skipped: 0, error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { added: 0, skipped: 0, error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { added: 0, skipped: 0, error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { added: 0, skipped: 0, error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   // Verify service belongs to this funeral home
   const { data: service } = await serviceRole

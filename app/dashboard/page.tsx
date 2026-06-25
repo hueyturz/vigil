@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { getActiveProfile } from '@/lib/utils/impersonation'
 import { AppShell } from '@/components/layout/AppShell'
 import { StatsRow } from '@/components/services/StatsRow'
 import { ServiceProgressChart } from '@/components/dashboard/ServiceProgressChart'
@@ -13,20 +14,12 @@ import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import type { ServiceWithTasks, ActivityLog } from '@/lib/types'
 
 export default async function DashboardPage() {
-  const supabase = createClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const ctx = await getActiveProfile()
+  if (!ctx) redirect('/login')
+  const { profile } = ctx
 
   const db = createServiceRoleClient()
 
-  const { data: profile } = await db
-    .from('profiles')
-    .select('id, full_name, role, funeral_home_id')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile) redirect('/login')
   if (profile.role === 'staff') redirect('/my-tasks')
 
   const { data: servicesRaw } = await db

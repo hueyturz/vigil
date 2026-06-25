@@ -1,6 +1,7 @@
 'use server'
 
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import { sendEmail } from '@/lib/utils/email'
 import { taskAssignedEmail } from '@/lib/utils/email-templates'
 import { sendAndLogSms } from '@/lib/utils/sms'
@@ -90,20 +91,11 @@ export async function addTaskToService(
     assigned_to_id?: string | null
   },
 ): Promise<{ data?: TaskWithProfile; error?: string }> {
-  const supabase     = createClient()
-  const serviceRole  = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: service } = await serviceRole
     .from('services')
@@ -151,12 +143,12 @@ export async function addTaskToService(
 
   if (input.assigned_to_id) {
     void maybeSendAssignmentEmail(
-      serviceRole, input.assigned_to_id, session.user.id, profile.full_name,
+      serviceRole, input.assigned_to_id, ctx.userId, profile.full_name,
       input.title, service.deceased_name, serviceId,
     )
     void maybeSendAssignmentSms(serviceRole, {
       assignedToId:  input.assigned_to_id,
-      actorId:       session.user.id,
+      actorId:       ctx.userId,
       taskId:        inserted.id,
       funeralHomeId: profile.funeral_home_id,
       serviceId,
@@ -175,20 +167,11 @@ export async function addTaskToService(
 export async function deleteServiceTask(
   taskId: string,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: task } = await serviceRole
     .from('tasks')
@@ -214,20 +197,11 @@ export async function updateServiceTask(
   taskId: string,
   input: { title: string; confirmation_hint: string },
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: task } = await serviceRole
     .from('tasks')
@@ -259,20 +233,11 @@ export async function updateTaskDueDays(
 ): Promise<{ error?: string }> {
   if (!Number.isInteger(dueDaysBefore)) return { error: 'Invalid due date.' }
 
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: task } = await serviceRole
     .from('tasks')
@@ -302,20 +267,11 @@ export async function updateTaskNotes(
   taskId: string,
   notes:  string | null,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: task } = await serviceRole
     .from('tasks')
@@ -342,20 +298,11 @@ export async function reassignTask(
   taskId:        string,
   assignedToId:  string | null,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role, full_name')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
-    return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
 
   const { data: task } = await serviceRole
     .from('tasks')
@@ -376,12 +323,12 @@ export async function reassignTask(
   if (assignedToId && task.service_id) {
     const svc = task.services as unknown as { deceased_name: string; service_date: string | null } | null
     void maybeSendAssignmentEmail(
-      serviceRole, assignedToId, session.user.id, profile.full_name,
+      serviceRole, assignedToId, ctx.userId, profile.full_name,
       task.title, svc?.deceased_name ?? '', task.service_id,
     )
     void maybeSendAssignmentSms(serviceRole, {
       assignedToId,
-      actorId:       session.user.id,
+      actorId:       ctx.userId,
       taskId,
       funeralHomeId: task.funeral_home_id,
       serviceId:     task.service_id,

@@ -7,6 +7,7 @@ import type { AdminUser, Role, SmsStatus } from '@/lib/types'
 import { AdminUsersTable } from '@/app/admin/_components/AdminUsersTable'
 import { AdminCreateServiceModal } from '@/app/admin/_components/AdminCreateServiceModal'
 import { DangerZone } from '@/app/admin/_components/DangerZone'
+import { startImpersonation } from '@/app/admin/impersonation-actions'
 import { ResendSmsButton } from '@/app/admin/_components/ResendSmsButton'
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -128,7 +129,10 @@ export default async function FuneralHomeDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Link href={`/admin/impersonate/${fhId}`} className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>Impersonate</Link>
+          <form action={startImpersonation}>
+            <input type="hidden" name="funeralHomeId" value={fhId} />
+            <button type="submit" className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}>Impersonate</button>
+          </form>
           <DangerZone funeralHomeId={fhId} funeralHomeName={home.name} />
         </div>
       </div>

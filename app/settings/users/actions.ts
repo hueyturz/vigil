@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import type { Role } from '@/lib/types'
 
 const InviteSchema = z.object({
@@ -15,19 +15,11 @@ const InviteSchema = z.object({
 // ── Invite a new user ─────────────────────────────────────────────────────────
 
 export async function inviteUser(formData: FormData): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (ctx.role !== 'owner') return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role }
 
   const raw = {
     email:     formData.get('email')     as string,
@@ -64,20 +56,12 @@ export async function updateUserRole(
   targetUserId: string,
   newRole: Role,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
-  if (targetUserId === session.user.id) return { error: 'You cannot change your own role.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (ctx.role !== 'owner') return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role }
+  if (targetUserId === ctx.userId) return { error: 'You cannot change your own role.' }
 
   // Confirm target belongs to same funeral home
   const { data: target } = await serviceRole
@@ -108,11 +92,9 @@ const OwnProfileSchema = z.object({
 })
 
 export async function updateOwnProfile(formData: FormData): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  const serviceRole = ctx.serviceRole
 
   const raw = {
     full_name: formData.get('full_name') as string,
@@ -128,7 +110,7 @@ export async function updateOwnProfile(formData: FormData): Promise<{ error?: st
   const { error } = await serviceRole
     .from('profiles')
     .update({ full_name: full_name.trim(), phone: phone?.trim() ? phone.trim() : null })
-    .eq('id', session.user.id)
+    .eq('id', ctx.userId)
 
   if (error) return { error: error.message }
 
@@ -142,20 +124,12 @@ export async function setUserActive(
   targetUserId: string,
   isActive: boolean,
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || profile.role !== 'owner') return { error: 'Insufficient permissions.' }
-  if (targetUserId === session.user.id) return { error: 'You cannot deactivate yourself.' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (ctx.role !== 'owner') return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+  const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role }
+  if (targetUserId === ctx.userId) return { error: 'You cannot deactivate yourself.' }
 
   const { data: target } = await serviceRole
     .from('profiles')

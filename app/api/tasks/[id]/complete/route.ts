@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import { buildSmsMessage, sendSMS, normalizePhone, sendAndLogSms } from '@/lib/utils/sms'
 import { sendEmail } from '@/lib/utils/email'
 import { taskConfirmedEmail } from '@/lib/utils/email-templates'
@@ -42,19 +42,12 @@ async function handleComplete(
     return NextResponse.json({ error: 'Server misconfigured: missing service role key.' }, { status: 500 })
   }
 
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('id, full_name, funeral_home_id, role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile) return NextResponse.json({ error: 'Profile not found.' }, { status: 401 })
+  const ctx = await getActionContext()
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  const serviceRole = ctx.serviceRole
+  // Effective tenant + real acting user (impersonation-aware). actor_id stays the
+  // real admin; actor_name in the activity log uses the audit form (see below).
+  const profile = { id: ctx.userId, full_name: ctx.fullName, funeral_home_id: ctx.funeralHomeId, role: ctx.role }
 
   let body: unknown
   try {
@@ -84,7 +77,7 @@ async function handleComplete(
     .update({
       status:             'complete',
       confirmation_value,
-      completed_by_id:    session.user.id,
+      completed_by_id:    ctx.userId,
       completed_at:       new Date().toISOString(),
     })
     .eq('id', params.id)
@@ -222,7 +215,7 @@ async function handleComplete(
         const message = `Vigilight: ${profile.full_name} confirmed '${task.title}' for the ${service.deceased_name} service (${formatDate(service.service_date)}). Txt STOP to opt out.`
 
         for (const m of members ?? []) {
-          if (m.id === session.user.id) continue                 // not the confirmer
+          if (m.id === ctx.userId) continue                      // not the confirmer
           if (!optedIn.has(m.id) || !m.phone) continue
           const ownsOrAssigned =
             m.role === 'owner' || m.role === 'fd' || m.id === service.assigned_staff_id
@@ -251,7 +244,7 @@ async function handleComplete(
       service_id:      task.service_id,
       task_id:         task.id,
       actor_id:        profile.id,
-      actor_name:      profile.full_name,
+      actor_name:      ctx.auditName,
       action_type:     'task_completed',
       description:     `Task "${task.title}" confirmed`,
       metadata:        { confirmation_value },

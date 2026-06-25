@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+import { getActiveProfile, auditActorName } from '@/lib/utils/impersonation'
 import { AppShell } from '@/components/layout/AppShell'
 import { AllTasksView } from '@/components/tasks/AllTasksView'
 import type { TaskWithProfile } from '@/lib/types'
@@ -18,20 +19,11 @@ export interface StaffOption {
 }
 
 export default async function TasksPage() {
-  const supabase = createClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const ctx = await getActiveProfile()
+  if (!ctx) redirect('/login')
+  const { profile } = ctx
 
   const db = createServiceRoleClient()
-
-  const { data: profile } = await db
-    .from('profiles')
-    .select('id, full_name, role, funeral_home_id')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile) redirect('/login')
 
   const isStaff = profile.role === 'staff'
 
@@ -49,7 +41,7 @@ export default async function TasksPage() {
     .neq('status', 'complete')
 
   if (isStaff) {
-    query = query.eq('assigned_to_id', session.user.id)
+    query = query.eq('assigned_to_id', ctx.userId)
   }
 
   const { data: rawTasks } = await query
@@ -108,7 +100,7 @@ export default async function TasksPage() {
           isStaff={isStaff}
           funeralHomeId={profile.funeral_home_id}
           actorId={profile.id}
-          actorName={profile.full_name}
+          actorName={auditActorName(ctx)}
         />
       </div>
     </AppShell>

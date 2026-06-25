@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import { transcribeAudio } from '@/lib/utils/deepgram'
 
 // Transcribe-only endpoint for voice NOTES. Unlike /api/intake/transcribe, this
 // does NOT create an intake_sessions row and does NOT run task extraction — it
 // just returns the transcript so the caller can save it as a service note.
 export async function POST(request: NextRequest) {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
-
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile || !['owner', 'fd'].includes(profile.role))
+  const ctx = await getActionContext()
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  if (!['owner', 'fd'].includes(ctx.role))
     return NextResponse.json({ error: 'Insufficient permissions.' }, { status: 403 })
 
   let formData: FormData
