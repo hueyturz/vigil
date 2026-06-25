@@ -19,6 +19,20 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 6, border: '1px solid #E2E8F0', padding: '4px 8px', fontSize: 13, color: '#0F172A', backgroundColor: '#FFFFFF',
 }
 
+const STALE_LOGIN_MS = 30 * 86_400_000 // 30 days — flag accounts that look inactive
+
+// e.g. "Jun 25, 2026 at 9:41 AM"
+function formatLastLogin(iso: string): string {
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return `${date} at ${time}`
+}
+
+function isStaleLogin(iso: string): boolean {
+  return Date.now() - new Date(iso).getTime() > STALE_LOGIN_MS
+}
+
 export function AdminUsersTable({ users, funeralHomeId }: { users: AdminUser[]; funeralHomeId: string }) {
   const [inviteOpen, setInviteOpen] = useState(false)
 
@@ -105,8 +119,14 @@ function UserRow({ user }: { user: AdminUser }) {
           </button>
         )}
       </td>
-      <td className="px-4 py-3" style={{ color: '#475569' }}>
-        {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+      <td className="px-4 py-3">
+        {user.lastLoginAt ? (
+          <span style={{ color: isStaleLogin(user.lastLoginAt) ? '#EF4444' : '#475569' }}>
+            {formatLastLogin(user.lastLoginAt)}
+          </span>
+        ) : (
+          <span style={{ color: '#94A3B8' }}>Never</span>
+        )}
       </td>
       <td className="px-4 py-3">
         <span className="rounded-full px-2 py-0.5 text-xs font-semibold"

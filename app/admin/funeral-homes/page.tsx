@@ -2,6 +2,12 @@ import Link from 'next/link'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { relativeJoined, timeAgo, completionColor } from '@/lib/utils/admin'
 
+// Flag accounts whose most recent login is more than 30 days old.
+const STALE_LOGIN_MS = 30 * 86_400_000
+function isStaleLogin(iso: string): boolean {
+  return Date.now() - new Date(iso).getTime() > STALE_LOGIN_MS
+}
+
 export default async function FuneralHomesPage({
   searchParams,
 }: {
@@ -16,20 +22,32 @@ export default async function FuneralHomesPage({
     { data: services },
     { data: sms },
     { data: activity },
+    { data: { users: authUsers } },
   ] = await Promise.all([
     db.from('funeral_homes').select('id, name, address, created_at'),
     db.from('profiles').select('id, full_name, role, funeral_home_id'),
     db.from('services').select('funeral_home_id, status'),
     db.from('sms_log').select('funeral_home_id, status'),
     db.from('activity_log').select('funeral_home_id, created_at'),
+    db.auth.admin.listUsers({ perPage: 1000 }),
   ])
+
+  // Most recent login (auth.users.last_sign_in_at) per user, for the "Last login"
+  // per-home aggregate below.
+  const lastLoginByUser = new Map((authUsers ?? []).map(u => [u.id, u.last_sign_in_at ?? null]))
 
   // Per-home aggregates.
   const ownerByHome = new Map<string, string>()
   const usersByHome = new Map<string, number>()
+  const lastLoginByHome = new Map<string, string>()
   for (const p of profiles ?? []) {
     usersByHome.set(p.funeral_home_id, (usersByHome.get(p.funeral_home_id) ?? 0) + 1)
     if (p.role === 'owner') ownerByHome.set(p.funeral_home_id, p.full_name)
+    const login = lastLoginByUser.get(p.id)
+    if (login) {
+      const cur = lastLoginByHome.get(p.funeral_home_id)
+      if (!cur || login > cur) lastLoginByHome.set(p.funeral_home_id, login)
+    }
   }
   const activeSvcByHome = new Map<string, number>()
   for (const s of services ?? []) {
@@ -61,6 +79,7 @@ export default async function FuneralHomesPage({
       deliveryRate: sent + failed > 0 ? Math.round((sent / (sent + failed)) * 100) : 0,
       createdAt: h.created_at,
       lastActivity: lastActivityByHome.get(h.id) ?? null,
+      lastLogin: lastLoginByHome.get(h.id) ?? null,
     }
   })
 
@@ -94,12 +113,12 @@ export default async function FuneralHomesPage({
               <Th>Funeral home</Th><Th>Owner</Th><Th>Location</Th>
               <Th className="text-center">Users</Th><Th className="text-center">Active</Th>
               <Th className="text-center">SMS</Th><Th className="text-center">Delivery</Th>
-              <Th>Created</Th><Th>Last activity</Th>
+              <Th>Created</Th><Th>Last activity</Th><Th>Last login</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={9} className="px-4 py-10 text-center" style={{ color: '#94A3B8' }}>No matching funeral homes.</td></tr>
+              <tr><td colSpan={10} className="px-4 py-10 text-center" style={{ color: '#94A3B8' }}>No matching funeral homes.</td></tr>
             )}
             {rows.map(r => (
               <tr key={r.id} className="border-t hover:bg-gray-50 transition" style={{ borderColor: '#E2E8F0' }}>
@@ -114,6 +133,9 @@ export default async function FuneralHomesPage({
                 <td className="px-4 py-3 text-center font-semibold" style={{ color: completionColor(r.deliveryRate) }}>{r.smsSent + (smsFailedByHome.get(r.id) ?? 0) > 0 ? `${r.deliveryRate}%` : '—'}</td>
                 <td className="px-4 py-3" style={{ color: '#475569' }}>{relativeJoined(r.createdAt)}</td>
                 <td className="px-4 py-3" style={{ color: '#475569' }}>{r.lastActivity ? timeAgo(r.lastActivity) : '—'}</td>
+                <td className="px-4 py-3" style={{ color: r.lastLogin ? (isStaleLogin(r.lastLogin) ? '#EF4444' : '#475569') : '#94A3B8' }}>
+                  {r.lastLogin ? timeAgo(r.lastLogin) : 'Never'}
+                </td>
               </tr>
             ))}
           </tbody>
