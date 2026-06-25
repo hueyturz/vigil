@@ -7,6 +7,7 @@ import { ActivityLog }      from '@/components/services/ActivityLog'
 import { AddTaskModal }     from '@/components/tasks/AddTaskModal'
 import { MultiContactCard } from '@/components/services/MultiContactCard'
 import { CaseNotes }        from '@/components/services/CaseNotes'
+import { ApplyTemplateBanner } from '@/components/services/ApplyTemplateBanner'
 import { useRouter }        from 'next/navigation'
 import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote } from '@/lib/types'
 
@@ -44,6 +45,12 @@ export function ServiceDetailTabs({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'contacts' | 'notes' | 'activity'>('meetings')
   const [addOpen,   setAddOpen]   = useState(false)
+  const [showTemplate, setShowTemplate] = useState(false)
+
+  // The page passes applyBanner only when there's no service type yet (managers).
+  // When it's showing, it already serves as the "get started" guidance for an
+  // empty task list, so we don't also show the empty state below.
+  const showApplyBanner = !serviceType && canManage && !!applyBanner
 
   const tabs = [
     { key: 'meetings' as const, label: 'Meetings' },
@@ -98,33 +105,80 @@ export function ServiceDetailTabs({
       {/* Tasks tab */}
       {activeTab === 'tasks' && (
         <div>
-          {!serviceType && canManage && applyBanner}
-          {canManage && (
-            <div className="flex justify-end mb-3">
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:opacity-90"
-                style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
+          {showApplyBanner && applyBanner}
+
+          {tasks.length > 0 ? (
+            <>
+              {canManage && (
+                <div className="flex justify-end mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setAddOpen(true)}
+                    className="rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:opacity-90"
+                    style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
+                  >
+                    + Add Task
+                  </button>
+                </div>
+              )}
+              <TaskList
+                tasks={tasks}
+                serviceDate={serviceDate}
+                serviceId={serviceId}
+                funeralHomeId={funeralHomeId}
+                actorId={actorId}
+                actorName={actorName}
+              />
+            </>
+          ) : showApplyBanner ? null : (
+            <div className="text-center py-12">
+              <div
+                className="mx-auto mb-4 flex items-center justify-center rounded-full"
+                style={{ width: 48, height: 48, backgroundColor: '#F1F5F9' }}
               >
-                + Add Task
-              </button>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold" style={{ color: '#0F172A' }}>No tasks yet</h3>
+              <p className="mt-1 text-sm" style={{ color: '#94A3B8' }}>
+                Add tasks manually or apply a template to get started.
+              </p>
+
+              {canManage && (
+                <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setAddOpen(true)}
+                    className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+                    style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
+                  >
+                    + Add Task
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplate(v => !v)}
+                    className="rounded-lg border px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+                    style={{ borderColor: '#0A2540', color: '#0A2540' }}
+                  >
+                    Apply Template
+                  </button>
+                </div>
+              )}
+
+              {canManage && showTemplate && (
+                <div className="mt-5 text-left">
+                  <ApplyTemplateBanner
+                    serviceId={serviceId}
+                    funeralHomeId={funeralHomeId}
+                    actorId={actorId}
+                    actorName={actorName}
+                  />
+                </div>
+              )}
             </div>
           )}
-          {tasks.length > 0 ? (
-            <TaskList
-              tasks={tasks}
-              serviceDate={serviceDate}
-              serviceId={serviceId}
-              funeralHomeId={funeralHomeId}
-              actorId={actorId}
-              actorName={actorName}
-            />
-          ) : serviceType ? (
-            <p className="text-sm text-center py-12" style={{ color: '#94A3B8' }}>
-              No tasks found for this service.
-            </p>
-          ) : null}
         </div>
       )}
 

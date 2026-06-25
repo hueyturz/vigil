@@ -97,19 +97,40 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
 
       {/* Email / SMS priority table */}
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12 }}>
-        <div className="grid grid-cols-3 px-5 py-3 border-b" style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+        {/* Column headers — desktop grid only; on mobile each row is a labeled card */}
+        <div className="hidden sm:grid grid-cols-3 px-5 py-3 border-b" style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
           <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#64748B' }}>Notification type</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#64748B' }}>Email</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#64748B' }}>SMS</span>
         </div>
         {ROWS.map((row, i) => (
-          <div key={row.label} className={`grid grid-cols-3 items-center px-5 py-4${i < ROWS.length - 1 ? ' border-b' : ''}`} style={{ borderColor: '#E2E8F0' }}>
-            <div className="flex items-center gap-2.5">
-              <span className="flex-shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: row.dot, display: 'inline-block' }} />
-              <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{row.label}</span>
+          <div key={row.label} className={`px-5 py-4${i < ROWS.length - 1 ? ' border-b' : ''}`} style={{ borderColor: '#E2E8F0' }}>
+            {/* Desktop: 3-column grid */}
+            <div className="hidden sm:grid grid-cols-3 items-center">
+              <div className="flex items-center gap-2.5">
+                <span className="flex-shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: row.dot, display: 'inline-block' }} />
+                <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{row.label}</span>
+              </div>
+              <div className="flex justify-center"><Toggle checked={prefs[row.emailKey]} onChange={() => toggle(row.emailKey)} /></div>
+              <div className="flex justify-center"><Toggle checked={prefs[row.smsKey]} onChange={() => toggle(row.smsKey)} /></div>
             </div>
-            <div className="flex justify-center"><Toggle checked={prefs[row.emailKey]} onChange={() => toggle(row.emailKey)} /></div>
-            <div className="flex justify-center"><Toggle checked={prefs[row.smsKey]} onChange={() => toggle(row.smsKey)} /></div>
+            {/* Mobile: stacked card — name on top, labeled toggles below */}
+            <div className="sm:hidden">
+              <div className="flex items-center gap-2.5">
+                <span className="flex-shrink-0 rounded-full" style={{ width: 8, height: 8, backgroundColor: row.dot, display: 'inline-block' }} />
+                <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{row.label}</span>
+              </div>
+              <div className="mt-3 flex items-center gap-8 pl-[18px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#64748B' }}>Email</span>
+                  <Toggle checked={prefs[row.emailKey]} onChange={() => toggle(row.emailKey)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#64748B' }}>SMS</span>
+                  <Toggle checked={prefs[row.smsKey]} onChange={() => toggle(row.smsKey)} />
+                </div>
+              </div>
+            </div>
           </div>
         ))}
       </div>

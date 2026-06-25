@@ -114,7 +114,7 @@ export function CaseNotes({ serviceId, funeralHomeId, actorId, actorName, initia
                   type="button"
                   onClick={() => handleDelete(note.id)}
                   aria-label="Delete note"
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition"
+                  className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition"
                   style={{ color: '#EF4444' }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

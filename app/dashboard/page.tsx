@@ -9,6 +9,7 @@ import { TodaysActions } from '@/components/dashboard/TodaysActions'
 import { UpcomingServices } from '@/components/dashboard/UpcomingServices'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { NewServiceButton } from '@/components/dashboard/NewServiceButton'
+import { GetStartedBanner } from '@/components/dashboard/GetStartedBanner'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import type { ServiceWithTasks, ActivityLog } from '@/lib/types'
@@ -71,6 +72,8 @@ export default async function DashboardPage() {
           needsAttentionCount={needsAttentionCount}
           overdueTaskCount={overdueTaskCount}
         />
+
+        {activeCount === 0 && <GetStartedBanner />}
 
         <TodaysActions services={services} />
 

@@ -621,7 +621,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
                       <button
                         type="button"
                         onClick={() => handleDeleteStep(step.id)}
-                        className="opacity-0 group-hover:opacity-100 transition p-0.5 rounded hover:opacity-70"
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition p-0.5 rounded hover:opacity-70"
                         style={{ color: '#94A3B8' }}
                         aria-label="Remove step"
                       >
