@@ -32,7 +32,7 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      const id = await createFuneralHome({ name: homeName, phone: homePhone, address: homeAddress })
+      const id = await createFuneralHome({ name: homeName, address: homeAddress })
       setFuneralHomeId(id)
       setStep(2)
     } catch (err) {
@@ -62,7 +62,7 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      await createOwnerAccount({ email, password, fullName, funeralHomeId })
+      await createOwnerAccount({ email, password, fullName, funeralHomeId, phone: homePhone })
 
       // Sign in immediately after account creation
       const supabase = createClient()
@@ -117,26 +117,32 @@ export default function OnboardingPage() {
               />
               <Field
                 id="homePhone"
-                label="Phone Number"
+                label="Your mobile number"
                 type="tel"
                 value={homePhone}
                 onChange={setHomePhone}
                 placeholder="(555) 000-0000"
                 hint={
-                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
-                    By providing your phone number, you consent to receive{' '}
-                    <Link
-                      href="/sms-policy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium hover:underline"
-                      style={{ color: '#4A7C8C' }}
-                    >
-                      SMS
-                    </Link>{' '}
-                    task reminders and service notifications from Vigilight. Message and
-                    data rates may apply. Reply STOP to unsubscribe.
-                  </p>
+                  <>
+                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+                      Used to send you SMS task reminders and notifications. You can update
+                      this later in Settings.
+                    </p>
+                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+                      By providing your phone number, you consent to receive{' '}
+                      <Link
+                        href="/sms-policy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium hover:underline"
+                        style={{ color: '#4A7C8C' }}
+                      >
+                        SMS
+                      </Link>{' '}
+                      task reminders and service notifications from Vigilight. Message and
+                      data rates may apply. Reply STOP to unsubscribe.
+                    </p>
+                  </>
                 }
               />
               <Field
