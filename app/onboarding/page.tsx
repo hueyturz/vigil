@@ -17,11 +17,11 @@ export default function OnboardingPage() {
 
   // Step 1 fields
   const [homeName, setHomeName] = useState('')
-  const [homePhone, setHomePhone] = useState('')
   const [homeAddress, setHomeAddress] = useState('')
 
   // Step 2 fields
   const [fullName, setFullName] = useState('')
+  const [ownerPhone, setOwnerPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -62,7 +62,7 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      await createOwnerAccount({ email, password, fullName, funeralHomeId, phone: homePhone })
+      await createOwnerAccount({ email, password, fullName, funeralHomeId, phone: ownerPhone })
 
       // Sign in immediately after account creation
       const supabase = createClient()
@@ -116,36 +116,6 @@ export default function OnboardingPage() {
                 placeholder="Henderson Funeral Home"
               />
               <Field
-                id="homePhone"
-                label="Your mobile number"
-                type="tel"
-                value={homePhone}
-                onChange={setHomePhone}
-                placeholder="(555) 000-0000"
-                hint={
-                  <>
-                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
-                      Used to send you SMS task reminders and notifications. You can update
-                      this later in Settings.
-                    </p>
-                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
-                      By providing your phone number, you consent to receive{' '}
-                      <Link
-                        href="/sms-policy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium hover:underline"
-                        style={{ color: '#4A7C8C' }}
-                      >
-                        SMS
-                      </Link>{' '}
-                      task reminders and service notifications from Vigilight. Message and
-                      data rates may apply. Reply STOP to unsubscribe.
-                    </p>
-                  </>
-                }
-              />
-              <Field
                 id="homeAddress"
                 label="Address"
                 value={homeAddress}
@@ -188,6 +158,36 @@ export default function OnboardingPage() {
                 value={email}
                 onChange={setEmail}
                 placeholder="jane@hendersonfh.com"
+              />
+              <Field
+                id="ownerPhone"
+                label="Your mobile number"
+                type="tel"
+                value={ownerPhone}
+                onChange={setOwnerPhone}
+                placeholder="(555) 000-0000"
+                hint={
+                  <>
+                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+                      Used to send you SMS task reminders and notifications. You can update
+                      this later in Settings.
+                    </p>
+                    <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+                      By providing your phone number, you consent to receive{' '}
+                      <Link
+                        href="/sms-policy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium hover:underline"
+                        style={{ color: '#4A7C8C' }}
+                      >
+                        SMS
+                      </Link>{' '}
+                      task reminders and service notifications from Vigilight. Message and
+                      data rates may apply. Reply STOP to unsubscribe.
+                    </p>
+                  </>
+                }
               />
               <Field
                 id="password"
