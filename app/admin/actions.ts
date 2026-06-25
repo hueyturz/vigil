@@ -173,40 +173,35 @@ export async function suspendFuneralHome(funeralHomeId: string): Promise<{ error
   return error ? { error: error.message } : {}
 }
 
-// Hard delete with cascade. IRREVERSIBLE. Tears down child rows in dependency
-// order, removes each member's auth user, then the funeral home itself.
+// Hard delete. IRREVERSIBLE. Migration 029 puts ON DELETE CASCADE on every FK
+// that references funeral_homes(id), so deleting the funeral home row tears down
+// all of its child rows (services, tasks, sms_log, profiles, etc.) automatically.
 export async function deleteFuneralHome(funeralHomeId: string): Promise<{ error?: string }> {
   const auth = await requireSuperadmin()
   if ('error' in auth) return { error: auth.error }
   const { serviceRole } = auth
 
   try {
-    // Service-scoped children first (these also have ON DELETE CASCADE to services,
-    // but we delete by funeral_home_id explicitly to be safe).
-    const { data: svcRows } = await serviceRole.from('services').select('id').eq('funeral_home_id', funeralHomeId)
-    const serviceIds = (svcRows ?? []).map(s => s.id)
-    if (serviceIds.length > 0) {
-      await serviceRole.from('task_subtasks').delete().in('service_id', serviceIds)
-    }
+    // Capture members BEFORE the delete — the cascade removes their profiles, and
+    // their auth.users rows live in the auth schema (not reachable by an FK
+    // cascade from funeral_homes), so they must be deleted explicitly afterward.
+    const { data: members } = await serviceRole
+      .from('profiles')
+      .select('id')
+      .eq('funeral_home_id', funeralHomeId)
 
-    // Tables that carry funeral_home_id.
-    for (const table of [
-      'task_subtasks', 'tasks', 'service_notes', 'service_contacts', 'intake_sessions',
-      'services', 'sms_log', 'email_log', 'activity_log', 'notification_preferences',
-    ]) {
-      await serviceRole.from(table).delete().eq('funeral_home_id', funeralHomeId)
-    }
+    // Single delete — Postgres cascades all tenant data.
+    const { error } = await serviceRole
+      .from('funeral_homes')
+      .delete()
+      .eq('id', funeralHomeId)
+    if (error) return { error: error.message }
 
-    // Members: remove auth users, then profiles.
-    const { data: members } = await serviceRole.from('profiles').select('id').eq('funeral_home_id', funeralHomeId)
+    // Clean up the now-orphaned auth users.
     for (const m of members ?? []) {
       await serviceRole.auth.admin.deleteUser(m.id)
     }
-    await serviceRole.from('profiles').delete().eq('funeral_home_id', funeralHomeId)
 
-    // Finally the funeral home row.
-    const { error } = await serviceRole.from('funeral_homes').delete().eq('id', funeralHomeId)
-    if (error) return { error: error.message }
     return {}
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Delete failed.' }
