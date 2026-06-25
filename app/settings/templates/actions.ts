@@ -39,7 +39,9 @@ export async function customizeTemplate(
   if (fetchErr) return { error: fetchErr.message }
   if (!systemTemplates?.length) return { error: 'No system defaults found for this service type.' }
 
-  // Insert copies as custom templates and return the created rows
+  // Insert copies as custom templates and return the created rows. Copy priority
+  // and notes too — otherwise "critical" system tasks (e.g. casket/vault orders)
+  // silently downgrade to the 'standard' column default the moment a home customizes.
   const rows = systemTemplates.map(t => ({
     funeral_home_id:   funeralHomeId,
     service_type:      t.service_type,
@@ -47,6 +49,8 @@ export async function customizeTemplate(
     category:          t.category,
     confirmation_hint: t.confirmation_hint,
     due_days_before:   t.due_days_before,
+    priority:          t.priority ?? 'standard',
+    notes:             t.notes ?? null,
     sort_order:        t.sort_order,
   }))
 

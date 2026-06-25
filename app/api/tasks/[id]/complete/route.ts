@@ -238,7 +238,6 @@ async function handleComplete(
 
   // Activity log (use service role — no browser session in API route)
   try {
-    console.log('[activity_log] inserting for task', task.id, 'funeral_home_id', profile.funeral_home_id)
     const { error: activityError } = await serviceRole.from('activity_log').insert({
       funeral_home_id: profile.funeral_home_id,
       service_id:      task.service_id,
@@ -251,8 +250,6 @@ async function handleComplete(
     })
     if (activityError) {
       console.error('[activity_log] insert failed:', activityError.message, activityError.code, activityError.details)
-    } else {
-      console.log('[activity_log] insert succeeded')
     }
   } catch (activityErr) {
     console.error('[activity_log] unexpected error:', activityErr)
