@@ -95,7 +95,7 @@ export default async function AdminOverviewPage() {
             {recentSignups.map(h => (
               <tr key={h.id} className="border-t hover:bg-gray-50 transition" style={{ borderColor: '#E2E8F0' }}>
                 <td className="px-4 py-3 font-medium" style={{ color: '#0F172A' }}>
-                  <Link href={`/admin/impersonate/${h.id}`} className="hover:underline">{h.name}</Link>
+                  <Link href={`/admin/funeral-homes/${h.id}`} className="hover:underline">{h.name}</Link>
                 </td>
                 <td className="px-4 py-3" style={{ color: '#475569' }}>{ownerByHome.get(h.id) ?? '—'}</td>
                 <td className="px-4 py-3 text-center" style={{ color: '#0F172A' }}>{userCountByHome.get(h.id) ?? 0}</td>
