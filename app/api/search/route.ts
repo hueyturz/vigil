@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   let taskIdsForTag: string[] | null = null
   if (tagName) {
     const { data: tagRows } = await db
-      .from('tags').select('id').eq('funeral_home_id', fhId).ilike('name', tagName)
+      .from('tags').select('id').or(`is_default.eq.true,funeral_home_id.eq.${fhId}`).ilike('name', tagName)
     const tagIds = (tagRows ?? []).map(r => r.id)
     if (tagIds.length === 0) {
       taskIdsForTag = []
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       : Promise.resolve({ data: [] as any[] }),
     canText
       ? db.from('tags').select('id, name, color')
-          .eq('funeral_home_id', fhId)
+          .or(`is_default.eq.true,funeral_home_id.eq.${fhId}`)
           .ilike('name', like).order('name').limit(5)
       : Promise.resolve({ data: [] as any[] }),
   ])

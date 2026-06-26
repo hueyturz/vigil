@@ -15,13 +15,11 @@ const MUTED = 'rgba(248,245,240,0.55)'
 type IconProps = { color: string; strong: boolean }
 
 const NAV: { href: string; label: string; roles: string[]; Icon: (p: IconProps) => JSX.Element }[] = [
-  { href: '/dashboard',              label: 'Dashboard',     roles: ['owner', 'fd'],          Icon: HouseIcon     },
-  { href: '/my-tasks',               label: 'My Tasks',      roles: ['staff'],                Icon: ListCheckIcon },
-  { href: '/tasks',                  label: 'Tasks',         roles: ['owner', 'fd'],          Icon: ClipboardIcon },
-  { href: '/services',               label: 'Services',      roles: ['owner', 'fd'],          Icon: FolderIcon    },
-  { href: '/settings/templates',     label: 'Templates',     roles: ['owner', 'fd'],          Icon: TemplateIcon  },
-  { href: '/settings/notifications', label: 'Notifications', roles: ['owner', 'fd', 'staff'], Icon: BellIcon      },
-  { href: '/settings/users',         label: 'Users',         roles: ['owner'],                Icon: UsersIcon     },
+  { href: '/dashboard', label: 'Dashboard', roles: ['owner', 'fd'],          Icon: HouseIcon     },
+  { href: '/my-tasks',  label: 'My Tasks',  roles: ['staff'],                Icon: ListCheckIcon },
+  { href: '/tasks',     label: 'Tasks',     roles: ['owner', 'fd'],          Icon: ClipboardIcon },
+  { href: '/services',  label: 'Services',  roles: ['owner', 'fd'],          Icon: FolderIcon    },
+  { href: '/settings',  label: 'Settings',  roles: ['owner', 'fd', 'staff'], Icon: GearIcon      },
 ]
 
 export function BottomNav({ profile }: BottomNavProps) {
@@ -123,32 +121,11 @@ function FolderIcon(p: IconProps) {
   )
 }
 
-function TemplateIcon(p: IconProps) {
+function GearIcon(p: IconProps) {
   return (
     <svg {...svgProps(p)}>
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <line x1="3" y1="9" x2="21" y2="9" />
-      <line x1="9" y1="21" x2="9" y2="9" />
-    </svg>
-  )
-}
-
-function BellIcon(p: IconProps) {
-  return (
-    <svg {...svgProps(p)}>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  )
-}
-
-function UsersIcon(p: IconProps) {
-  return (
-    <svg {...svgProps(p)}>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
     </svg>
   )
 }

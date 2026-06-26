@@ -20,9 +20,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('tasks').select('id').eq('id', params.id).eq('funeral_home_id', fhId).single()
   if (!task) return NextResponse.json({ error: 'Task not found.' }, { status: 404 })
 
-  // Only attach tags that belong to this funeral home.
+  // Only attach tags visible to this funeral home: its own custom tags or any
+  // platform default tag (is_default = true, funeral_home_id NULL).
   const { data: validTags } = await db
-    .from('tags').select('id').eq('funeral_home_id', fhId).in('id', tagIds)
+    .from('tags').select('id').or(`is_default.eq.true,funeral_home_id.eq.${fhId}`).in('id', tagIds)
   const validIds = (validTags ?? []).map(t => t.id)
   if (validIds.length === 0) return NextResponse.json({ error: 'No valid tags.' }, { status: 400 })
 
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('task_tags')
     .upsert(validIds.map(tag_id => ({ task_id: params.id, tag_id })), { onConflict: 'task_id,tag_id', ignoreDuplicates: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[POST /api/tasks/[id]/tags] failed:', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }

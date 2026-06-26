@@ -106,9 +106,10 @@ export interface ServiceNote {
 
 export interface Tag {
   id: string
-  funeral_home_id: string
+  funeral_home_id: string | null   // null = platform default tag
   name: string
   color: string
+  is_default: boolean
   created_at: string
 }
 

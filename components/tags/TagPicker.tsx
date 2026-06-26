@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
 import { TAG_COLORS, tint } from './colors'
 import type { Tag } from '@/lib/types'
 
@@ -44,17 +45,41 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
   const q       = query.trim()
   const qLower  = q.toLowerCase()
   const matches = allTags.filter(t => !attachedIds.has(t.id) && t.name.toLowerCase().includes(qLower))
+  const standardMatches = matches.filter(t => t.is_default).slice(0, 6)
+  const customMatches   = matches.filter(t => !t.is_default).slice(0, 6)
   const exact   = allTags.find(t => t.name.toLowerCase() === qLower)
 
   async function attach(tag: Tag) {
+    const prev = tags
     update([...tags.filter(t => t.id !== tag.id), tag])  // optimistic
     setQuery(''); setOpen(false); setCreating(false)
-    try { await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tagIds: [tag.id] }) }) } catch {}
+    try {
+      const res = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tagIds: [tag.id] }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || `Failed to add tag (${res.status})`)
+      }
+    } catch (err) {
+      update(prev)  // roll back the optimistic add
+      console.error('[TagPicker] attach failed:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to add tag.')
+    }
   }
 
   async function detach(tag: Tag) {
+    const prev = tags
     update(tags.filter(t => t.id !== tag.id))            // optimistic
-    try { await fetch(`${base}/${tag.id}`, { method: 'DELETE' }) } catch {}
+    try {
+      const res = await fetch(`${base}/${tag.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || `Failed to remove tag (${res.status})`)
+      }
+    } catch (err) {
+      update(prev)  // roll back the optimistic remove
+      console.error('[TagPicker] detach failed:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to remove tag.')
+    }
   }
 
   async function createAndAttach() {
@@ -62,14 +87,17 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
     setBusy(true)
     try {
       const res = await fetch('/api/tags', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: q, color: pickColor }) })
-      const d = await res.json()
-      if (res.ok && d.tag) {
-        setAllTags(prev => prev.some(t => t.id === d.tag.id) ? prev : [...prev, d.tag])
-        await attach(d.tag)
-        setPickColor(TAG_COLORS[0].value)
-      }
-    } catch {}
-    setBusy(false)
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.tag) throw new Error(d.error || `Failed to create tag (${res.status})`)
+      setAllTags(prev => prev.some(t => t.id === d.tag.id) ? prev : [...prev, d.tag])
+      await attach(d.tag)
+      setPickColor(TAG_COLORS[0].value)
+    } catch (err) {
+      console.error('[TagPicker] create failed:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to create tag.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -112,18 +140,31 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
       {open && q.length > 0 && (
         <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-lg border shadow-lg" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
           {matches.length > 0 && (
-            <div className="py-1">
-              {matches.slice(0, 6).map(tag => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => attach(tag)}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition hover:bg-gray-50"
-                >
-                  <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                  <span style={{ color: '#0F172A' }}>{tag.name}</span>
-                </button>
-              ))}
+            <div className="py-1 max-h-60 overflow-y-auto">
+              {standardMatches.length > 0 && (
+                <>
+                  <p className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>Standard Tags</p>
+                  {standardMatches.map(tag => (
+                    <button key={tag.id} type="button" onClick={() => attach(tag)}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition hover:bg-gray-50">
+                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                      <span style={{ color: '#0F172A' }}>{tag.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+              {customMatches.length > 0 && (
+                <>
+                  <p className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#94A3B8' }}>Custom Tags</p>
+                  {customMatches.map(tag => (
+                    <button key={tag.id} type="button" onClick={() => attach(tag)}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition hover:bg-gray-50">
+                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                      <span style={{ color: '#0F172A' }}>{tag.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

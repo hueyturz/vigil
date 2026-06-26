@@ -89,7 +89,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
       out.push({ key: `c-${c.id}`, section: 'Contacts', primary: c.name, secondary: c.service_deceased_name, href: `/services/${c.service_id}?tab=contacts`, icon: 'contact' })
     }
     for (const tag of results.tags) {
-      out.push({ key: `tag-${tag.id}`, section: 'Tags', primary: tag.name, secondary: 'Filter tasks by this tag', icon: 'tag', tagName: tag.name, color: tag.color })
+      out.push({ key: `tag-${tag.id}`, section: 'Tags', primary: tag.name, secondary: 'View tasks with this tag', icon: 'tag', tagName: tag.name, color: tag.color })
     }
     return out
   }, [results])
@@ -98,8 +98,9 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
 
   const select = useCallback((item: FlatItem | undefined) => {
     if (!item) return
-    if (item.tagName) { setTagFilter(item.tagName); return }   // filter, don't navigate
     onClose()
+    // Tag → open the cross-service tasks page filtered to that tag.
+    if (item.tagName) { router.push(`/tasks?tag=${encodeURIComponent(item.tagName)}`); return }
     if (item.href) router.push(item.href)
   }, [onClose, router])
 

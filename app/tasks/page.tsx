@@ -3,7 +3,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { getActiveProfile, auditActorName } from '@/lib/utils/impersonation'
 import { AppShell } from '@/components/layout/AppShell'
 import { AllTasksView } from '@/components/tasks/AllTasksView'
-import type { TaskWithProfile } from '@/lib/types'
+import type { TaskWithProfile, Tag } from '@/lib/types'
 
 export interface TaskForAllView extends TaskWithProfile {
   service: {
@@ -18,7 +18,11 @@ export interface StaffOption {
   full_name: string
 }
 
-export default async function TasksPage() {
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: { tag?: string }
+}) {
   const ctx = await getActiveProfile()
   if (!ctx) redirect('/login')
   const { profile } = ctx
@@ -79,6 +83,35 @@ export default async function TasksPage() {
       }
     })
 
+  // Tags per task — embed-free decoupled fetch, merged onto the task list.
+  const taskIds = tasks.map(t => t.id)
+  if (taskIds.length > 0) {
+    const { data: tagLinks } = await db
+      .from('task_tags')
+      .select('task_id, tag_id')
+      .in('task_id', taskIds)
+
+    const linkTagIds = Array.from(new Set((tagLinks ?? []).map(l => l.tag_id)))
+    const tagsById = new Map<string, Tag>()
+    if (linkTagIds.length > 0) {
+      const { data: tagRows } = await db
+        .from('tags')
+        .select('id, funeral_home_id, name, color, created_at')
+        .in('id', linkTagIds)
+      for (const t of tagRows ?? []) tagsById.set(t.id, t as Tag)
+    }
+
+    const tagsByTask = new Map<string, Tag[]>()
+    for (const link of tagLinks ?? []) {
+      const tag = tagsById.get(link.tag_id)
+      if (!tag) continue
+      const arr = tagsByTask.get(link.task_id) ?? []
+      arr.push(tag)
+      tagsByTask.set(link.task_id, arr)
+    }
+    for (const t of tasks) t.tags = tagsByTask.get(t.id) ?? []
+  }
+
   let staffOptions: StaffOption[] = []
   if (!isStaff) {
     const { data: staff } = await db
@@ -100,6 +133,7 @@ export default async function TasksPage() {
           funeralHomeId={profile.funeral_home_id}
           actorId={profile.id}
           actorName={auditActorName(ctx)}
+          initialTag={searchParams.tag ?? null}
         />
       </div>
     </AppShell>

@@ -56,17 +56,28 @@ export default async function ServiceDetailPage({
     .eq('service_id', params.id)
     .order('sort_order', { ascending: true })
 
-  // Tags per task (best-effort): a failure here leaves tasks tagless, not hidden.
+  // Tags per task — fetched embed-free (two plain queries joined in JS). Avoids the
+  // PostgREST relationship/schema-cache embed that previously made tags vanish.
   const taskIds = (tasksRaw ?? []).map(t => t.id)
   const tagsByTask = new Map<string, Tag[]>()
   if (taskIds.length > 0) {
     const { data: tagLinks } = await db
       .from('task_tags')
-      .select('task_id, tag:tags ( id, funeral_home_id, name, color, created_at )')
+      .select('task_id, tag_id')
       .in('task_id', taskIds)
 
+    const linkTagIds = Array.from(new Set((tagLinks ?? []).map(l => l.tag_id)))
+    const tagsById = new Map<string, Tag>()
+    if (linkTagIds.length > 0) {
+      const { data: tagRows } = await db
+        .from('tags')
+        .select('id, funeral_home_id, name, color, created_at')
+        .in('id', linkTagIds)
+      for (const t of tagRows ?? []) tagsById.set(t.id, t as Tag)
+    }
+
     for (const link of tagLinks ?? []) {
-      const tag = (Array.isArray(link.tag) ? link.tag[0] : link.tag) as Tag | null
+      const tag = tagsById.get(link.tag_id)
       if (!tag) continue
       const arr = tagsByTask.get(link.task_id) ?? []
       arr.push(tag)
