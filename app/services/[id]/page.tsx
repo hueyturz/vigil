@@ -49,7 +49,8 @@ export default async function ServiceDetailPage({
     .select(`
       *,
       completed_by:profiles!tasks_completed_by_id_fkey (id, full_name),
-      assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name)
+      assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name),
+      task_tags ( tag:tags ( id, funeral_home_id, name, color, created_at ) )
     `)
     .eq('service_id', params.id)
     .order('sort_order', { ascending: true })
@@ -58,6 +59,9 @@ export default async function ServiceDetailPage({
     ...t,
     completed_by: t.completed_by ?? null,
     assigned_to:  t.assigned_to  ?? null,
+    tags: ((t.task_tags ?? []) as { tag: unknown }[])
+      .map(tt => (Array.isArray(tt.tag) ? tt.tag[0] : tt.tag))
+      .filter(Boolean),
   }))
 
   const { data: intakeRaw } = await db

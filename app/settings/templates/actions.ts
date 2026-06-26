@@ -46,7 +46,6 @@ export async function customizeTemplate(
     funeral_home_id:   funeralHomeId,
     service_type:      t.service_type,
     title:             t.title,
-    category:          t.category,
     confirmation_hint: t.confirmation_hint,
     due_days_before:   t.due_days_before,
     priority:          t.priority ?? 'standard',
@@ -95,7 +94,6 @@ export async function addTemplate(
   serviceType: ServiceType,
   input: {
     title: string
-    category: string
     confirmation_hint: string
     due_days_before: number
     priority: string
@@ -124,7 +122,6 @@ export async function addTemplate(
       funeral_home_id:   funeralHomeId,
       service_type:      serviceType,
       title:             input.title,
-      category:          input.category,
       confirmation_hint: input.confirmation_hint,
       due_days_before:   input.due_days_before,
       priority:          input.priority,
@@ -145,7 +142,6 @@ export async function updateTemplate(
   templateId: string,
   input: {
     title: string
-    category: string
     confirmation_hint: string
     due_days_before: number
     priority: string

@@ -163,7 +163,7 @@ export async function duplicateService(
   // confirmation_hint are NOT NULL, so they must be carried over.
   const { data: originalTasks } = await serviceRole
     .from('tasks')
-    .select('title, category, confirmation_hint, due_days_before, priority, notes, sort_order')
+    .select('title, confirmation_hint, due_days_before, priority, notes, sort_order')
     .eq('service_id', serviceId)
     .order('sort_order', { ascending: true })
 
@@ -173,7 +173,6 @@ export async function duplicateService(
         service_id:        copy.id,
         funeral_home_id:   ctx.funeralHomeId,
         title:             t.title,
-        category:          t.category,
         confirmation_hint: t.confirmation_hint,
         due_days_before:   t.due_days_before,
         priority:          (t.priority ?? 'standard') as Priority,
@@ -459,7 +458,6 @@ export async function applyTemplateToService(
       service_id:        serviceId,
       funeral_home_id:   profile.funeral_home_id,
       title:             tpl.title,
-      category:          tpl.category,
       confirmation_hint: tpl.confirmation_hint,
       due_days_before:   tpl.due_days_before,
       priority:          (tpl.priority ?? 'standard') as Priority,
@@ -489,6 +487,19 @@ export async function applyTemplateToService(
             sort_order:     s.sort_order,
             is_complete:    false,
           }))
+        )
+      }
+
+      // Carry the template task's tags onto the new task
+      const { data: tplTags } = await serviceRole
+        .from('template_task_tags')
+        .select('tag_id')
+        .eq('template_task_id', tpl.id)
+
+      if (tplTags?.length) {
+        await serviceRole.from('task_tags').upsert(
+          tplTags.map(tt => ({ task_id: insertedTask.id, tag_id: tt.tag_id })),
+          { onConflict: 'task_id,tag_id', ignoreDuplicates: true },
         )
       }
     }

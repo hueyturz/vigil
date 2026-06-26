@@ -85,7 +85,6 @@ export async function addTaskToService(
   serviceId: string,
   input: {
     title: string
-    category: string
     confirmation_hint: string
     due_days_before: number
     assigned_to_id?: string | null
@@ -123,7 +122,6 @@ export async function addTaskToService(
       service_id:        serviceId,
       funeral_home_id:   profile.funeral_home_id,
       title:             input.title,
-      category:          input.category,
       confirmation_hint: input.confirmation_hint,
       due_days_before:   input.due_days_before,
       sort_order:        nextOrder,
@@ -342,7 +340,7 @@ export async function reassignTask(
   return {}
 }
 
-// ── Update a task's sort_order (drag-to-reorder within a category) ─────────
+// ── Update a task's sort_order (drag-to-reorder) ──────────────────────────
 
 export async function updateTaskOrder(
   taskId:       string,

@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getActiveProfile } from '@/lib/utils/impersonation'
+import { createServiceRoleClient } from '@/lib/supabase/server'
+
+// POST /api/tasks/[id]/tags — attach tag(s) to a task { tagIds: string[] }.
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+  const ctx = await getActiveProfile()
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+
+  let body: { tagIds?: string[] }
+  try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }) }
+  const tagIds = Array.isArray(body.tagIds) ? body.tagIds.filter(Boolean) : []
+  if (tagIds.length === 0) return NextResponse.json({ error: 'tagIds is required.' }, { status: 400 })
+
+  const db   = createServiceRoleClient()
+  const fhId = ctx.profile.funeral_home_id
+
+  // Verify the task belongs to this funeral home.
+  const { data: task } = await db
+    .from('tasks').select('id').eq('id', params.id).eq('funeral_home_id', fhId).single()
+  if (!task) return NextResponse.json({ error: 'Task not found.' }, { status: 404 })
+
+  // Only attach tags that belong to this funeral home.
+  const { data: validTags } = await db
+    .from('tags').select('id').eq('funeral_home_id', fhId).in('id', tagIds)
+  const validIds = (validTags ?? []).map(t => t.id)
+  if (validIds.length === 0) return NextResponse.json({ error: 'No valid tags.' }, { status: 400 })
+
+  const { error } = await db
+    .from('task_tags')
+    .upsert(validIds.map(tag_id => ({ task_id: params.id, tag_id })), { onConflict: 'task_id,tag_id', ignoreDuplicates: true })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}

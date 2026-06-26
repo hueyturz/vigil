@@ -9,7 +9,6 @@ interface SaveConfirmation {
 
 interface SaveNewTask {
   title:             string
-  category:          string
   confirmation_hint: string
   due_days_before:   number
   priority:          Priority
@@ -109,7 +108,6 @@ export async function POST(request: NextRequest) {
         service_id:        service_id,
         funeral_home_id:   profile.funeral_home_id,
         title:             nt.title,
-        category:          nt.category,
         confirmation_hint: nt.confirmation_hint,
         due_days_before:   nt.due_days_before,
         priority:          nt.priority,

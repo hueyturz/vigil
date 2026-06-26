@@ -21,7 +21,6 @@ interface ConfirmReview {
 
 interface NewTaskReview {
   title:             string
-  category:          string
   confirmation_hint: string
   due_days_before:   number
   priority:          Priority
@@ -60,7 +59,6 @@ export function ExtractionResults({
   const [newTasks, setNewTasks] = useState<NewTaskReview[]>(() =>
     (extraction.new_tasks ?? []).map(t => ({
       title:             t.title,
-      category:          t.category,
       confirmation_hint: t.confirmation_hint,
       due_days_before:   t.due_days_before,
       priority:          t.priority as Priority,
@@ -132,7 +130,6 @@ export function ExtractionResults({
         .filter(t => t.accepted)
         .map(t => ({
           title:             t.title,
-          category:          t.category,
           confirmation_hint: t.confirmation_hint,
           due_days_before:   t.due_days_before,
           priority:          t.priority,
@@ -241,7 +238,7 @@ export function ExtractionResults({
                 onNotesChange={v => updateNewTaskNotes(i, v)}
                 priority={t.priority}
                 onPriorityChange={readOnly ? undefined : v => updateNewTaskPriority(i, v)}
-                meta={`${t.category} · due ${t.due_days_before}d before service`}
+                meta={`Due ${t.due_days_before}d before service`}
               />
             ))}
           </div>

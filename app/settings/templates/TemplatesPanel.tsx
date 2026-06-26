@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TASK_CATEGORIES } from '@/components/tasks/AddTaskModal'
+import { TagPicker } from '@/components/tags/TagPicker'
+import { TagPills } from '@/components/tags/TagPills'
 import {
   customizeTemplate,
   resetToDefaults,
@@ -58,7 +59,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
   const [confirmDel,   setConfirmDel]   = useState<string | null>(null)
   const [addOpen,      setAddOpen]      = useState(false)
   const [addValues,    setAddValues]    = useState({
-    title: '', category: TASK_CATEGORIES[0], confirmation_hint: '',
+    title: '', confirmation_hint: '',
     due_days_before: 1, priority: 'standard' as Priority,
   })
   const [busy,  setBusy]  = useState(false)
@@ -155,7 +156,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     await run(
       () => updateTemplate(templateId, {
         title:             values.title.trim(),
-        category:          values.category,
         confirmation_hint: values.confirmation_hint.trim(),
         due_days_before:   values.due_days_before,
         priority:          values.priority,
@@ -184,7 +184,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
     await run(
       () => addTemplate(activeTab, {
         title:             addValues.title.trim(),
-        category:          addValues.category,
         confirmation_hint: '',
         due_days_before:   addValues.due_days_before,
         priority:          addValues.priority,
@@ -192,7 +191,7 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
       (data) => {
         if (data) setCustom(prev => [...prev, data])
         setAddOpen(false)
-        setAddValues({ title: '', category: TASK_CATEGORIES[0], confirmation_hint: '', due_days_before: 1, priority: 'standard' })
+        setAddValues({ title: '', confirmation_hint: '', due_days_before: 1, priority: 'standard' })
       },
     )
   }
@@ -335,8 +334,11 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{tpl.title}</p>
                   <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>
-                    {tpl.category} · {tpl.due_days_before}d before
+                    {tpl.due_days_before}d before
                   </p>
+                  {(tpl.tags?.length ?? 0) > 0 && (
+                    <div className="mt-1"><TagPills tags={tpl.tags} /></div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -406,12 +408,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
                 onChange={e => setAddValues(v => ({ ...v, title: e.target.value }))}
                 style={inputStyle} placeholder="e.g. Flowers ordered" />
             </Field>
-            <Field label="Category" required>
-              <select value={addValues.category}
-                onChange={e => setAddValues(v => ({ ...v, category: e.target.value }))} style={inputStyle}>
-                {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
             <Field label="Priority" required>
               <select value={addValues.priority}
                 onChange={e => setAddValues(v => ({ ...v, priority: e.target.value as Priority }))} style={inputStyle}>
@@ -477,7 +473,6 @@ export function TemplatesPanel({ customTemplates: initCustom, systemTemplates }:
 
 interface EditValues {
   title: string
-  category: string
   confirmation_hint: string
   due_days_before: number
   priority: Priority
@@ -488,7 +483,6 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
   onSave: (values: EditValues) => void; onClose: () => void
 }) {
   const [title,    setTitle]    = useState(template.title)
-  const [cat,      setCat]      = useState(template.category)
   const [days,     setDays]     = useState(template.due_days_before)
   const [priority, setPriority] = useState<Priority>(template.priority)
 
@@ -534,7 +528,7 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onSave({ title, category: cat, confirmation_hint: template.confirmation_hint, due_days_before: days, priority })
+    onSave({ title, confirmation_hint: template.confirmation_hint, due_days_before: days, priority })
   }
 
   return (
@@ -560,12 +554,8 @@ function EditTemplateModal({ template, busy, onSave, onClose }: {
               <input type="text" required autoFocus value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
-                Category <span style={{ color: '#EF4444' }}>*</span>
-              </label>
-              <select value={cat} onChange={e => setCat(e.target.value)} style={inputStyle}>
-                {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>Tags</label>
+              <TagPicker taskId={template.id} existingTags={template.tags ?? []} mode="template-task" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>

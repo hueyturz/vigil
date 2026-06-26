@@ -5,11 +5,6 @@ import { addTaskToService } from '@/app/services/task-actions'
 import { logActivity } from '@/lib/utils/activity'
 import type { TaskWithProfile, Profile } from '@/lib/types'
 
-export const TASK_CATEGORIES = [
-  'Merchandise', 'Cemetery', 'Print', 'Communication',
-  'Legal', 'Arrangements', 'Facility', 'Military', 'Other',
-]
-
 interface AddTaskModalProps {
   serviceId:      string
   funeralHomeId?: string
@@ -25,7 +20,6 @@ export function AddTaskModal({
   open, onClose, onAdded,
 }: AddTaskModalProps) {
   const [title,            setTitle]            = useState('')
-  const [category,         setCategory]         = useState(TASK_CATEGORIES[0])
   const [confirmationHint, setConfirmationHint] = useState('')
   const [daysBefore,       setDaysBefore]       = useState('1')   // string while editing; parsed on submit
   const [assignedToId,     setAssignedToId]     = useState('')
@@ -42,7 +36,7 @@ export function AddTaskModal({
   }, [open])
 
   function reset() {
-    setTitle(''); setCategory(TASK_CATEGORIES[0])
+    setTitle('')
     setConfirmationHint(''); setDaysBefore('1')
     setAssignedToId(''); setError(null)
   }
@@ -59,7 +53,6 @@ export function AddTaskModal({
 
     const result = await addTaskToService(serviceId, {
       title:             title.trim(),
-      category,
       confirmation_hint: '',
       due_days_before:   dueDays,
       assigned_to_id:    assignedToId || null,
@@ -111,15 +104,6 @@ export function AddTaskModal({
             </label>
             <input type="text" required value={title} onChange={e => setTitle(e.target.value)}
               placeholder="e.g. Flowers ordered" style={inputStyle} />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#0F172A' }}>
-              Category <span style={{ color: '#EF4444' }}>*</span>
-            </label>
-            <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
-              {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
           </div>
 
           <div>

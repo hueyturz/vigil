@@ -104,12 +104,19 @@ export interface ServiceNote {
   created_at: string
 }
 
+export interface Tag {
+  id: string
+  funeral_home_id: string
+  name: string
+  color: string
+  created_at: string
+}
+
 export interface Task {
   id: string
   service_id: string
   funeral_home_id: string
   title: string
-  category: string
   confirmation_hint: string
   due_days_before: number
   sort_order: number
@@ -128,12 +135,12 @@ export interface TaskTemplate {
   funeral_home_id: string | null   // null = system default
   service_type: ServiceType
   title: string
-  category: string
   confirmation_hint: string
   due_days_before: number
   sort_order: number
   priority: Priority
   notes: string | null
+  tags?: Tag[]
 }
 
 export interface NotificationPreferences {
@@ -197,6 +204,7 @@ export interface ServiceWithProfile extends Service {
 export interface TaskWithProfile extends Task {
   completed_by: Pick<Profile, 'id' | 'full_name'> | null
   assigned_to: Pick<Profile, 'id' | 'full_name'> | null
+  tags?: Tag[]
 }
 
 export interface TaskTemplateSubtask {
@@ -238,7 +246,6 @@ export interface ExtractionTaskConfirmation {
 
 export interface ExtractionNewTask {
   title:             string
-  category:          string
   confirmation_hint: string
   due_days_before:   number
   priority:          Priority

@@ -23,7 +23,6 @@ You must output ONLY a valid JSON object with this exact structure:
   "new_tasks": [
     {
       "title": "task title",
-      "category": "Merchandise|Cemetery|Print|Communication|Legal|Arrangements|Facility|Military|Other",
       "confirmation_hint": "what detail will be needed to confirm this",
       "due_days_before": 3,
       "priority": "critical|standard|informational",

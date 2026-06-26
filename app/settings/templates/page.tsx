@@ -20,10 +20,10 @@ export default async function TemplatesPage() {
   if (!profile) redirect('/login')
   if (!['owner', 'fd'].includes(profile.role)) redirect('/dashboard')
 
-  // Fetch this funeral home's custom templates
+  // Fetch this funeral home's custom templates (with their tags)
   const { data: customRaw } = await serviceRole
     .from('task_templates')
-    .select('*')
+    .select('*, template_task_tags ( tag:tags ( id, funeral_home_id, name, color, created_at ) )')
     .eq('funeral_home_id', profile.funeral_home_id)
     .order('sort_order', { ascending: true })
 
@@ -34,7 +34,12 @@ export default async function TemplatesPage() {
     .is('funeral_home_id', null)
     .order('sort_order', { ascending: true })
 
-  const customTemplates: TaskTemplate[] = customRaw ?? []
+  const customTemplates: TaskTemplate[] = (customRaw ?? []).map(t => ({
+    ...t,
+    tags: ((t.template_task_tags ?? []) as { tag: unknown }[])
+      .map(tt => (Array.isArray(tt.tag) ? tt.tag[0] : tt.tag))
+      .filter(Boolean),
+  })) as TaskTemplate[]
   const systemTemplates: TaskTemplate[] = systemRaw ?? []
 
   return (

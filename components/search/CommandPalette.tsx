@@ -5,21 +5,24 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 
 interface ServiceResult { id: string; deceased_name: string; service_type: string | null; service_date: string | null; status: string }
-interface TaskResult    { id: string; title: string; category: string; service_id: string; service_deceased_name: string }
+interface TaskResult    { id: string; title: string; service_id: string; service_deceased_name: string }
 interface ContactResult { id: string; name: string; service_id: string; service_deceased_name: string }
-interface SearchResults { services: ServiceResult[]; tasks: TaskResult[]; contacts: ContactResult[] }
+interface TagResult     { id: string; name: string; color: string }
+interface SearchResults { services: ServiceResult[]; tasks: TaskResult[]; contacts: ContactResult[]; tags: TagResult[] }
 
-// A single navigable row, flattened across sections for keyboard navigation.
+// A single navigable/actionable row, flattened across sections for keyboard nav.
 interface FlatItem {
   key:       string
-  section:   'Services' | 'Tasks' | 'Contacts'
+  section:   'Services' | 'Tasks' | 'Contacts' | 'Tags'
   primary:   string
   secondary: string
-  href:      string
-  icon:      'service' | 'task' | 'contact'
+  icon:      'service' | 'task' | 'contact' | 'tag'
+  href?:     string     // navigation target (services/tasks/contacts)
+  tagName?:  string     // set for Tag items — selecting filters tasks by this tag
+  color?:    string     // tag dot color
 }
 
-const EMPTY: SearchResults = { services: [], tasks: [], contacts: [] }
+const EMPTY: SearchResults = { services: [], tasks: [], contacts: [], tags: [] }
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
   'full-burial': 'Full Burial', 'graveside': 'Graveside', 'cremation': 'Cremation', 'military': 'Military Honors',
@@ -29,6 +32,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
   const router = useRouter()
   const [mounted, setMounted]     = useState(false)
   const [query, setQuery]         = useState('')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [results, setResults]     = useState<SearchResults>(EMPTY)
   const [loading, setLoading]     = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -36,34 +40,32 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
 
   useEffect(() => setMounted(true), [])
 
-  // Reset + focus on open; lock background scroll while open.
   useEffect(() => {
     if (!isOpen) return
-    setQuery('')
-    setResults(EMPTY)
-    setActiveIndex(0)
+    setQuery(''); setTagFilter(null); setResults(EMPTY); setActiveIndex(0)
     const t = setTimeout(() => inputRef.current?.focus(), 0)
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => {
-      clearTimeout(t)
-      document.body.style.overflow = prevOverflow
-    }
+    return () => { clearTimeout(t); document.body.style.overflow = prevOverflow }
   }, [isOpen])
 
-  // Debounced fetch. <2 chars clears results without hitting the API.
+  // Debounced fetch (re-runs when the tag filter changes too).
   useEffect(() => {
     if (!isOpen) return
-    const q = query.trim()
-    if (q.length < 2) { setResults(EMPTY); setLoading(false); return }
+    const trimmed = query.trim()
+    if (trimmed.length < 2 && !tagFilter) { setResults(EMPTY); setLoading(false); return }
 
     let cancelled = false
     setLoading(true)
     const t = setTimeout(async () => {
       try {
-        const res  = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        const params = new URLSearchParams({ q: trimmed })
+        if (tagFilter) params.set('tag', tagFilter)
+        const res  = await fetch(`/api/search?${params.toString()}`)
         const data = await res.json()
-        if (!cancelled) setResults(res.ok ? { services: data.services ?? [], tasks: data.tasks ?? [], contacts: data.contacts ?? [] } : EMPTY)
+        if (!cancelled) setResults(res.ok ? {
+          services: data.services ?? [], tasks: data.tasks ?? [], contacts: data.contacts ?? [], tags: data.tags ?? [],
+        } : EMPTY)
       } catch {
         if (!cancelled) setResults(EMPTY)
       } finally {
@@ -72,7 +74,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
     }, 200)
 
     return () => { cancelled = true; clearTimeout(t) }
-  }, [query, isOpen])
+  }, [query, tagFilter, isOpen])
 
   const items = useMemo<FlatItem[]>(() => {
     const out: FlatItem[] = []
@@ -81,21 +83,24 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
       out.push({ key: `s-${s.id}`, section: 'Services', primary: s.deceased_name, secondary: bits.join(' · '), href: `/services/${s.id}`, icon: 'service' })
     }
     for (const t of results.tasks) {
-      out.push({ key: `t-${t.id}`, section: 'Tasks', primary: t.title, secondary: [t.category, t.service_deceased_name].filter(Boolean).join(' · '), href: `/services/${t.service_id}?tab=tasks`, icon: 'task' })
+      out.push({ key: `t-${t.id}`, section: 'Tasks', primary: t.title, secondary: t.service_deceased_name, href: `/services/${t.service_id}?tab=tasks`, icon: 'task' })
     }
     for (const c of results.contacts) {
       out.push({ key: `c-${c.id}`, section: 'Contacts', primary: c.name, secondary: c.service_deceased_name, href: `/services/${c.service_id}?tab=contacts`, icon: 'contact' })
     }
+    for (const tag of results.tags) {
+      out.push({ key: `tag-${tag.id}`, section: 'Tags', primary: tag.name, secondary: 'Filter tasks by this tag', icon: 'tag', tagName: tag.name, color: tag.color })
+    }
     return out
   }, [results])
 
-  // Keep the active index in range as results change.
   useEffect(() => { setActiveIndex(0) }, [items.length])
 
   const select = useCallback((item: FlatItem | undefined) => {
     if (!item) return
+    if (item.tagName) { setTagFilter(item.tagName); return }   // filter, don't navigate
     onClose()
-    router.push(item.href)
+    if (item.href) router.push(item.href)
   }, [onClose, router])
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -116,36 +121,40 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div
-        className="w-full max-w-xl rounded-xl overflow-hidden shadow-2xl"
-        style={{ backgroundColor: '#FFFFFF' }}
-        onKeyDown={onKeyDown}
-      >
+      <div className="w-full max-w-xl rounded-xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#FFFFFF' }} onKeyDown={onKeyDown}>
         {/* Navy header with input */}
         <div className="flex items-center gap-3 px-4 py-3" style={{ backgroundColor: '#0A2540' }}>
           <SearchIcon color="rgba(248,245,240,0.6)" />
           <input
             ref={inputRef}
             value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search services, tasks, contacts…"
+            onChange={e => { setQuery(e.target.value); setTagFilter(null) }}
+            placeholder="Search services, tasks, contacts, tags…"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-[rgba(248,245,240,0.5)]"
             style={{ color: '#FFFFFF' }}
           />
           <kbd className="hidden sm:inline-block rounded px-1.5 py-0.5 text-[11px] font-medium" style={{ backgroundColor: 'rgba(248,245,240,0.12)', color: 'rgba(248,245,240,0.7)' }}>Esc</kbd>
         </div>
 
-        {/* Amber focus underline */}
         <div style={{ height: 2, backgroundColor: '#E8B923' }} />
+
+        {/* Active tag filter banner */}
+        {tagFilter && (
+          <div className="flex items-center gap-2 px-4 py-2 text-xs" style={{ backgroundColor: '#F8F5F0', color: '#475569' }}>
+            <span>Filtering tasks by tag:</span>
+            <span className="font-semibold" style={{ color: '#0A2540' }}>{tagFilter}</span>
+            <button type="button" onClick={() => setTagFilter(null)} className="ml-auto font-semibold hover:opacity-70" style={{ color: '#4A7C8C' }}>Clear ×</button>
+          </div>
+        )}
 
         {/* Body */}
         <div className="max-h-[55vh] overflow-y-auto">
-          {q.length < 2 ? (
+          {q.length < 2 && !tagFilter ? (
             <p className="px-4 py-10 text-center text-sm" style={{ color: '#94A3B8' }}>Type to search…</p>
           ) : loading ? (
             <p className="px-4 py-10 text-center text-sm" style={{ color: '#94A3B8' }}>Searching…</p>
           ) : !hasResults ? (
-            <p className="px-4 py-10 text-center text-sm" style={{ color: '#94A3B8' }}>No results for “{q}”</p>
+            <p className="px-4 py-10 text-center text-sm" style={{ color: '#94A3B8' }}>No results{q ? ` for “${q}”` : ''}</p>
           ) : (
             <Sections items={items} activeIndex={activeIndex} onHover={setActiveIndex} onSelect={select} />
           )}
@@ -159,7 +168,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
 function Sections({ items, activeIndex, onHover, onSelect }: {
   items: FlatItem[]; activeIndex: number; onHover: (i: number) => void; onSelect: (item: FlatItem) => void
 }) {
-  const sections: FlatItem['section'][] = ['Services', 'Tasks', 'Contacts']
+  const sections: FlatItem['section'][] = ['Services', 'Tasks', 'Contacts', 'Tags']
   return (
     <div className="py-2">
       {sections.map(section => {
@@ -180,7 +189,11 @@ function Sections({ items, activeIndex, onHover, onSelect }: {
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition"
                   style={{ backgroundColor: active ? '#F8F5F0' : 'transparent' }}
                 >
-                  <span className="flex-shrink-0" style={{ color: '#4A7C8C' }}><ResultIcon icon={item.icon} /></span>
+                  <span className="flex-shrink-0 flex items-center justify-center" style={{ width: 18, color: '#4A7C8C' }}>
+                    {item.icon === 'tag'
+                      ? <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color ?? '#94A3B8' }} />
+                      : <ResultIcon icon={item.icon} />}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium truncate" style={{ color: '#0F172A' }}>{item.primary}</span>
                     {item.secondary && <span className="block text-xs truncate" style={{ color: '#94A3B8' }}>{item.secondary}</span>}

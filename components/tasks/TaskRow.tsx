@@ -9,6 +9,8 @@ import { isTaskOverdue } from '@/lib/utils/service-status'
 import { deleteServiceTask, updateServiceTask, updateTaskNotes, reassignTask, updateTaskDueDays } from '@/app/services/task-actions'
 import { logActivity } from '@/lib/utils/activity'
 import { createClient } from '@/lib/supabase/client'
+import { TagPicker } from '@/components/tags/TagPicker'
+import { TagPills } from '@/components/tags/TagPills'
 import type { Priority, TaskWithProfile, TaskSubtask, Profile } from '@/lib/types'
 
 interface TaskRowProps {
@@ -593,6 +595,9 @@ export function TaskRow({
                 {mounted && task.completed_at && <span style={{ color: '#94A3B8' }}> · {formatDateTime(task.completed_at)}</span>}
               </p>
             )}
+            {(task.tags?.length ?? 0) > 0 && (
+              <div className="mt-1"><TagPills tags={task.tags} /></div>
+            )}
           </div>
 
           {/* Chevron */}
@@ -667,6 +672,17 @@ export function TaskRow({
         {/* Expanded panel */}
         {expanded && (
           <div className="border-t px-4 pb-4 pt-3 space-y-4" style={{ borderColor: '#F1F5F9' }}>
+
+            {/* Tags */}
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: '#94A3B8' }}>Tags</p>
+              <TagPicker
+                taskId={task.id}
+                existingTags={task.tags ?? []}
+                mode="task"
+                onChange={tags => { const u = { ...task, tags }; setTask(u); onTaskUpdate?.(u) }}
+              />
+            </div>
 
             {/* Confirmation value (if complete) */}
             {complete && task.confirmation_value && (

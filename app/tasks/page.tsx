@@ -58,7 +58,6 @@ export default async function TasksPage() {
         service_id:        t.service_id,
         funeral_home_id:   t.funeral_home_id,
         title:             t.title,
-        category:          '',
         confirmation_hint: t.confirmation_hint,
         due_days_before:   t.due_days_before,
         sort_order:        t.sort_order ?? 0,
