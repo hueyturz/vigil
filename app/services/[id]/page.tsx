@@ -11,7 +11,7 @@ import { EditServiceButton }     from '@/components/services/EditServiceButton'
 import { ServiceActionsMenu }    from '@/components/services/ServiceActionsMenu'
 import { computeServiceStatus }  from '@/lib/utils/service-status'
 import { formatDate }            from '@/lib/utils/date-helpers'
-import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote } from '@/lib/types'
+import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote, Tag } from '@/lib/types'
 
 // Always render fresh — contact data changes via client mutations and we never
 // want a cached/stale snapshot of the service detail page.
@@ -44,24 +44,41 @@ export default async function ServiceDetailPage({
 
   if (!service) notFound()
 
+  // Fetch tasks WITHOUT embedding tags — task visibility must never depend on the
+  // tag tables/embed resolving. Tags are loaded separately below and merged in.
   const { data: tasksRaw } = await db
     .from('tasks')
     .select(`
       *,
       completed_by:profiles!tasks_completed_by_id_fkey (id, full_name),
-      assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name),
-      task_tags ( tag:tags ( id, funeral_home_id, name, color, created_at ) )
+      assigned_to:profiles!tasks_assigned_to_id_fkey  (id, full_name)
     `)
     .eq('service_id', params.id)
     .order('sort_order', { ascending: true })
+
+  // Tags per task (best-effort): a failure here leaves tasks tagless, not hidden.
+  const taskIds = (tasksRaw ?? []).map(t => t.id)
+  const tagsByTask = new Map<string, Tag[]>()
+  if (taskIds.length > 0) {
+    const { data: tagLinks } = await db
+      .from('task_tags')
+      .select('task_id, tag:tags ( id, funeral_home_id, name, color, created_at )')
+      .in('task_id', taskIds)
+
+    for (const link of tagLinks ?? []) {
+      const tag = (Array.isArray(link.tag) ? link.tag[0] : link.tag) as Tag | null
+      if (!tag) continue
+      const arr = tagsByTask.get(link.task_id) ?? []
+      arr.push(tag)
+      tagsByTask.set(link.task_id, arr)
+    }
+  }
 
   const tasks: TaskWithProfile[] = (tasksRaw ?? []).map(t => ({
     ...t,
     completed_by: t.completed_by ?? null,
     assigned_to:  t.assigned_to  ?? null,
-    tags: ((t.task_tags ?? []) as { tag: unknown }[])
-      .map(tt => (Array.isArray(tt.tag) ? tt.tag[0] : tt.tag))
-      .filter(Boolean),
+    tags:         tagsByTask.get(t.id) ?? [],
   }))
 
   const { data: intakeRaw } = await db
