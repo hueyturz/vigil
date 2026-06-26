@@ -11,6 +11,7 @@ import { logActivity } from '@/lib/utils/activity'
 import { createClient } from '@/lib/supabase/client'
 import { TagPicker } from '@/components/tags/TagPicker'
 import { TagPills } from '@/components/tags/TagPills'
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import type { Priority, TaskWithProfile, TaskSubtask, Profile } from '@/lib/types'
 
 interface TaskRowProps {
@@ -24,11 +25,14 @@ interface TaskRowProps {
   onTaskComplete?: (updated: TaskWithProfile) => void
   onTaskDelete?:   (taskId: string) => void
   onTaskUpdate?:   (updated: TaskWithProfile) => void
-  // Drag-to-reorder (owner/fd only). The handle is the draggable element; the
-  // drop target / indicator lives on the wrapping element in TaskList.
+  // Drag-to-reorder (owner/fd only). dnd-kit provides the handle props via
+  // TaskList's SortableTaskRow wrapper; the ⋮⋮ handle is the drag activator.
   canReorder?:     boolean
-  onDragStart?:    () => void
-  onDragEnd?:      () => void
+  dragHandleProps?: {
+    attributes:           DraggableAttributes
+    listeners:            DraggableSyntheticListeners
+    setActivatorNodeRef:  (el: HTMLElement | null) => void
+  }
 }
 
 // ── Due-date urgency label ─────────────────────────────────────────────────────
@@ -330,8 +334,7 @@ export function TaskRow({
   onTaskDelete,
   onTaskUpdate,
   canReorder,
-  onDragStart,
-  onDragEnd,
+  dragHandleProps,
 }: TaskRowProps) {
   const [task,         setTask]         = useState<TaskWithProfile>(initialTask)
   const [modalOpen,    setModalOpen]    = useState(false)
@@ -513,14 +516,15 @@ export function TaskRow({
           className="flex items-start gap-3 p-4 cursor-pointer select-none"
           onClick={() => setExpanded(o => !o)}
         >
-          {/* Drag handle (owner/fd only) — the draggable element for reordering */}
-          {canReorder && (
+          {/* Drag handle (owner/fd only) — dnd-kit activator; works on touch.
+              touch-none keeps the browser from scrolling instead of dragging. */}
+          {canReorder && dragHandleProps && (
             <div
-              draggable
-              onDragStart={e => { e.stopPropagation(); onDragStart?.() }}
-              onDragEnd={() => onDragEnd?.()}
+              ref={dragHandleProps.setActivatorNodeRef}
+              {...dragHandleProps.attributes}
+              {...dragHandleProps.listeners}
               onClick={e => e.stopPropagation()}
-              className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing"
+              className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
               style={{ color: '#CBD5E1' }}
               aria-label="Drag to reorder"
               title="Drag to reorder"

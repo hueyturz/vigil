@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import {
+  DndContext, PointerSensor, useSensor, useSensors, closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, arrayMove, verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { TaskRow } from './TaskRow'
 import { AddTaskModal } from './AddTaskModal'
 import { updateTaskOrder } from '@/app/services/task-actions'
@@ -24,37 +32,37 @@ export function TaskList({
 }: TaskListProps) {
   const [tasks,   setTasks]   = useState<TaskWithProfile[]>(initialTasks)
   const [addOpen, setAddOpen] = useState(false)
-
-  const [draggingId, setDraggingId] = useState<string | null>(null)
-  const [dragOverId, setDragOverId] = useState<string | null>(null)
   const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set())
 
-  // Reorder `draggedId` to sit just before `targetId` in the flat list. The set
-  // of sort_order values is preserved and reassigned in the new order.
-  function reorder(draggedId: string, targetId: string) {
-    if (draggedId === targetId) return
+  // PointerSensor handles mouse, touch, and pen via pointer events (works on
+  // mobile). The small distance constraint lets taps/clicks through so tapping a
+  // row still expands it and only a deliberate drag starts a reorder.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  )
+
+  // Move the active task to the dropped position. The set of sort_order values is
+  // preserved and reassigned in the new order, then persisted per changed task.
+  function reorder(activeId: string, overId: string) {
+    if (activeId === overId) return
     const ordered = [...tasks].sort((a, b) => a.sort_order - b.sort_order)
     const slots   = ordered.map(t => t.sort_order)
-    const dragged = ordered.find(t => t.id === draggedId)
-    if (!dragged) return
+    const from    = ordered.findIndex(t => t.id === activeId)
+    const to      = ordered.findIndex(t => t.id === overId)
+    if (from === -1 || to === -1 || from === to) return
 
-    const without   = ordered.filter(t => t.id !== draggedId)
-    const targetIdx = without.findIndex(t => t.id === targetId)
-    if (targetIdx === -1) return
-    without.splice(targetIdx, 0, dragged)
-
-    const newOrder = new Map(without.map((t, i) => [t.id, slots[i]]))
+    const moved    = arrayMove(ordered, from, to)
+    const newOrder = new Map(moved.map((t, i) => [t.id, slots[i]]))
     setTasks(prev => prev.map(t => newOrder.has(t.id) ? { ...t, sort_order: newOrder.get(t.id)! } : t))
-    for (const t of without) {
+    for (const t of moved) {
       const next = newOrder.get(t.id)!
       if (t.sort_order !== next) void updateTaskOrder(t.id, next)
     }
   }
 
-  function handleDrop(targetId: string) {
-    if (draggingId) reorder(draggingId, targetId)
-    setDraggingId(null)
-    setDragOverId(null)
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (over && active.id !== over.id) reorder(String(active.id), String(over.id))
   }
 
   function handleTaskComplete(updated: TaskWithProfile) { setTasks(prev => prev.map(t => t.id === updated.id ? updated : t)) }
@@ -119,20 +127,12 @@ export function TaskList({
       )}
 
       <div className="space-y-2">
-        {visible.map(task => {
-          const showIndicator = canReorder && dragOverId === task.id && draggingId !== task.id
-          return (
-            <div
-              key={task.id}
-              className="relative"
-              onDragOver={canReorder ? (e => { e.preventDefault(); if (dragOverId !== task.id) setDragOverId(task.id) }) : undefined}
-              onDrop={canReorder ? (e => { e.preventDefault(); handleDrop(task.id) }) : undefined}
-            >
-              {showIndicator && (
-                <div className="absolute left-0 right-0 -top-1 h-0.5 rounded-full" style={{ backgroundColor: '#4A7C8C' }} />
-              )}
-              <div style={{ opacity: draggingId === task.id ? 0.5 : 1 }}>
-                <TaskRow
+        {canReorder ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={visible.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              {visible.map(task => (
+                <SortableTaskRow
+                  key={task.id}
                   task={task}
                   serviceDate={serviceDate}
                   serviceId={serviceId}
@@ -142,14 +142,26 @@ export function TaskList({
                   onTaskComplete={handleTaskComplete}
                   onTaskDelete={handleTaskDelete}
                   onTaskUpdate={handleTaskUpdate}
-                  canReorder={canReorder}
-                  onDragStart={() => setDraggingId(task.id)}
-                  onDragEnd={() => { setDraggingId(null); setDragOverId(null) }}
                 />
-              </div>
-            </div>
-          )
-        })}
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          visible.map(task => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              serviceDate={serviceDate}
+              serviceId={serviceId}
+              funeralHomeId={funeralHomeId}
+              actorId={actorId}
+              actorName={actorName}
+              onTaskComplete={handleTaskComplete}
+              onTaskDelete={handleTaskDelete}
+              onTaskUpdate={handleTaskUpdate}
+            />
+          ))
+        )}
 
         {visible.length === 0 && (
           <p className="text-sm text-center py-8" style={{ color: '#94A3B8' }}>No tasks match the selected tags.</p>
@@ -175,5 +187,32 @@ export function TaskList({
         onAdded={handleTaskAdded}
       />
     </>
+  )
+}
+
+// A single sortable row: registers with dnd-kit and hands the drag handle props
+// (listeners/attributes) down to TaskRow's ⋮⋮ handle so dragging only starts there.
+type SortableTaskRowProps = Omit<React.ComponentProps<typeof TaskRow>, 'canReorder' | 'dragHandleProps'>
+
+function SortableTaskRow(props: SortableTaskRowProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: props.task.id })
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex:  isDragging ? 10 : undefined,
+    position: 'relative',
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <TaskRow
+        {...props}
+        canReorder
+        dragHandleProps={{ attributes, listeners, setActivatorNodeRef }}
+      />
+    </div>
   )
 }
