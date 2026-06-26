@@ -8,8 +8,11 @@ import { AddTaskModal }     from '@/components/tasks/AddTaskModal'
 import { MultiContactCard } from '@/components/services/MultiContactCard'
 import { CaseNotes }        from '@/components/services/CaseNotes'
 import { ApplyTemplateBanner } from '@/components/services/ApplyTemplateBanner'
-import { useRouter }        from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { IntakeSession, TaskWithProfile, ServiceContact, ServiceNote } from '@/lib/types'
+
+type TabKey = 'tasks' | 'meetings' | 'contacts' | 'notes' | 'activity'
+const VALID_TABS: TabKey[] = ['tasks', 'meetings', 'contacts', 'notes', 'activity']
 
 interface ServiceDetailTabsProps {
   tasks:          TaskWithProfile[]
@@ -43,7 +46,10 @@ export function ServiceDetailTabs({
   applyBanner,
 }: ServiceDetailTabsProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'tasks' | 'meetings' | 'contacts' | 'notes' | 'activity'>('meetings')
+  // Honor a ?tab= deep link (e.g. from the global search palette), else default to Meetings.
+  const tabParam = useSearchParams().get('tab')
+  const initialTab: TabKey = (VALID_TABS as string[]).includes(tabParam ?? '') ? (tabParam as TabKey) : 'meetings'
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [addOpen,   setAddOpen]   = useState(false)
   const [showTemplate, setShowTemplate] = useState(false)
 

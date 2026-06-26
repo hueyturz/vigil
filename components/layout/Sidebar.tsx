@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useSearch } from '@/components/search/SearchProvider'
 import type { Profile } from '@/lib/types'
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ const NAV = [
 export function Sidebar({ profile, redAlert = false }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
+  const { open } = useSearch()
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -48,6 +50,20 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
+        {/* Search trigger — opens the command palette (also bound to ⌘K) */}
+        <button
+          type="button"
+          onClick={open}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-[rgba(244,201,93,0.08)]"
+          style={{ color: 'rgba(248,245,240,0.55)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span>Search</span>
+          <kbd className="ml-auto rounded px-1.5 py-0.5 text-[11px] font-medium" style={{ backgroundColor: 'rgba(248,245,240,0.1)', color: 'rgba(248,245,240,0.5)' }}>⌘K</kbd>
+        </button>
+
         {visibleNav.map(item => {
           const active = pathname.startsWith(item.href)
           return (

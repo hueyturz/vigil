@@ -1,5 +1,6 @@
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
+import { SearchProvider } from '@/components/search/SearchProvider'
 import { getImpersonationBanner } from '@/lib/utils/impersonation'
 import { exitImpersonation } from '@/app/admin/impersonation-actions'
 import type { Profile } from '@/lib/types'
@@ -14,6 +15,7 @@ export async function AppShell({ profile, redAlert = false, children }: AppShell
   const impersonating = await getImpersonationBanner()
 
   return (
+    <SearchProvider>
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F8F5F0' }}>
       {/* Sidebar hidden on mobile, visible on md+ */}
       <Sidebar profile={profile} redAlert={redAlert} />
@@ -42,5 +44,6 @@ export async function AppShell({ profile, redAlert = false, children }: AppShell
       {/* Icons-only bottom nav, mobile only */}
       <BottomNav profile={profile} />
     </div>
+    </SearchProvider>
   )
 }

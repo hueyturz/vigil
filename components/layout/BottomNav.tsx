@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSearch } from '@/components/search/SearchProvider'
 import type { Profile } from '@/lib/types'
 
 interface BottomNavProps {
@@ -25,6 +26,7 @@ const NAV: { href: string; label: string; roles: string[]; Icon: (p: IconProps) 
 
 export function BottomNav({ profile }: BottomNavProps) {
   const pathname = usePathname()
+  const { open } = useSearch()
   const items = NAV.filter(item => item.roles.includes(profile.role))
 
   return (
@@ -50,6 +52,16 @@ export function BottomNav({ profile }: BottomNavProps) {
           </Link>
         )
       })}
+
+      {/* Search — opens the command palette */}
+      <button
+        type="button"
+        onClick={open}
+        aria-label="Search"
+        className="flex flex-1 items-center justify-center transition-opacity active:opacity-70"
+      >
+        <SearchIcon color={MUTED} strong={false} />
+      </button>
     </nav>
   )
 }
@@ -62,6 +74,15 @@ function svgProps({ color, strong }: IconProps) {
     stroke: color, strokeWidth: strong ? 2.4 : 1.9,
     strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
   }
+}
+
+function SearchIcon(p: IconProps) {
+  return (
+    <svg {...svgProps(p)}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
 }
 
 function HouseIcon(p: IconProps) {
