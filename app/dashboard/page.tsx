@@ -79,10 +79,14 @@ export default async function DashboardPage() {
 
         <UpcomingServices services={services} />
 
-        <div className="mt-8 mb-3">
-          <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Service Progress</h2>
-        </div>
-        <ServiceProgressChart services={services} />
+        {activeServices.some(s => s.tasks.length > 0) && (
+          <>
+            <div className="mt-8 mb-3">
+              <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Service Progress</h2>
+            </div>
+            <ServiceProgressChart services={services} />
+          </>
+        )}
 
         <div className="mt-6">
           <Link

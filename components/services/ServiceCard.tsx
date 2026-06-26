@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { ServiceCardMenu } from '@/components/services/ServiceCardMenu'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
@@ -50,7 +51,10 @@ export function ServiceCard({ service }: { service: ServiceWithTasks }) {
             ? (SERVICE_TYPE_LABEL[service.service_type] ?? service.service_type)
             : ''}
         </span>
-        <Badge status={isCompleted ? 'completed' : status} />
+        <div className="flex items-center gap-1">
+          <Badge status={isCompleted ? 'completed' : status} />
+          <ServiceCardMenu serviceId={service.id} />
+        </div>
       </div>
 
       {/* Family / deceased names */}

@@ -22,6 +22,11 @@ interface TaskRowProps {
   onTaskComplete?: (updated: TaskWithProfile) => void
   onTaskDelete?:   (taskId: string) => void
   onTaskUpdate?:   (updated: TaskWithProfile) => void
+  // Drag-to-reorder (owner/fd only). The handle is the draggable element; the
+  // drop target / indicator lives on the wrapping element in TaskList.
+  canReorder?:     boolean
+  onDragStart?:    () => void
+  onDragEnd?:      () => void
 }
 
 // ── Due-date urgency label ─────────────────────────────────────────────────────
@@ -322,6 +327,9 @@ export function TaskRow({
   onTaskComplete,
   onTaskDelete,
   onTaskUpdate,
+  canReorder,
+  onDragStart,
+  onDragEnd,
 }: TaskRowProps) {
   const [task,         setTask]         = useState<TaskWithProfile>(initialTask)
   const [modalOpen,    setModalOpen]    = useState(false)
@@ -503,6 +511,26 @@ export function TaskRow({
           className="flex items-start gap-3 p-4 cursor-pointer select-none"
           onClick={() => setExpanded(o => !o)}
         >
+          {/* Drag handle (owner/fd only) — the draggable element for reordering */}
+          {canReorder && (
+            <div
+              draggable
+              onDragStart={e => { e.stopPropagation(); onDragStart?.() }}
+              onDragEnd={() => onDragEnd?.()}
+              onClick={e => e.stopPropagation()}
+              className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing"
+              style={{ color: '#CBD5E1' }}
+              aria-label="Drag to reorder"
+              title="Drag to reorder"
+            >
+              <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
+                <circle cx="4" cy="3"  r="1.4" /><circle cx="10" cy="3"  r="1.4" />
+                <circle cx="4" cy="8"  r="1.4" /><circle cx="10" cy="8"  r="1.4" />
+                <circle cx="4" cy="13" r="1.4" /><circle cx="10" cy="13" r="1.4" />
+              </svg>
+            </div>
+          )}
+
           {/* Status circle */}
           <div className="mt-0.5 flex-shrink-0">
             {complete ? <CheckCircleIcon color="#10B981" /> : overdue ? <AlertCircleIcon color="#EF4444" /> : <CircleIcon color="#94A3B8" />}

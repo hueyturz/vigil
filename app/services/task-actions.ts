@@ -341,3 +341,35 @@ export async function reassignTask(
 
   return {}
 }
+
+// ── Update a task's sort_order (drag-to-reorder within a category) ─────────
+
+export async function updateTaskOrder(
+  taskId:       string,
+  newSortOrder: number,
+): Promise<{ error?: string }> {
+  if (!Number.isInteger(newSortOrder)) return { error: 'Invalid sort order.' }
+
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+
+  const { data: task } = await serviceRole
+    .from('tasks')
+    .select('funeral_home_id')
+    .eq('id', taskId)
+    .single()
+
+  if (!task || task.funeral_home_id !== ctx.funeralHomeId)
+    return { error: 'Task not found.' }
+
+  const { error } = await serviceRole
+    .from('tasks')
+    .update({ sort_order: newSortOrder })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+
+  return {}
+}

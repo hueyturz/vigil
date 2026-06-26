@@ -118,6 +118,79 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
   return { data: { id: service.id } }
 }
 
+// ── Duplicate an existing service (template-style copy) ────────────────────
+// Copies the service fields and its task checklist into a fresh service. Does
+// NOT copy contacts, meetings, or intake sessions. The new service starts with
+// no date, a "(Copy)" name, and all tasks reset to not-started / unassigned.
+
+export async function duplicateService(
+  serviceId: string,
+): Promise<{ data?: { id: string }; error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
+  const serviceRole = ctx.serviceRole
+
+  const { data: original } = await serviceRole
+    .from('services')
+    .select('family_name, deceased_name, service_type, location, assigned_staff_id, notes')
+    .eq('id', serviceId)
+    .eq('funeral_home_id', ctx.funeralHomeId)
+    .single()
+
+  if (!original) return { error: 'Service not found.' }
+
+  const { data: copy, error: insertError } = await serviceRole
+    .from('services')
+    .insert({
+      funeral_home_id:   ctx.funeralHomeId,
+      family_name:       original.family_name,
+      deceased_name:     `${original.deceased_name} (Copy)`,
+      service_type:      original.service_type ?? null,
+      service_date:      null,                       // dates differ — don't copy
+      location:          original.location ?? null,
+      assigned_staff_id: original.assigned_staff_id ?? null,
+      notes:             original.notes ?? null,
+      created_by_id:     ctx.userId,
+      status:            'active',
+    })
+    .select('id')
+    .single()
+
+  if (insertError || !copy) return { error: insertError?.message ?? 'Failed to duplicate service.' }
+
+  // Copy the task checklist (reset progress/assignment). sort_order and
+  // confirmation_hint are NOT NULL, so they must be carried over.
+  const { data: originalTasks } = await serviceRole
+    .from('tasks')
+    .select('title, category, confirmation_hint, due_days_before, priority, notes, sort_order')
+    .eq('service_id', serviceId)
+    .order('sort_order', { ascending: true })
+
+  if (originalTasks && originalTasks.length > 0) {
+    const { error: taskError } = await serviceRole.from('tasks').insert(
+      originalTasks.map(t => ({
+        service_id:        copy.id,
+        funeral_home_id:   ctx.funeralHomeId,
+        title:             t.title,
+        category:          t.category,
+        confirmation_hint: t.confirmation_hint,
+        due_days_before:   t.due_days_before,
+        priority:          (t.priority ?? 'standard') as Priority,
+        notes:             t.notes ?? null,
+        sort_order:        t.sort_order,
+        status:            'not-started',            // schema CHECK: 'not-started' | 'complete'
+        assigned_to_id:    null,
+      })),
+    )
+    if (taskError) return { error: taskError.message }
+  }
+
+  revalidatePath('/services')
+  revalidatePath('/dashboard')
+  return { data: { id: copy.id } }
+}
+
 // ── Update service fields (Edit Service modal) ────────────────────────────
 
 interface UpdateServiceInput {

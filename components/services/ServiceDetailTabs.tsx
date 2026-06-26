@@ -128,6 +128,7 @@ export function ServiceDetailTabs({
                 funeralHomeId={funeralHomeId}
                 actorId={actorId}
                 actorName={actorName}
+                canReorder={canManage}
               />
             </>
           ) : showApplyBanner ? null : (
