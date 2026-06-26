@@ -162,10 +162,6 @@ export default function TermsPage() {
           <p>
             Vigilight LLC
             <br />
-            1134 W 360 S
-            <br />
-            American Fork, UT 84003
-            <br />
             <MailLink>help@getvigilight.com</MailLink>
           </p>
         </Section>
