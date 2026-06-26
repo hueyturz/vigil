@@ -1,20 +1,29 @@
 import type { Metadata, Viewport } from 'next'
+import * as Sentry from '@sentry/nextjs'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://getvigilight.com'),
-  title: 'Vigilight',
-  description: 'Funeral home service operations',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
+// Use generateMetadata rather than a static `metadata` export so we can inject
+// Sentry's per-request trace headers via `other` — Next.js forbids exporting both
+// `metadata` and `generateMetadata` from the same module.
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL('https://getvigilight.com'),
     title: 'Vigilight',
-  },
-  icons: {
-    apple: '/icon-192.png',
-  },
+    description: 'Funeral home service operations',
+    manifest: '/manifest.json',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'Vigilight',
+    },
+    icons: {
+      apple: '/icon-192.png',
+    },
+    other: {
+      ...Sentry.getTraceData(),
+    },
+  }
 }
 
 export const viewport: Viewport = {
