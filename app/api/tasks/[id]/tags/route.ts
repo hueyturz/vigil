@@ -12,12 +12,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const tagIds = Array.isArray(body.tagIds) ? body.tagIds.filter(Boolean) : []
   if (tagIds.length === 0) return NextResponse.json({ error: 'tagIds is required.' }, { status: 400 })
 
+  // TEMP DEBUG — remove after diagnosing "No valid tags."
+  console.log('[DEBUG tags] incoming tagIds:', JSON.stringify(tagIds))
+
   // Service-role client: the task_tags RLS policy references `tasks` via EXISTS,
   // and this project does not grant the `authenticated` role SELECT on `tasks`
   // (only the service-role path reads it). Tenant isolation is enforced below via
   // getActiveProfile() + the explicit funeral_home_id checks.
   const db   = createServiceRoleClient()
   const fhId = ctx.profile.funeral_home_id
+
+  // TEMP DEBUG — remove after diagnosing "No valid tags."
+  console.log('[DEBUG tags] fhId from getActiveProfile:', fhId, 'impersonating:', !!ctx.impersonating)
 
   // Verify the task belongs to this funeral home.
   const { data: task, error: taskErr } = await db
@@ -30,8 +36,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   // Only attach tags visible to this funeral home: its own custom tags or any
   // platform default tag (is_default = true, funeral_home_id NULL).
-  const { data: validTags } = await db
+  const { data: validTags, error: validErr } = await db
     .from('tags').select('id').or(`is_default.eq.true,funeral_home_id.eq.${fhId}`).in('id', tagIds)
+  // TEMP DEBUG — remove after diagnosing "No valid tags."
+  console.log('[DEBUG tags] validTags query →', JSON.stringify({ data: validTags, error: validErr?.message ?? null }))
   const validIds = (validTags ?? []).map(t => t.id)
   if (validIds.length === 0) return NextResponse.json({ error: 'No valid tags.' }, { status: 400 })
 
