@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveProfile } from '@/lib/utils/impersonation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 // POST /api/tasks/[id]/tags — attach tag(s) to a task { tagIds: string[] }.
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -12,14 +12,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const tagIds = Array.isArray(body.tagIds) ? body.tagIds.filter(Boolean) : []
   if (tagIds.length === 0) return NextResponse.json({ error: 'tagIds is required.' }, { status: 400 })
 
-  // Cookie-based client → runs as `authenticated` under RLS (task_tags policy),
-  // so the user's JWT authorizes the write instead of falling back to anon.
-  const db   = createClient()
+  // Service-role client: the task_tags RLS policy references `tasks` via EXISTS,
+  // and this project does not grant the `authenticated` role SELECT on `tasks`
+  // (only the service-role path reads it). Tenant isolation is enforced below via
+  // getActiveProfile() + the explicit funeral_home_id checks.
+  const db   = createServiceRoleClient()
   const fhId = ctx.profile.funeral_home_id
 
   // Verify the task belongs to this funeral home.
-  const { data: task } = await db
-    .from('tasks').select('id').eq('id', params.id).eq('funeral_home_id', fhId).single()
+  const { data: task, error: taskErr } = await db
+    .from('tasks').select('id').eq('id', params.id).eq('funeral_home_id', fhId).maybeSingle()
+  if (taskErr) {
+    console.error('[POST /api/tasks/[id]/tags] task lookup failed:', taskErr.message)
+    return NextResponse.json({ error: taskErr.message }, { status: 500 })
+  }
   if (!task) return NextResponse.json({ error: 'Task not found.' }, { status: 404 })
 
   // Only attach tags visible to this funeral home: its own custom tags or any
