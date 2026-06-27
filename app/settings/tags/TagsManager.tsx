@@ -136,27 +136,30 @@ export function TagsManager({ defaults, initialCustom }: { defaults: Tag[]; init
         </div>
       )}
 
-      {/* Standard tags */}
+      {/* Standard tags — stacked full-width rows */}
       <section className="mb-8">
         <h2 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#94A3B8' }}>Standard Tags</h2>
-        <div className="flex flex-wrap gap-2">
-          {defaults.map(tag => (
-            <span
+        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+          {defaults.map((tag, i) => (
+            <div
               key={tag.id}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold"
-              style={{ backgroundColor: tint(tag.color, 0.15), color: tag.color, border: `1px solid ${tint(tag.color, 0.35)}` }}
+              className={`flex items-center gap-3 px-4 py-3${i < defaults.length - 1 ? ' border-b' : ''}`}
+              style={{ borderColor: '#E2E8F0' }}
             >
-              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-              {tag.name}
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="Default" className="opacity-70">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </span>
+              <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+              <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{tag.name}</span>
+              <span className="ml-auto inline-flex items-center gap-2">
+                <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>Default</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </span>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Custom tags */}
+      {/* Custom tags — stacked full-width rows */}
       <section>
         <h2 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#94A3B8' }}>Custom Tags</h2>
         {custom.length === 0 ? (
@@ -164,28 +167,28 @@ export function TagsManager({ defaults, initialCustom }: { defaults: Tag[]; init
             <p className="text-sm" style={{ color: '#94A3B8' }}>No custom tags yet — create your first one.</p>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {custom.map(tag => (
-              <span
+          <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+            {custom.map((tag, i) => (
+              <div
                 key={tag.id}
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
-                style={{ backgroundColor: tint(tag.color, 0.15), color: tag.color, border: `1px solid ${tint(tag.color, 0.35)}` }}
+                className={`flex items-center gap-3 px-4 py-3${i < custom.length - 1 ? ' border-b' : ''}`}
+                style={{ borderColor: '#E2E8F0' }}
               >
-                <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                {tag.name}
+                <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{tag.name}</span>
                 {confirmId === tag.id ? (
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="ml-auto inline-flex items-center gap-2">
                     <button type="button" disabled={busy} onClick={() => remove(tag)} className="text-xs font-bold hover:opacity-70" style={{ color: '#DC2626' }}>Delete</button>
                     <button type="button" onClick={() => setConfirmId(null)} className="text-xs hover:opacity-70" style={{ color: '#94A3B8' }}>Cancel</button>
                   </span>
                 ) : (
-                  <button type="button" onClick={() => setConfirmId(tag.id)} aria-label={`Delete ${tag.name}`} className="leading-none hover:opacity-70" style={{ color: '#DC2626' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <button type="button" onClick={() => setConfirmId(tag.id)} aria-label={`Delete ${tag.name}`} className="ml-auto leading-none hover:opacity-70" style={{ color: '#DC2626' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" />
                     </svg>
                   </button>
                 )}
-              </span>
+              </div>
             ))}
           </div>
         )}

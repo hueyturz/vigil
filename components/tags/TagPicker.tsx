@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { TAG_COLORS, tint } from './colors'
 import type { Tag } from '@/lib/types'
@@ -26,9 +26,11 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
     ? `/api/tasks/${taskId}/tags`
     : `/api/template-tasks/${taskId}/tags`
 
-  useEffect(() => {
+  const loadTags = useCallback(() => {
     fetch('/api/tags').then(r => r.json()).then(d => setAllTags(d.tags ?? [])).catch(() => {})
   }, [])
+
+  useEffect(() => { loadTags() }, [loadTags])
 
   useEffect(() => {
     if (!open) return
@@ -44,10 +46,11 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
   const attachedIds = new Set(tags.map(t => t.id))
   const q       = query.trim()
   const qLower  = q.toLowerCase()
+  // q === '' → includes('') is true for all, so this is the full unattached list.
   const matches = allTags.filter(t => !attachedIds.has(t.id) && t.name.toLowerCase().includes(qLower))
-  const standardMatches = matches.filter(t => t.is_default).slice(0, 6)
-  const customMatches   = matches.filter(t => !t.is_default).slice(0, 6)
-  const exact   = allTags.find(t => t.name.toLowerCase() === qLower)
+  const standardMatches = matches.filter(t => t.is_default)
+  const customMatches   = matches.filter(t => !t.is_default)
+  const exact   = q ? allTags.find(t => t.name.toLowerCase() === qLower) : undefined
 
   async function attach(tag: Tag) {
     const prev = tags
@@ -128,7 +131,7 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
         <input
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true); setCreating(false) }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => { setOpen(true); loadTags() }}
           onKeyDown={onKeyDown}
           placeholder={tags.length ? 'Add tag…' : 'Add a tag…'}
           className="min-w-[90px] flex-1 rounded border px-2 py-1 text-xs outline-none"
@@ -136,9 +139,9 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
         />
       </div>
 
-      {/* Dropdown */}
-      {open && q.length > 0 && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-lg border shadow-lg" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+      {/* Dropdown — opens on focus and shows the full tag list before typing */}
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border shadow-lg" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
           {matches.length > 0 && (
             <div className="py-1 max-h-60 overflow-y-auto">
               {standardMatches.length > 0 && (
@@ -168,9 +171,9 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
             </div>
           )}
 
-          {/* Create option (only when there's no exact match) */}
-          {!exact && (
-            <div className="border-t" style={{ borderColor: '#E2E8F0' }}>
+          {/* Create option — only once the user has typed a name with no exact match */}
+          {q.length > 0 && !exact && (
+            <div className={matches.length > 0 ? 'border-t' : ''} style={{ borderColor: '#E2E8F0' }}>
               {!creating ? (
                 <button
                   type="button"
@@ -209,7 +212,13 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
             </div>
           )}
 
-          {matches.length === 0 && exact && (
+          {/* Empty hints */}
+          {matches.length === 0 && q.length === 0 && (
+            <p className="px-3 py-2 text-xs" style={{ color: '#94A3B8' }}>
+              {allTags.length === 0 ? 'No tags yet — type to create one.' : 'All tags added.'}
+            </p>
+          )}
+          {matches.length === 0 && q.length > 0 && exact && (
             <p className="px-3 py-2 text-xs" style={{ color: '#94A3B8' }}>Already added.</p>
           )}
         </div>
