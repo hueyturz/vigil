@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveProfile } from '@/lib/utils/impersonation'
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 const TAG_COLS = 'id, funeral_home_id, name, color, is_default, created_at'
 
@@ -10,7 +10,9 @@ export async function GET() {
   const ctx = await getActiveProfile()
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
-  const db = createServiceRoleClient()
+  // Cookie-based client → the user's JWT reaches Supabase so the query runs as the
+  // `authenticated` role under RLS (not anon). RLS already scopes to defaults + own.
+  const db = createClient()
   const { data, error } = await db
     .from('tags')
     .select(TAG_COLS)
@@ -42,7 +44,9 @@ export async function POST(request: NextRequest) {
   if (!name)  return NextResponse.json({ error: 'Name is required.' }, { status: 400 })
   if (!color) return NextResponse.json({ error: 'Color is required.' }, { status: 400 })
 
-  const db   = createServiceRoleClient()
+  // Cookie-based client → runs as `authenticated` under RLS (tags_insert policy),
+  // so the user's JWT is what authorizes the write — not the anon key.
+  const db   = createClient()
   const fhId = ctx.profile.funeral_home_id
 
   // Don't let a custom tag duplicate a platform default name.

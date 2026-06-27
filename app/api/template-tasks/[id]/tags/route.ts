@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveProfile } from '@/lib/utils/impersonation'
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // POST /api/template-tasks/[id]/tags — attach tag(s) to a template task
 // (task_templates row) { tagIds: string[] }. Only custom (funeral-home-owned)
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const tagIds = Array.isArray(body.tagIds) ? body.tagIds.filter(Boolean) : []
   if (tagIds.length === 0) return NextResponse.json({ error: 'tagIds is required.' }, { status: 400 })
 
-  const db   = createServiceRoleClient()
+  // Cookie-based client → runs as `authenticated` under RLS (template_task_tags policy).
+  const db   = createClient()
   const fhId = ctx.profile.funeral_home_id
 
   const { data: tpl } = await db
