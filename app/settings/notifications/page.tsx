@@ -19,6 +19,13 @@ const DEFAULTS: Prefs = {
   sms_staff_tasks_overdue:         false,
   sms_task_approaching_deadline:   false,
   sms_new_service_created:         false,
+  // Email reminder preferences (mirror the SMS reminder defaults)
+  email_task_assigned:               true,
+  email_task_completed_on_my_service: false,
+  email_my_tasks_overdue:            true,
+  email_staff_tasks_overdue:         false,
+  email_task_approaching_deadline:   false,
+  email_new_service_created:         false,
   preferred_sms_hour:              8,
   timezone:                        'America/Denver',
 }
@@ -61,6 +68,12 @@ export default async function NotificationsPage() {
         sms_staff_tasks_overdue:          prefs.sms_staff_tasks_overdue         ?? DEFAULTS.sms_staff_tasks_overdue,
         sms_task_approaching_deadline:    prefs.sms_task_approaching_deadline   ?? DEFAULTS.sms_task_approaching_deadline,
         sms_new_service_created:          prefs.sms_new_service_created         ?? DEFAULTS.sms_new_service_created,
+        email_task_assigned:                prefs.email_task_assigned                ?? DEFAULTS.email_task_assigned,
+        email_task_completed_on_my_service: prefs.email_task_completed_on_my_service ?? DEFAULTS.email_task_completed_on_my_service,
+        email_my_tasks_overdue:             prefs.email_my_tasks_overdue             ?? DEFAULTS.email_my_tasks_overdue,
+        email_staff_tasks_overdue:          prefs.email_staff_tasks_overdue          ?? DEFAULTS.email_staff_tasks_overdue,
+        email_task_approaching_deadline:    prefs.email_task_approaching_deadline    ?? DEFAULTS.email_task_approaching_deadline,
+        email_new_service_created:          prefs.email_new_service_created          ?? DEFAULTS.email_new_service_created,
         preferred_sms_hour:               prefs.preferred_sms_hour              ?? DEFAULTS.preferred_sms_hour,
         timezone:                         prefs.timezone                        ?? DEFAULTS.timezone,
       }

@@ -71,6 +71,14 @@ async function maybeSendAssignmentEmail(
 ) {
   if (assignedToId === actorId) return
   try {
+    // Respect the assignee's email preference (defaults on when no row exists).
+    const { data: pref } = await serviceRole
+      .from('notification_preferences')
+      .select('email_task_assigned')
+      .eq('user_id', assignedToId)
+      .maybeSingle()
+    if (pref && !pref.email_task_assigned) return
+
     const { data: authData } = await serviceRole.auth.admin.getUserById(assignedToId)
     const email = authData?.user?.email
     if (!email) return

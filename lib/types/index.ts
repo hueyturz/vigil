@@ -161,8 +161,15 @@ export interface NotificationPreferences {
   sms_task_completed_on_my_service: boolean
   sms_my_tasks_overdue: boolean
   sms_staff_tasks_overdue: boolean
-  sms_task_approaching_deadline: boolean
+  sms_task_approaching_deadline: boolean   // UI label: "A task is due tomorrow"
   sms_new_service_created: boolean
+  // Email reminder preferences (migration 035) — mirror the SMS reminder toggles
+  email_task_assigned: boolean
+  email_task_completed_on_my_service: boolean
+  email_my_tasks_overdue: boolean
+  email_staff_tasks_overdue: boolean
+  email_task_approaching_deadline: boolean  // UI label: "A task is due tomorrow"
+  email_new_service_created: boolean
   preferred_sms_hour: number
   timezone: string
   created_at: string

@@ -13,6 +13,9 @@ export async function saveNotificationPreferences(
     | 'sms_task_assigned' | 'sms_task_completed_on_my_service'
     | 'sms_my_tasks_overdue' | 'sms_staff_tasks_overdue'
     | 'sms_task_approaching_deadline' | 'sms_new_service_created'
+    | 'email_task_assigned' | 'email_task_completed_on_my_service'
+    | 'email_my_tasks_overdue' | 'email_staff_tasks_overdue'
+    | 'email_task_approaching_deadline' | 'email_new_service_created'
     | 'preferred_sms_hour' | 'timezone'
   >
 ): Promise<{ error?: string }> {
