@@ -65,7 +65,13 @@ function buildReminderMessage(tasks: ReminderTask[]): string {
   return `Vigilight: Tasks need attention across ${groups.size} services:\n\n${blocks.join('\n\n')}\n\n${STOP}`
 }
 
-export async function GET(request: NextRequest) {
+// Vercel native crons fire a GET; QStash schedules can POST. Accept both (they
+// share one handler) so the daily reminder runs regardless of the trigger — and
+// we never 405 a legitimate cron invocation.
+export async function GET(request: NextRequest)  { return handle(request) }
+export async function POST(request: NextRequest) { return handle(request) }
+
+async function handle(request: NextRequest) {
   // Auth: accept QStash's native bearer token, or the CRON_SECRET
   // (Bearer or x-cron-secret header) as a fallback for manual testing.
   const cronSecret   = process.env.CRON_SECRET
