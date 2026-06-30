@@ -3,9 +3,9 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { sendAndLogSms } from '@/lib/utils/sms'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
 
-// Hourly cron (QStash). Each invocation sends the daily SMS reminder only to
-// users whose local time currently equals their preferred reminder hour, so a
-// single hourly job covers every timezone.
+// Daily cron. Every fire sends the reminder to all eligible users (no per-user
+// timezone/preferred-hour gate) — i.e. anyone with a phone and in-scope overdue
+// tasks gets the digest each time the cron runs.
 
 type Timing = 'overdue' | 'today' | 'tomorrow'
 
@@ -15,19 +15,6 @@ const TIMING_LABEL: Record<Timing, string> = {
   tomorrow: 'due tomorrow',
 }
 const TIMING_ORDER: Record<Timing, number> = { overdue: 0, today: 1, tomorrow: 2 }
-
-// Current wall-clock hour (0-23) in the given IANA timezone.
-function localHour(tz: string): number {
-  try {
-    const h = parseInt(
-      new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date()),
-      10,
-    )
-    return h === 24 ? 0 : h
-  } catch {
-    return new Date().getUTCHours()
-  }
-}
 
 interface ReminderTask {
   title:         string
@@ -134,13 +121,10 @@ async function handle(request: NextRequest) {
 
   const sent: string[]   = []
   const failed: string[] = []
-  const skipped = { offHour: 0, noTasks: 0, noPhone: 0 }
+  const skipped = { noTasks: 0, noPhone: 0 }
 
   for (const user of profiles ?? []) {
     const p = prefsByUser.get(user.id)
-    const tz            = (p?.timezone as string) ?? 'America/Denver'
-    const preferredHour = (p?.preferred_sms_hour as number) ?? 8
-    if (localHour(tz) !== preferredHour) { skipped.offHour++; continue }
     if (!user.phone) { skipped.noPhone++; continue }
 
     const myOverdue    = p ? !!p.sms_my_tasks_overdue : true
