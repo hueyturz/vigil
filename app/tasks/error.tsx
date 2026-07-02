@@ -17,7 +17,7 @@ export default function TasksError({
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-6">
       <div className="w-full max-w-sm rounded-xl border p-8 text-center" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-        <h2 className="text-lg font-bold" style={{ color: '#0F172A' }}>Couldn't load tasks</h2>
+        <h2 className="text-lg font-bold" style={{ color: '#0F172A' }}>Couldn&rsquo;t load tasks</h2>
         <p className="mt-2 text-sm" style={{ color: '#475569' }}>
           Something went wrong on our end. Your data is safe — try again in a moment.
         </p>
