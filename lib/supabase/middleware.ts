@@ -57,10 +57,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/demo-request') ||
-    // Stripe webhooks carry no session cookie — authenticated by signature
-    // verification inside the route, not by middleware. (Only the webhook is
-    // public; other /api/stripe/* routes keep the default gate.)
-    pathname === '/api/stripe/webhook'
+    // Stripe/Twilio webhooks carry no session cookie — authenticated by
+    // signature verification inside each route, not by middleware. (Only the
+    // webhooks are public; other /api/stripe/* routes keep the default gate.)
+    pathname === '/api/stripe/webhook' ||
+    pathname === '/api/twilio/webhook'
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()

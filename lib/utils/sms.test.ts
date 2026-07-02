@@ -81,16 +81,27 @@ describe('sendSMS env-var handling (audit C2)', () => {
     await expect(sendSMS('+18015551234', 'test')).rejects.toThrow(/Missing Twilio env vars/)
   })
 
-  it('sendAndLogSms marks the row failed (not sent) when Twilio env vars are missing', async () => {
-    stubMissingTwilioEnv()
-
-    // Minimal chainable fake of the Supabase client surface sendAndLogSms uses:
-    // insert(...).select(...).single() and update(...).eq(...).
+  // Minimal chainable fake of the Supabase client surface sendAndLogSms uses:
+  // profiles opt-out lookup (select→eq→maybeSingle), sms_log insert→select→single,
+  // and update→eq. `optedOut` controls the profiles answer.
+  function makeFakeDb(optedOut = false) {
     const updates: Array<Record<string, unknown>> = []
-    const fakeDb = {
-      from() {
+    const inserts: Array<Record<string, unknown>> = []
+    const db = {
+      from(table: string) {
         return {
-          insert() {
+          select() {
+            return {
+              eq() {
+                return {
+                  maybeSingle: async () =>
+                    table === 'profiles' ? { data: { sms_opted_out: optedOut } } : { data: null },
+                }
+              },
+            }
+          },
+          insert(row: Record<string, unknown>) {
+            inserts.push(row)
             return { select() { return { single: async () => ({ data: { id: 'row-1' } }) } } }
           },
           update(patch: Record<string, unknown>) {
@@ -100,8 +111,14 @@ describe('sendSMS env-var handling (audit C2)', () => {
         }
       },
     }
+    return { db: db as never, updates, inserts }
+  }
 
-    const ok = await sendAndLogSms(fakeDb as never, {
+  it('sendAndLogSms marks the row failed (not sent) when Twilio env vars are missing', async () => {
+    stubMissingTwilioEnv()
+    const { db, updates } = makeFakeDb()
+
+    const ok = await sendAndLogSms(db, {
       funeralHomeId: 'fh-1',
       serviceId:     null,
       taskId:        null,
@@ -118,22 +135,9 @@ describe('sendSMS env-var handling (audit C2)', () => {
 
   it('sendAndLogSms marks the row failed when the recipient has no phone', async () => {
     stubMissingTwilioEnv() // irrelevant here — the phone check throws first
-    const updates: Array<Record<string, unknown>> = []
-    const fakeDb = {
-      from() {
-        return {
-          insert() {
-            return { select() { return { single: async () => ({ data: { id: 'row-1' } }) } } }
-          },
-          update(patch: Record<string, unknown>) {
-            updates.push(patch)
-            return { eq: async () => ({}) }
-          },
-        }
-      },
-    }
+    const { db, updates } = makeFakeDb()
 
-    const ok = await sendAndLogSms(fakeDb as never, {
+    const ok = await sendAndLogSms(db, {
       funeralHomeId: 'fh-1',
       serviceId:     null,
       taskId:        null,
@@ -145,5 +149,23 @@ describe('sendSMS env-var handling (audit C2)', () => {
     expect(ok).toBe(false)
     expect(updates[0].status).toBe('failed')
     expect(String(updates[0].error_message)).toMatch(/no phone number/)
+  })
+
+  it('sendAndLogSms skips opted-out recipients: logs opted_out, sends nothing (session 8)', async () => {
+    stubMissingTwilioEnv() // if a send were attempted, it would throw → 'failed'
+    const { db, updates, inserts } = makeFakeDb(true)
+
+    const ok = await sendAndLogSms(db, {
+      funeralHomeId: 'fh-1',
+      serviceId:     null,
+      taskId:        null,
+      recipientId:   'user-1',
+      phone:         '8015551234',
+      message:       'test message',
+    })
+
+    expect(ok).toBe(false)
+    expect(inserts[0].status).toBe('opted_out')   // logged as opted_out, not pending
+    expect(updates).toHaveLength(0)               // no send attempt, no status flip
   })
 })

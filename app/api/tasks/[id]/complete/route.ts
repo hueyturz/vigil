@@ -150,8 +150,8 @@ async function handleComplete(
           try {
             if (!recipient.phone) throw new Error('Recipient has no phone number on file.')
             const normalizedPhone = normalizePhone(recipient.phone)
-            await sendSMS(normalizedPhone, smsMessage)
-            await serviceRole.from('sms_log').update({ status: 'sent' }).eq('id', smsRow.id)
+            const sid = await sendSMS(normalizedPhone, smsMessage)
+            await serviceRole.from('sms_log').update({ status: 'sent', twilio_sid: sid }).eq('id', smsRow.id)
           } catch (smsErr) {
             const message = smsErr instanceof Error ? smsErr.message : 'Send failed.'
             console.error('[sms] send failed:', message)
