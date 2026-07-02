@@ -72,8 +72,12 @@ export async function AppShell({ profile, redAlert = false, children }: AppShell
           </div>
         )}
 
-        {/* Bottom padding on mobile leaves room for the taller fixed bottom nav */}
-        <main className="flex-1 overflow-auto [padding-bottom:calc(6rem_+_env(safe-area-inset-bottom))] md:pb-0 flex flex-col">
+        {/* Bottom padding on mobile leaves room for the taller fixed bottom nav.
+            NOTE: main must stay block layout — making it a flex column turns page
+            wrappers (max-w-* mx-auto) into flex items whose auto margins absorb
+            space instead of stretching, shrinking all page content. The wall
+            centers itself via min-h-full instead. */}
+        <main className="flex-1 overflow-auto [padding-bottom:calc(6rem_+_env(safe-area-inset-bottom))] md:pb-0">
           {walled ? (
             <BillingWall
               status={billing!.status === 'canceled' ? 'canceled' : 'suspended'}

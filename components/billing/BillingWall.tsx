@@ -11,7 +11,10 @@ export function BillingWall({ status, role }: { status: 'suspended' | 'canceled'
     : 'Payment is required to restore access. Your data is safe and will be right here when you return.'
 
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-16">
+    // min-h-full (not flex-1): <main> is block layout — see the note in AppShell.
+    // main has a definite height (flex-1 of the h-screen shell), so this centers
+    // the card vertically without forcing main into flex layout.
+    <div className="flex min-h-full items-center justify-center px-6 py-16">
       <div
         className="w-full max-w-md rounded-2xl border p-8 text-center"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
