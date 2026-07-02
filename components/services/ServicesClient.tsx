@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CreateServiceModal } from './CreateServiceModal'
-import { ServiceCard } from './ServiceCard'
+import { ServiceRow } from './ServiceRow'
 import { computeServiceStatus } from '@/lib/utils/service-status'
 import type { ServiceWithTasks } from '@/lib/types'
 
@@ -180,9 +180,9 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
+        <div className="space-y-3 pb-8">
           {filtered.map(service => (
-            <ServiceCard key={service.id} service={service} />
+            <ServiceRow key={service.id} service={service} />
           ))}
         </div>
       )}
