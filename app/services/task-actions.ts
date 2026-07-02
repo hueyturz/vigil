@@ -1,5 +1,6 @@
 'use server'
 
+import * as Sentry from '@sentry/nextjs'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { getActionContext } from '@/lib/utils/impersonation'
 import { sendEmail } from '@/lib/utils/email'
@@ -68,6 +69,8 @@ async function maybeSendAssignmentEmail(
   taskTitle: string,
   familyName: string,
   serviceId: string,
+  funeralHomeId: string,
+  taskId: string | null,
 ) {
   if (assignedToId === actorId) return
   try {
@@ -83,8 +86,36 @@ async function maybeSendAssignmentEmail(
     const email = authData?.user?.email
     if (!email) return
     const { subject, html } = taskAssignedEmail({ taskTitle, familyName, serviceId, actorName })
-    await sendEmail({ to: email, subject, html })
-  } catch { /* fire-and-forget */ }
+    const result = await sendEmail({ to: email, subject, html })
+
+    // Audit trail: assignment emails were previously unlogged and failures
+    // fully swallowed (audit C5/H8). Log every attempt; report failures.
+    await serviceRole.from('email_log').insert({
+      funeral_home_id: funeralHomeId,
+      service_id:      serviceId,
+      task_id:         taskId,
+      recipient_id:    assignedToId,
+      recipient_email: email,
+      subject,
+      status:          result.success ? 'sent' : 'failed',
+      error_message:   result.error ?? null,
+    })
+    if (!result.success) {
+      Sentry.captureMessage('[task-assigned] email failed', {
+        level: 'error',
+        tags:  { channel: 'email', stage: 'task-assigned' },
+        extra: { taskId, funeralHomeId, error: result.error },
+      })
+    }
+  } catch (err) {
+    // Still fire-and-forget (assignment must not fail on email problems), but
+    // no longer invisible.
+    Sentry.captureException(err, {
+      tags:  { channel: 'email', stage: 'task-assigned' },
+      extra: { taskId, funeralHomeId },
+    })
+    console.error('[task-assigned] email error:', err instanceof Error ? err.message : err)
+  }
 }
 
 // ── Add a custom task to a specific service ────────────────────────────────
@@ -151,6 +182,7 @@ export async function addTaskToService(
     void maybeSendAssignmentEmail(
       serviceRole, input.assigned_to_id, ctx.userId, profile.full_name,
       input.title, service.deceased_name, serviceId,
+      profile.funeral_home_id, inserted.id,
     )
     void maybeSendAssignmentSms(serviceRole, {
       assignedToId:  input.assigned_to_id,
@@ -331,6 +363,7 @@ export async function reassignTask(
     void maybeSendAssignmentEmail(
       serviceRole, assignedToId, ctx.userId, profile.full_name,
       task.title, svc?.deceased_name ?? '', task.service_id,
+      task.funeral_home_id, taskId,
     )
     void maybeSendAssignmentSms(serviceRole, {
       assignedToId,

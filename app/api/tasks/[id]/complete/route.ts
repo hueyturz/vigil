@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { getActionContext } from '@/lib/utils/impersonation'
 import { buildSmsMessage, sendSMS, normalizePhone, sendAndLogSms } from '@/lib/utils/sms'
 import { sendEmail } from '@/lib/utils/email'
@@ -19,6 +20,7 @@ export async function POST(
   } catch (err) {
     // Catch synchronous throws (e.g. missing env vars crashing client init)
     // so the function always returns a response instead of a silent status 0.
+    Sentry.captureException(err, { tags: { route: 'tasks/complete' }, extra: { taskId: params.id } })
     console.error('[tasks/complete] fatal error:', err)
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Internal server error.' },
@@ -151,8 +153,13 @@ async function handleComplete(
             await sendSMS(normalizedPhone, smsMessage)
             await serviceRole.from('sms_log').update({ status: 'sent' }).eq('id', smsRow.id)
           } catch (smsErr) {
-            console.error('[sms] send failed:', smsErr instanceof Error ? smsErr.message : smsErr)
-            await serviceRole.from('sms_log').update({ status: 'failed' }).eq('id', smsRow.id)
+            const message = smsErr instanceof Error ? smsErr.message : 'Send failed.'
+            console.error('[sms] send failed:', message)
+            Sentry.captureException(smsErr, {
+              tags:  { route: 'tasks/complete', channel: 'sms' },
+              extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id },
+            })
+            await serviceRole.from('sms_log').update({ status: 'failed', error_message: message }).eq('id', smsRow.id)
           }
         }
       }
@@ -174,6 +181,14 @@ async function handleComplete(
 
           const emailResult = await sendEmail({ to: recipientEmail, subject, html })
 
+          if (!emailResult.success) {
+            Sentry.captureMessage('[tasks/complete] confirmation email failed', {
+              level: 'error',
+              tags:  { route: 'tasks/complete', channel: 'email' },
+              extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id, error: emailResult.error },
+            })
+          }
+
           await serviceRole.from('email_log').insert({
             funeral_home_id: profile.funeral_home_id,
             service_id:      task.service_id,
@@ -188,6 +203,10 @@ async function handleComplete(
       }
     }
   } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags:  { route: 'tasks/complete', stage: 'notifications' },
+      extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id },
+    })
     console.error('[notifications] error — continuing to activity log:', notifyErr)
   }
 
@@ -233,6 +252,10 @@ async function handleComplete(
       }
     }
   } catch (smsErr) {
+    Sentry.captureException(smsErr, {
+      tags:  { route: 'tasks/complete', stage: 'task-completed-sms' },
+      extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id },
+    })
     console.error('[task-completed-sms] error:', smsErr instanceof Error ? smsErr.message : smsErr)
   }
 
@@ -249,9 +272,18 @@ async function handleComplete(
       metadata:        { confirmation_value },
     })
     if (activityError) {
+      Sentry.captureMessage('[tasks/complete] activity_log insert failed', {
+        level: 'error',
+        tags:  { route: 'tasks/complete', stage: 'activity_log' },
+        extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id, error: activityError.message, code: activityError.code },
+      })
       console.error('[activity_log] insert failed:', activityError.message, activityError.code, activityError.details)
     }
   } catch (activityErr) {
+    Sentry.captureException(activityErr, {
+      tags:  { route: 'tasks/complete', stage: 'activity_log' },
+      extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id },
+    })
     console.error('[activity_log] unexpected error:', activityErr)
   }
 

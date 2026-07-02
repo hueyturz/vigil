@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { normalizePhone, buildSmsMessage } from './sms'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { normalizePhone, buildSmsMessage, sendSMS, sendAndLogSms } from './sms'
 
 // Regression tests pinning the SMS utility contract. Written as part of the
 // 2026-07 production audit — the `it.todo` entries document KNOWN GAPS found in
@@ -64,11 +64,86 @@ describe('buildSmsMessage', () => {
   })
 })
 
-// AUDIT GAP (High): sendSMS() returns void (does NOT throw) when Twilio env vars
-// are missing — so sendAndLogSms marks the sms_log row 'sent' even though nothing
-// was sent. A misconfigured deploy silently "succeeds" at every SMS.
-// Fix: throw from sendSMS when env vars are missing; then add a test asserting
-// sendAndLogSms marks the row 'failed' in that case.
-describe('sendSMS env-var handling (documented audit gap)', () => {
-  it.todo('throws (rather than silently returning) when TWILIO_* env vars are missing')
+// Regression tests for audit finding C2: sendSMS used to silently return when
+// Twilio env vars were missing, so sendAndLogSms marked rows 'sent' with nothing
+// sent. It now throws, and sendAndLogSms records 'failed' + the reason.
+describe('sendSMS env-var handling (audit C2)', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  function stubMissingTwilioEnv() {
+    vi.stubEnv('TWILIO_ACCOUNT_SID', '')
+    vi.stubEnv('TWILIO_AUTH_TOKEN', '')
+    vi.stubEnv('TWILIO_FROM_NUMBER', '')
+  }
+
+  it('throws (rather than silently returning) when TWILIO_* env vars are missing', async () => {
+    stubMissingTwilioEnv()
+    await expect(sendSMS('+18015551234', 'test')).rejects.toThrow(/Missing Twilio env vars/)
+  })
+
+  it('sendAndLogSms marks the row failed (not sent) when Twilio env vars are missing', async () => {
+    stubMissingTwilioEnv()
+
+    // Minimal chainable fake of the Supabase client surface sendAndLogSms uses:
+    // insert(...).select(...).single() and update(...).eq(...).
+    const updates: Array<Record<string, unknown>> = []
+    const fakeDb = {
+      from() {
+        return {
+          insert() {
+            return { select() { return { single: async () => ({ data: { id: 'row-1' } }) } } }
+          },
+          update(patch: Record<string, unknown>) {
+            updates.push(patch)
+            return { eq: async () => ({}) }
+          },
+        }
+      },
+    }
+
+    const ok = await sendAndLogSms(fakeDb as never, {
+      funeralHomeId: 'fh-1',
+      serviceId:     null,
+      taskId:        null,
+      recipientId:   'user-1',
+      phone:         '8015551234',
+      message:       'test message',
+    })
+
+    expect(ok).toBe(false)
+    expect(updates).toHaveLength(1)
+    expect(updates[0].status).toBe('failed')
+    expect(String(updates[0].error_message)).toMatch(/Missing Twilio env vars/)
+  })
+
+  it('sendAndLogSms marks the row failed when the recipient has no phone', async () => {
+    stubMissingTwilioEnv() // irrelevant here — the phone check throws first
+    const updates: Array<Record<string, unknown>> = []
+    const fakeDb = {
+      from() {
+        return {
+          insert() {
+            return { select() { return { single: async () => ({ data: { id: 'row-1' } }) } } }
+          },
+          update(patch: Record<string, unknown>) {
+            updates.push(patch)
+            return { eq: async () => ({}) }
+          },
+        }
+      },
+    }
+
+    const ok = await sendAndLogSms(fakeDb as never, {
+      funeralHomeId: 'fh-1',
+      serviceId:     null,
+      taskId:        null,
+      recipientId:   'user-1',
+      phone:         null,
+      message:       'test message',
+    })
+
+    expect(ok).toBe(false)
+    expect(updates[0].status).toBe('failed')
+    expect(String(updates[0].error_message)).toMatch(/no phone number/)
+  })
 })

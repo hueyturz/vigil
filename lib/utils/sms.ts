@@ -31,9 +31,13 @@ export async function sendSMS(to: string, message: string): Promise<void> {
   const authToken  = process.env.TWILIO_AUTH_TOKEN
   const fromNumber = process.env.TWILIO_FROM_NUMBER
 
+  // THROW (don't silently return) on missing config — a silent return here made
+  // sendAndLogSms mark rows 'sent' with nothing sent (audit C2). Throwing routes
+  // the failure into the caller's catch, so sms_log records 'failed' + the reason.
   if (!accountSid || !authToken || !fromNumber) {
-    console.error('[sms] Missing Twilio env vars')
-    return
+    throw new Error(
+      'Missing Twilio env vars (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — SMS cannot be sent.',
+    )
   }
 
   const client = twilio(accountSid, authToken)

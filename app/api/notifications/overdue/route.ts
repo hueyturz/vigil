@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { sendAndLogSms } from '@/lib/utils/sms'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
@@ -58,6 +59,14 @@ function buildReminderMessage(tasks: ReminderTask[]): string {
 export async function GET(request: NextRequest)  { return handle(request) }
 export async function POST(request: NextRequest) { return handle(request) }
 
+// Sentry Cron Monitor (dead-man switch): withMonitor sends in_progress at start
+// and ok/error at end, so a run that never happens (Vercel cron dropped, secret
+// drift → 401) or throws mid-way alerts in Sentry after the check-in margin.
+// The monitorConfig below upserts the monitor automatically on first check-in —
+// no manual dashboard step required (it can also be created/tuned in the Sentry
+// dashboard under Crons; keep the slug in sync with SENTRY_CRON_MONITOR_SLUG).
+const MONITOR_SLUG = process.env.SENTRY_CRON_MONITOR_SLUG ?? 'overdue-sms-cron'
+
 async function handle(request: NextRequest) {
   // Auth: accept QStash's native bearer token, or the CRON_SECRET
   // (Bearer or x-cron-secret header) as a fallback for manual testing.
@@ -68,8 +77,30 @@ async function handle(request: NextRequest) {
   const authorized =
     (!!cronSecret  && (headerSecret === cronSecret || bearer === `Bearer ${cronSecret}`)) ||
     (!!qstashToken && bearer === `Bearer ${qstashToken}`)
+  // Auth check BEFORE the monitor check-in: unauthorized probes must not report
+  // "ok" and mask a dead cron.
   if (!authorized) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
+  try {
+    return await Sentry.withMonitor(
+      MONITOR_SLUG,
+      () => runOverdueReminders(),
+      {
+        schedule:      { type: 'crontab', value: '0 14 * * *' }, // keep in sync with vercel.json
+        checkinMargin: 30, // minutes late before Sentry flags a missed run
+        maxRuntime:    10, // minutes before an in_progress run is flagged errored
+        timezone:      'Etc/UTC',
+      },
+    )
+  } catch (err) {
+    // withMonitor has already recorded the errored check-in; report + respond.
+    Sentry.captureException(err, { tags: { cron: MONITOR_SLUG } })
+    console.error('[overdue-cron] fatal:', err)
+    return NextResponse.json({ error: 'Internal error.' }, { status: 500 })
+  }
+}
+
+async function runOverdueReminders(): Promise<NextResponse> {
   const db = createServiceRoleClient()
 
   // Not-started tasks on active services, with service + assignment info.
@@ -82,7 +113,8 @@ async function handle(request: NextRequest) {
     .eq('status', 'not-started')
     .eq('services.status', 'active')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // Throw (not a handled 500) so the monitor check-in records an errored run.
+  if (error) throw new Error(`overdue-cron task fetch failed: ${error.message}`)
 
   // Classify each task's timing; keep only overdue / due today / due tomorrow.
   const enriched: ReminderTask[] = []
@@ -164,6 +196,15 @@ async function handle(request: NextRequest) {
     })
     if (ok) sent.push(user.id)
     else failed.push(user.id)
+  }
+
+  // Surface per-recipient send failures (previously only visible as sms_log rows).
+  // One aggregated event per run — the per-row detail (error_message) is in sms_log.
+  if (failed.length > 0) {
+    Sentry.captureMessage(`[overdue-cron] ${failed.length} SMS send(s) failed`, {
+      level: 'error',
+      extra: { failedUserIds: failed, sentCount: sent.length, skipped },
+    })
   }
 
   return NextResponse.json({
