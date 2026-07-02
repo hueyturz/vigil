@@ -1,9 +1,12 @@
 import { cookies } from 'next/headers'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { isSuperadmin } from '@/lib/utils/superadmin'
+import { resolveBillingState, type BillingState } from '@/lib/billing/enforcement'
 import type { Role } from '@/lib/types'
 
 export const IMPERSONATION_COOKIE = 'impersonation_context'
+
+const BILLING_COLS = 'subscription_status, trial_ends_at, current_period_end'
 
 export interface ActiveProfile {
   userId: string
@@ -17,6 +20,10 @@ export interface ActiveProfile {
   // Non-null only when a superadmin is impersonating a funeral home.
   impersonating: { id: string; name: string } | null
   actorName: string
+  // Billing enforcement state for the EFFECTIVE tenant (session 6). During
+  // superadmin impersonation, access is forced 'full' so suspended tenants can
+  // be troubleshot; the underlying status is preserved for display.
+  billing: BillingState
 }
 
 /**
@@ -45,21 +52,36 @@ export async function getActiveProfile(): Promise<ActiveProfile | null> {
     if (superadmin) {
       const { data: home } = await db
         .from('funeral_homes')
-        .select('id, name')
+        .select(`id, name, ${BILLING_COLS}`)
         .eq('id', impersonationId)
         .maybeSingle()
       if (home) {
+        // Superadmin bypass: report the tenant's real status, but never block.
+        const billing = { ...resolveBillingState(home), access: 'full' as const }
         return {
           userId: session.user.id,
           profile: { ...profile, funeral_home_id: home.id, role: 'owner', is_active: true },
           impersonating: { id: home.id, name: home.name },
           actorName: profile.full_name,
+          billing,
         }
       }
     }
   }
 
-  return { userId: session.user.id, profile, impersonating: null, actorName: profile.full_name }
+  const { data: ownHome } = await db
+    .from('funeral_homes')
+    .select(BILLING_COLS)
+    .eq('id', profile.funeral_home_id)
+    .maybeSingle()
+
+  return {
+    userId: session.user.id,
+    profile,
+    impersonating: null,
+    actorName: profile.full_name,
+    billing: resolveBillingState(ownHome ?? null),
+  }
 }
 
 // Audit display name for activity_log: notes superadmin impersonation when active.
@@ -72,9 +94,16 @@ export function auditActorName(ctx: ActiveProfile): string {
 // Standardized context for write server actions. Returns the EFFECTIVE tenant
 // (impersonated home when a superadmin is impersonating, else the user's own),
 // the real acting user id, and an audit name. null = not authenticated.
+//
+// BILLING WRITE GATE (session 6): when the tenant is suspended/canceled, this
+// returns null so every write action fails closed. Normal users never reach
+// those actions — AppShell shows the billing wall instead of the app — so the
+// null here is defense-in-depth against direct API/action calls. Superadmin
+// impersonation is exempt (access forced 'full' in getActiveProfile).
 export async function getActionContext() {
   const ctx = await getActiveProfile()
   if (!ctx) return null
+  if (ctx.billing.access === 'readonly') return null
   return {
     serviceRole:   createServiceRoleClient(),
     userId:        ctx.userId,
@@ -105,4 +134,15 @@ export async function getImpersonationBanner(): Promise<{ id: string; name: stri
     .eq('id', impersonationId)
     .maybeSingle()
   return home ? { id: home.id, name: home.name } : null
+}
+
+/**
+ * Billing state for AppShell (banners + suspension wall). Returns null when
+ * there is no session. `impersonating` lets the shell suppress the wall for
+ * superadmins working inside a suspended tenant.
+ */
+export async function getBillingForShell(): Promise<{ billing: BillingState; impersonating: boolean } | null> {
+  const ctx = await getActiveProfile()
+  if (!ctx) return null
+  return { billing: ctx.billing, impersonating: !!ctx.impersonating }
 }

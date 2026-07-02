@@ -1,7 +1,8 @@
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { SearchProvider } from '@/components/search/SearchProvider'
-import { getImpersonationBanner } from '@/lib/utils/impersonation'
+import { BillingWall } from '@/components/billing/BillingWall'
+import { getImpersonationBanner, getBillingForShell } from '@/lib/utils/impersonation'
 import { exitImpersonation } from '@/app/admin/impersonation-actions'
 import type { Profile } from '@/lib/types'
 
@@ -13,6 +14,16 @@ interface AppShellProps {
 
 export async function AppShell({ profile, redAlert = false, children }: AppShellProps) {
   const impersonating = await getImpersonationBanner()
+  const shellBilling  = await getBillingForShell()
+  const billing       = shellBilling?.billing ?? null
+
+  // Suspension wall (session 6): suspended/canceled tenants see the wall instead
+  // of app content. Suppressed during superadmin impersonation so suspended
+  // tenants can be troubleshot. Server-side — this is not a client redirect.
+  const walled =
+    billing !== null &&
+    billing.access === 'readonly' &&
+    !(shellBilling?.impersonating ?? false)
 
   return (
     <SearchProvider>
@@ -35,9 +46,42 @@ export async function AppShell({ profile, redAlert = false, children }: AppShell
           </div>
         )}
 
+        {/* Billing banners (trial ending / payment past due) */}
+        {!walled && billing?.banner === 'trial_ending' && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2 flex-shrink-0" style={{ backgroundColor: '#FFFBEB', color: '#92400E' }}>
+            <span className="text-sm font-medium truncate">
+              Trial ends {billing.trialDaysLeft === 0 ? 'today' : `in ${billing.trialDaysLeft} day${billing.trialDaysLeft !== 1 ? 's' : ''}`} — add a payment method to keep access.
+            </span>
+            {profile.role === 'owner' && (
+              <a href="/settings/billing" className="flex-shrink-0 rounded-md px-3 py-1 text-xs font-bold" style={{ backgroundColor: '#92400E', color: '#FFFBEB' }}>
+                Billing
+              </a>
+            )}
+          </div>
+        )}
+        {!walled && billing?.banner === 'past_due' && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2 flex-shrink-0" style={{ backgroundColor: '#FEF2F2', color: '#991B1B' }}>
+            <span className="text-sm font-semibold truncate">
+              Payment failed — update your billing to avoid interruption.
+            </span>
+            {profile.role === 'owner' && (
+              <a href="/settings/billing" className="flex-shrink-0 rounded-md px-3 py-1 text-xs font-bold" style={{ backgroundColor: '#991B1B', color: '#FEF2F2' }}>
+                Update billing
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Bottom padding on mobile leaves room for the taller fixed bottom nav */}
-        <main className="flex-1 overflow-auto [padding-bottom:calc(6rem_+_env(safe-area-inset-bottom))] md:pb-0">
-          {children}
+        <main className="flex-1 overflow-auto [padding-bottom:calc(6rem_+_env(safe-area-inset-bottom))] md:pb-0 flex flex-col">
+          {walled ? (
+            <BillingWall
+              status={billing!.status === 'canceled' ? 'canceled' : 'suspended'}
+              role={profile.role}
+            />
+          ) : (
+            children
+          )}
         </main>
       </div>
 
