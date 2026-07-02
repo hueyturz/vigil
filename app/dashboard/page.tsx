@@ -23,10 +23,12 @@ export default async function DashboardPage() {
 
   if (profile.role === 'staff') redirect('/my-tasks')
 
-  const { data: servicesRaw } = await db
+  const { data: servicesRaw, error: servicesErr } = await db
     .from('services')
     .select('*, tasks (*)')
     .eq('funeral_home_id', profile.funeral_home_id)
+  // Throw (audit H4) so error.tsx renders — never an empty-but-200 dashboard.
+  if (servicesErr) throw new Error(`Failed to load services: ${servicesErr.message}`)
 
   const services: ServiceWithTasks[] = (servicesRaw ?? []).map(s => ({
     ...s,
@@ -43,12 +45,13 @@ export default async function DashboardPage() {
     0
   )
 
-  const { data: activityRaw } = await db
+  const { data: activityRaw, error: activityErr } = await db
     .from('activity_log')
     .select('*')
     .eq('funeral_home_id', profile.funeral_home_id)
     .order('created_at', { ascending: false })
     .limit(10)
+  if (activityErr) throw new Error(`Failed to load activity: ${activityErr.message}`)
 
   const activity: ActivityLog[] = (activityRaw ?? []) as ActivityLog[]
   const serviceNameById: Record<string, string> = {}

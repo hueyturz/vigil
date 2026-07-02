@@ -48,7 +48,9 @@ export default async function TasksPage({
     query = query.eq('assigned_to_id', ctx.userId)
   }
 
-  const { data: rawTasks } = await query
+  const { data: rawTasks, error: tasksErr } = await query
+  // Throw (audit H4) so error.tsx renders — never an empty-but-200 task list.
+  if (tasksErr) throw new Error(`Failed to load tasks: ${tasksErr.message}`)
 
   const tasks: TaskForAllView[] = (rawTasks ?? [])
     .filter((t: any) => {

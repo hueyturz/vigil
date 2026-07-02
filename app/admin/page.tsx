@@ -7,17 +7,7 @@ import { ResendSmsButton } from './_components/ResendSmsButton'
 export default async function AdminOverviewPage() {
   const db = createServiceRoleClient()
 
-  const [
-    { data: homes },
-    { data: profiles },
-    { data: services },
-    { count: activeUsers },
-    { count: totalServices },
-    { count: smsSent },
-    { count: smsFailed },
-    { count: tasksConfirmed },
-    { data: failedSms },
-  ] = await Promise.all([
+  const results = await Promise.all([
     db.from('funeral_homes').select('id, name, created_at'),
     db.from('profiles').select('id, full_name, role, funeral_home_id'),
     db.from('services').select('funeral_home_id'),
@@ -32,6 +22,23 @@ export default async function AdminOverviewPage() {
       .order('created_at', { ascending: false })
       .limit(10),
   ])
+
+  // Throw on any query error (audit H4) so error.tsx renders — never a
+  // zeros-everywhere admin overview masquerading as healthy.
+  const firstError = results.find(r => r.error)?.error
+  if (firstError) throw new Error(`Failed to load admin overview: ${firstError.message}`)
+
+  const [
+    { data: homes },
+    { data: profiles },
+    { data: services },
+    { count: activeUsers },
+    { count: totalServices },
+    { count: smsSent },
+    { count: smsFailed },
+    { count: tasksConfirmed },
+    { data: failedSms },
+  ] = results
 
   const homeName = new Map((homes ?? []).map(h => [h.id, h.name]))
   const profileName = new Map((profiles ?? []).map(p => [p.id, p.full_name]))

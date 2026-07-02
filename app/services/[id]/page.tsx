@@ -46,7 +46,7 @@ export default async function ServiceDetailPage({
 
   // Fetch tasks WITHOUT embedding tags — task visibility must never depend on the
   // tag tables/embed resolving. Tags are loaded separately below and merged in.
-  const { data: tasksRaw } = await db
+  const { data: tasksRaw, error: tasksErr } = await db
     .from('tasks')
     .select(`
       *,
@@ -55,6 +55,8 @@ export default async function ServiceDetailPage({
     `)
     .eq('service_id', params.id)
     .order('sort_order', { ascending: true })
+  // Throw (audit H4): tasks must never silently render empty on a query error.
+  if (tasksErr) throw new Error(`Failed to load tasks: ${tasksErr.message}`)
 
   // Tags per task — fetched embed-free (two plain queries joined in JS). Avoids the
   // PostgREST relationship/schema-cache embed that previously made tags vanish.
@@ -92,28 +94,31 @@ export default async function ServiceDetailPage({
     tags:         tagsByTask.get(t.id) ?? [],
   }))
 
-  const { data: intakeRaw } = await db
+  const { data: intakeRaw, error: intakeErr } = await db
     .from('intake_sessions')
     .select('*')
     .eq('service_id', params.id)
     .order('created_at', { ascending: false })
+  if (intakeErr) throw new Error(`Failed to load meetings: ${intakeErr.message}`)
 
   const intakeSessions: IntakeSession[] = (intakeRaw ?? []) as IntakeSession[]
 
-  const { data: contactsRaw } = await db
+  const { data: contactsRaw, error: contactsErr } = await db
     .from('service_contacts')
     .select('*')
     .eq('service_id', service.id)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: true })
+  if (contactsErr) throw new Error(`Failed to load contacts: ${contactsErr.message}`)
 
   const contacts: ServiceContact[] = (contactsRaw ?? []) as ServiceContact[]
 
-  const { data: notesRaw } = await db
+  const { data: notesRaw, error: notesErr } = await db
     .from('service_notes')
     .select('*')
     .eq('service_id', params.id)
     .order('created_at', { ascending: true })
+  if (notesErr) throw new Error(`Failed to load notes: ${notesErr.message}`)
 
   const serviceNotes: ServiceNote[] = (notesRaw ?? []) as ServiceNote[]
 

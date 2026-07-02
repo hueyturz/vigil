@@ -38,13 +38,16 @@ const SMS_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean }[] 
   { key: 'sms_new_service_created',          label: 'A new service is created', managerOnly: true },
 ]
 
-const EMAIL_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean }[] = [
+// comingSoon (audit H6): these preferences save correctly but no email send path
+// exists for them yet — shown disabled so users aren't misled into thinking they
+// control live behavior. Only 'A task is assigned to me' sends email today.
+const EMAIL_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean; comingSoon?: boolean }[] = [
   { key: 'email_task_assigned',                label: 'A task is assigned to me' },
-  { key: 'email_task_completed_on_my_service', label: 'A task is completed on my service' },
-  { key: 'email_my_tasks_overdue',             label: 'My tasks are overdue (daily reminder)' },
-  { key: 'email_staff_tasks_overdue',          label: 'Staff tasks are overdue (daily reminder)', managerOnly: true },
-  { key: 'email_task_approaching_deadline',    label: 'A task is due tomorrow' },
-  { key: 'email_new_service_created',          label: 'A new service is created', managerOnly: true },
+  { key: 'email_task_completed_on_my_service', label: 'A task is completed on my service', comingSoon: true },
+  { key: 'email_my_tasks_overdue',             label: 'My tasks are overdue (daily reminder)', comingSoon: true },
+  { key: 'email_staff_tasks_overdue',          label: 'Staff tasks are overdue (daily reminder)', managerOnly: true, comingSoon: true },
+  { key: 'email_task_approaching_deadline',    label: 'A task is due tomorrow', comingSoon: true },
+  { key: 'email_new_service_created',          label: 'A new service is created', managerOnly: true, comingSoon: true },
 ]
 
 const REMINDER_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
@@ -154,9 +157,21 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
       </h2>
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12 }}>
         {emailToggles.map((row, i) => (
-          <div key={row.key} className={`flex items-center justify-between px-5 py-4${i < emailToggles.length - 1 ? ' border-b' : ''}`} style={{ borderColor: '#E2E8F0' }}>
-            <span className="text-sm font-medium pr-4" style={{ color: '#0F172A' }}>{row.label}</span>
-            <Toggle checked={prefs[row.key]} onChange={() => toggle(row.key)} />
+          <div
+            key={row.key}
+            title={row.comingSoon ? 'Coming soon — this email isn’t sent yet' : undefined}
+            className={`flex items-center justify-between px-5 py-4${i < emailToggles.length - 1 ? ' border-b' : ''}`}
+            style={{ borderColor: '#E2E8F0', opacity: row.comingSoon ? 0.55 : 1 }}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium pr-4" style={{ color: '#0F172A' }}>
+              {row.label}
+              {row.comingSoon && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>
+                  Coming soon
+                </span>
+              )}
+            </span>
+            <Toggle checked={prefs[row.key]} onChange={() => toggle(row.key)} disabled={row.comingSoon} />
           </div>
         ))}
       </div>
@@ -174,18 +189,29 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
         ))}
       </div>
 
-      {/* Reminder timing */}
-      <h2 className="text-sm font-semibold uppercase tracking-wide mt-8 mb-3" style={{ color: '#64748B' }}>
+      {/* Reminder timing — disabled (audit H6): the per-user hour/timezone gate
+          was removed from the daily cron (it now sends to everyone each run), so
+          these selectors currently have no effect. Re-enable when per-timezone
+          scheduling returns (requires an hourly trigger). */}
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide mt-8 mb-3" style={{ color: '#64748B' }}>
         Reminder timing
+        <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide normal-case" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>
+          Coming soon
+        </span>
       </h2>
-      <div className="rounded-xl border p-5 space-y-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12 }}>
+      <div
+        className="rounded-xl border p-5 space-y-4"
+        title="Coming soon — daily reminders currently send on a fixed schedule"
+        style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12, opacity: 0.55 }}
+      >
         <div className="flex items-center justify-between gap-4">
           <label htmlFor="reminder-hour" className="text-sm font-medium" style={{ color: '#0F172A' }}>Daily reminder time</label>
           <select
             id="reminder-hour"
             value={prefs.preferred_sms_hour}
+            disabled
             onChange={e => setField('preferred_sms_hour', Number(e.target.value))}
-            style={selectStyle}
+            style={{ ...selectStyle, cursor: 'not-allowed' }}
           >
             {REMINDER_HOURS.map(h => <option key={h} value={h}>{hourLabel(h)}</option>)}
           </select>
@@ -195,8 +221,9 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
           <select
             id="reminder-tz"
             value={prefs.timezone}
+            disabled
             onChange={e => setField('timezone', e.target.value)}
-            style={selectStyle}
+            style={{ ...selectStyle, cursor: 'not-allowed' }}
           >
             {TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
           </select>
@@ -229,15 +256,16 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
   )
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={onChange}
-      className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none"
-      style={{ backgroundColor: checked ? '#4A7C8C' : '#CBD5E1' }}
+      disabled={disabled}
+      onClick={disabled ? undefined : onChange}
+      className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed"
+      style={{ backgroundColor: checked ? '#4A7C8C' : '#CBD5E1', cursor: disabled ? 'not-allowed' : 'pointer' }}
     >
       <span
         className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 mt-0.5"

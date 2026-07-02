@@ -14,12 +14,14 @@ export default async function ServicesPage() {
 
   if (profile.role === 'staff') redirect('/my-tasks')
 
-  const { data: servicesRaw } = await db
+  const { data: servicesRaw, error: servicesErr } = await db
     .from('services')
     .select('*, tasks (*)')
     .eq('funeral_home_id', profile.funeral_home_id)
     .neq('status', 'archived')
     .order('service_date', { ascending: true, nullsFirst: false })
+  // Throw (audit H4) so error.tsx renders — never an empty-but-200 list.
+  if (servicesErr) throw new Error(`Failed to load services: ${servicesErr.message}`)
 
   const services: ServiceWithTasks[] = (servicesRaw ?? []).map(s => ({
     ...s,
