@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
   const serviceId       = formData.get('service_id')       as string | null
   const durationRaw     = formData.get('duration_seconds') as string | null
   const clientMimeType  = formData.get('mimeType')         as string | null
-  const durationSeconds = durationRaw ? parseInt(durationRaw, 10) : null
+  const durationParsed  = durationRaw ? parseInt(durationRaw, 10) : null
+  // NaN guard (audit): non-numeric input must not reach the DB
+  const durationSeconds = durationParsed !== null && Number.isFinite(durationParsed) ? durationParsed : null
 
   if (!audioBlob || !serviceId)
     return NextResponse.json({ error: 'audio and service_id are required.' }, { status: 400 })

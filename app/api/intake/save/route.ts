@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getActionContext } from '@/lib/utils/impersonation'
-import type { Priority } from '@/lib/types'
 
-interface SaveConfirmation {
-  task_title: string
-  notes:      string
-}
-
-interface SaveNewTask {
-  title:             string
-  confirmation_hint: string
-  due_days_before:   number
-  priority:          Priority
-  notes:             string
-}
-
-interface SaveServiceNote {
-  note:             string
-  confidence_score: number
-}
+// Zod validation (session 10 #2): the arrays were previously unvalidated and
+// unbounded — oversized payloads or malformed items now 422 instead of writing.
+const SaveSchema = z.object({
+  intake_session_id: z.string().uuid(),
+  service_id:        z.string().uuid(),
+  confirmations: z.array(z.object({
+    task_title: z.string().max(500),
+    notes:      z.string().max(5000),
+  })).max(100).default([]),
+  new_tasks: z.array(z.object({
+    title:             z.string().min(1).max(255),
+    confirmation_hint: z.string().max(500),
+    due_days_before:   z.number().int().min(0).max(365),
+    priority:          z.enum(['critical', 'standard', 'informational']),
+    notes:             z.string().max(5000),
+  })).max(100).default([]),
+  service_notes: z.array(z.object({
+    note:             z.string().max(5000),
+    confidence_score: z.number(),
+  })).max(100).default([]),
+})
 
 export async function POST(request: NextRequest) {
   const ctx = await getActionContext()
@@ -28,24 +32,18 @@ export async function POST(request: NextRequest) {
   const serviceRole = ctx.serviceRole
   const profile = { id: ctx.userId, role: ctx.role, funeral_home_id: ctx.funeralHomeId }
 
-  let body: {
-    intake_session_id: string
-    service_id:        string
-    confirmations:     SaveConfirmation[]
-    new_tasks:         SaveNewTask[]
-    service_notes?:    SaveServiceNote[]
-  }
-
+  let raw: unknown
   try {
-    body = await request.json()
+    raw = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 })
   }
 
-  const { intake_session_id, service_id, confirmations = [], new_tasks = [], service_notes = [] } = body
-
-  if (!intake_session_id || !service_id)
-    return NextResponse.json({ error: 'intake_session_id and service_id are required.' }, { status: 400 })
+  const parsed = SaveSchema.safeParse(raw)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 422 })
+  }
+  const { intake_session_id, service_id, confirmations, new_tasks, service_notes } = parsed.data
 
   // Verify session + service belong to this funeral home
   const { data: intakeSession } = await serviceRole

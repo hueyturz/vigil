@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { relativeJoined, timeAgo, completionColor } from '@/lib/utils/admin'
+import { relativeJoined, timeAgo, completionColor, listAllAuthUsers } from '@/lib/utils/admin'
 import { formatDate } from '@/lib/utils/date-helpers'
 
 // Flag accounts whose most recent login is more than 30 days old.
@@ -22,7 +22,7 @@ const BILLING_FILTERS = ['all', 'active', 'trialing', 'past_due', 'suspended', '
 export default async function FuneralHomesPage({
   searchParams,
 }: {
-  searchParams: { q?: string; status?: string }
+  searchParams: { q?: string; status?: string; page?: string }
 }) {
   const db = createServiceRoleClient()
   const q = (searchParams.q ?? '').trim().toLowerCase()
@@ -34,14 +34,14 @@ export default async function FuneralHomesPage({
     { data: services },
     { data: sms },
     { data: activity },
-    { data: { users: authUsers } },
+    authUsers,
   ] = await Promise.all([
     db.from('funeral_homes').select('id, name, address, created_at, subscription_status, trial_ends_at, current_period_end'),
     db.from('profiles').select('id, full_name, role, funeral_home_id'),
     db.from('services').select('funeral_home_id, status'),
     db.from('sms_log').select('funeral_home_id, status'),
     db.from('activity_log').select('funeral_home_id, created_at'),
-    db.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(db),
   ])
 
   // Most recent login (auth.users.last_sign_in_at) per user, for the "Last login"
@@ -102,12 +102,21 @@ export default async function FuneralHomesPage({
   if (statusFilter !== 'all') rows = rows.filter(r => r.subscriptionStatus === statusFilter)
   rows.sort((a, b) => a.name.localeCompare(b.name))
 
+  // Pagination (session 10 #5): 20 homes per page.
+  const PAGE_SIZE  = 20
+  const totalRows  = rows.length
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE))
+  const page       = Math.min(Math.max(1, parseInt(searchParams.page ?? '1', 10) || 1), totalPages)
+  rows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const pageHref = (n: number) =>
+    `/admin/funeral-homes?status=${statusFilter}&page=${n}${searchParams.q ? `&q=${encodeURIComponent(searchParams.q)}` : ''}`
+
   return (
     <div className="px-6 py-8 md:px-10 max-w-6xl">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>Funeral Homes</h1>
-          <p className="mt-1 text-sm" style={{ color: '#475569' }}>{rows.length} {rows.length === 1 ? 'account' : 'accounts'}</p>
+          <p className="mt-1 text-sm" style={{ color: '#475569' }}>{totalRows} {totalRows === 1 ? 'account' : 'accounts'}</p>
         </div>
         <form method="GET" className="flex gap-2">
           <input
@@ -180,6 +189,18 @@ export default async function FuneralHomesPage({
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between text-sm" style={{ color: '#475569' }}>
+          {page > 1
+            ? <Link href={pageHref(page - 1)} className="rounded-lg border px-3 py-1.5 font-medium" style={{ borderColor: '#E2E8F0' }}>← Previous</Link>
+            : <span />}
+          <span>Page {page} of {totalPages}</span>
+          {page < totalPages
+            ? <Link href={pageHref(page + 1)} className="rounded-lg border px-3 py-1.5 font-medium" style={{ borderColor: '#E2E8F0' }}>Next →</Link>
+            : <span />}
+        </div>
+      )}
     </div>
   )
 }

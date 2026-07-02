@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
-import { timeAgo, ACTION_LABELS, completionColor } from '@/lib/utils/admin'
+import { timeAgo, ACTION_LABELS, completionColor, listAllAuthUsers } from '@/lib/utils/admin'
 import type { AdminUser, Role, SmsStatus } from '@/lib/types'
 import { AdminUsersTable } from '@/app/admin/_components/AdminUsersTable'
 import { AdminCreateServiceModal } from '@/app/admin/_components/AdminCreateServiceModal'
@@ -37,14 +37,14 @@ export default async function FuneralHomeDetailPage({
 
   const [
     { data: profiles },
-    { data: { users: authUsers } },
+    authUsers,
     { data: services },
     { data: tasks },
     { data: sms },
     { data: activity },
   ] = await Promise.all([
     db.from('profiles').select('id, full_name, role, phone, is_active').eq('funeral_home_id', fhId),
-    db.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(db),
     db.from('services').select('id, family_name, deceased_name, service_type, service_date, status, created_at').eq('funeral_home_id', fhId),
     db.from('tasks').select('id, service_id, status, due_days_before').eq('funeral_home_id', fhId),
     db.from('sms_log').select('id, recipient_id, status, message, created_at').eq('funeral_home_id', fhId).order('created_at', { ascending: false }).limit(200),

@@ -1,7 +1,27 @@
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import type { User } from '@supabase/supabase-js'
 import { ADMIN_EMAILS, isAdminEmail, isSuperadmin } from '@/lib/utils/superadmin'
 
 export { ADMIN_EMAILS, isAdminEmail }
+
+/**
+ * All auth users, iterated page-by-page (session 10 #5). listUsers({perPage:1000})
+ * silently truncated at 1000 users; this walks pages up to maxPages (safety cap —
+ * 10k users is far beyond current scale; raise when the platform grows).
+ */
+export async function listAllAuthUsers(
+  db: ReturnType<typeof createServiceRoleClient>,
+  maxPages = 10,
+) {
+  const all: User[] = []
+  for (let page = 1; page <= maxPages; page++) {
+    const { data } = await db.auth.admin.listUsers({ page, perPage: 1000 })
+    const users = data?.users ?? []
+    all.push(...users)
+    if (users.length < 1000) break
+  }
+  return all
+}
 
 /**
  * Returns the current session if the logged-in user is a platform superadmin

@@ -22,22 +22,24 @@ describe('normalizePhone', () => {
     expect(normalizePhone('+1 801 555 1234')).toBe('+18015551234')
   })
 
-  // AUDIT GAP (High): invalid inputs are NOT rejected — 5 digits, 0 digits, or
-  // garbage all produce a "+"-prefixed string that Twilio will reject at send
-  // time with no feedback loop to the user who owns the bad phone number.
-  // These assertions PIN the current permissive behavior so a future fix is a
-  // conscious, test-visible change (they should start failing when validation
-  // is added — then invert them).
-  it('currently accepts a 5-digit number (documents audit gap — should throw once validated)', () => {
-    expect(normalizePhone('12345')).toBe('+12345')
+  // E.164 length validation (audit gap closed in session 10): invalid inputs
+  // now throw, so bad numbers surface as 'failed' sms_log rows with a clear
+  // reason instead of opaque Twilio-side rejections.
+  it('rejects numbers with fewer than 10 digits', () => {
+    expect(() => normalizePhone('12345')).toThrow(/Invalid phone number/)
   })
 
-  it('currently accepts an empty string (documents audit gap — should throw once validated)', () => {
-    expect(normalizePhone('')).toBe('+')
+  it('rejects an empty string', () => {
+    expect(() => normalizePhone('')).toThrow(/Invalid phone number/)
   })
 
-  it.todo('rejects numbers with fewer than 10 digits (fix: length validation in normalizePhone)')
-  it.todo('rejects numbers with more than 15 digits (E.164 max)')
+  it('rejects numbers with more than 15 digits (E.164 max)', () => {
+    expect(() => normalizePhone('1234567890123456')).toThrow(/Invalid phone number/)
+  })
+
+  it('accepts a 15-digit international number', () => {
+    expect(normalizePhone('123456789012345')).toBe('+123456789012345')
+  })
 })
 
 describe('buildSmsMessage', () => {

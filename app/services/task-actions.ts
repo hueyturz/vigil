@@ -131,6 +131,7 @@ export async function addTaskToService(
 ): Promise<{ data?: TaskWithProfile; error?: string }> {
   const ctx = await getActionContext()
   if (!ctx) return { error: 'Not authenticated.' }
+  if (input.title.length > 255) return { error: 'Task title must be 255 characters or fewer.' }
   if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
   const serviceRole = ctx.serviceRole
   const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
@@ -223,7 +224,7 @@ export async function deleteServiceTask(
   if (task.status === 'complete')
     return { error: 'Cannot delete a completed task.' }
 
-  const { error } = await serviceRole.from('tasks').delete().eq('id', taskId)
+  const { error } = await serviceRole.from('tasks').delete().eq('id', taskId).eq('funeral_home_id', profile.funeral_home_id)
   if (error) return { error: error.message }
 
   return {}
@@ -237,6 +238,7 @@ export async function updateServiceTask(
 ): Promise<{ error?: string }> {
   const ctx = await getActionContext()
   if (!ctx) return { error: 'Not authenticated.' }
+  if (input.title.length > 255) return { error: 'Task title must be 255 characters or fewer.' }
   if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
   const serviceRole = ctx.serviceRole
   const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
@@ -257,6 +259,7 @@ export async function updateServiceTask(
     .from('tasks')
     .update({ title: input.title, confirmation_hint: input.confirmation_hint })
     .eq('id', taskId)
+    .eq('funeral_home_id', profile.funeral_home_id)  // defense-in-depth tenant scope
 
   if (error) return { error: error.message }
 
@@ -293,6 +296,7 @@ export async function updateTaskDueDays(
     .from('tasks')
     .update({ due_days_before: dueDaysBefore })
     .eq('id', taskId)
+    .eq('funeral_home_id', profile.funeral_home_id)  // defense-in-depth tenant scope
 
   if (error) return { error: error.message }
 
@@ -324,6 +328,7 @@ export async function updateTaskNotes(
     .from('tasks')
     .update({ notes: notes || null })
     .eq('id', taskId)
+    .eq('funeral_home_id', profile.funeral_home_id)  // defense-in-depth tenant scope
 
   if (error) return { error: error.message }
 
@@ -355,6 +360,7 @@ export async function reassignTask(
     .from('tasks')
     .update({ assigned_to_id: assignedToId })
     .eq('id', taskId)
+    .eq('funeral_home_id', profile.funeral_home_id)  // defense-in-depth tenant scope
 
   if (error) return { error: error.message }
 
@@ -407,6 +413,7 @@ export async function updateTaskOrder(
     .from('tasks')
     .update({ sort_order: newSortOrder })
     .eq('id', taskId)
+    .eq('funeral_home_id', ctx.funeralHomeId)  // defense-in-depth tenant scope
 
   if (error) return { error: error.message }
 

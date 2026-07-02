@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
   const name  = (body.name ?? '').trim()
   const color = (body.color ?? '').trim()
   if (!name)  return NextResponse.json({ error: 'Name is required.' }, { status: 400 })
-  if (!color) return NextResponse.json({ error: 'Color is required.' }, { status: 400 })
+  if (name.length > 100) return NextResponse.json({ error: 'Name must be 100 characters or fewer.' }, { status: 400 })
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+    return NextResponse.json({ error: 'Color must be a hex value like #4A7C8C.' }, { status: 400 })
+  }
 
   // Cookie-based client → runs as `authenticated` under RLS (tags_insert policy),
   // so the user's JWT is what authorizes the write — not the anon key.

@@ -9,6 +9,7 @@ import {
   SortableContext, useSortable, arrayMove, verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import toast from 'react-hot-toast'
 import { TaskRow } from './TaskRow'
 import { AddTaskModal } from './AddTaskModal'
 import { updateTaskOrder } from '@/app/services/task-actions'
@@ -43,6 +44,7 @@ export function TaskList({
 
   // Move the active task to the dropped position. The set of sort_order values is
   // preserved and reassigned in the new order, then persisted per changed task.
+  // On any persistence failure: revert the optimistic order and toast (session 10 #6).
   function reorder(activeId: string, overId: string) {
     if (activeId === overId) return
     const ordered = [...tasks].sort((a, b) => a.sort_order - b.sort_order)
@@ -51,13 +53,24 @@ export function TaskList({
     const to      = ordered.findIndex(t => t.id === overId)
     if (from === -1 || to === -1 || from === to) return
 
+    const previous = tasks
     const moved    = arrayMove(ordered, from, to)
     const newOrder = new Map(moved.map((t, i) => [t.id, slots[i]]))
     setTasks(prev => prev.map(t => newOrder.has(t.id) ? { ...t, sort_order: newOrder.get(t.id)! } : t))
-    for (const t of moved) {
-      const next = newOrder.get(t.id)!
-      if (t.sort_order !== next) void updateTaskOrder(t.id, next)
-    }
+
+    const changed = moved.filter(t => t.sort_order !== newOrder.get(t.id)!)
+    void Promise.all(changed.map(t => updateTaskOrder(t.id, newOrder.get(t.id)!)))
+      .then(results => {
+        const failed = results.find(r => r?.error)
+        if (failed) {
+          setTasks(previous)
+          toast.error(failed.error ?? 'Could not save the new order.')
+        }
+      })
+      .catch(() => {
+        setTasks(previous)
+        toast.error('Could not save the new order.')
+      })
   }
 
   function handleDragEnd(event: DragEndEvent) {

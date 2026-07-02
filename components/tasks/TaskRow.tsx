@@ -137,6 +137,9 @@ function AssignDropdown({
       }
       onAssigned(profile)
       onClose()
+    } else {
+      // Surface the failure — previously silent (audit, session 10 #6).
+      toast.error(result.error ?? 'Could not update the assignment.')
     }
   }
 

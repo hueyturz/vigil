@@ -19,8 +19,13 @@ export function buildSmsMessage({
 }
 
 // Normalize a free-text phone number to E.164 for Twilio.
+// Throws on lengths outside E.164 (10–15 digits) so bad numbers surface as
+// 'failed' sms_log rows with a clear reason instead of Twilio-side rejections.
 export function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, '')
+  if (digits.length < 10 || digits.length > 15) {
+    throw new Error(`Invalid phone number: ${digits.length} digits (expected 10–15).`)
+  }
   if (digits.length === 10) return '+1' + digits
   if (digits.length === 11 && digits.startsWith('1')) return '+' + digits
   return '+' + digits

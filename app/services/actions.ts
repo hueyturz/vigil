@@ -28,6 +28,9 @@ interface CreateServiceInput {
 export async function createService(input: CreateServiceInput): Promise<{ data?: { id: string }; error?: string }> {
   const ctx = await getActionContext()
   if (!ctx) return { error: 'Not authenticated.' }
+  if (input.deceased_name.length > 255 || input.family_name.length > 255) {
+    return { error: 'Names must be 255 characters or fewer.' }
+  }
   if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
   const serviceRole = ctx.serviceRole
   const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
@@ -213,6 +216,9 @@ export async function updateService(
 ): Promise<{ error?: string }> {
   const ctx = await getActionContext()
   if (!ctx) return { error: 'Not authenticated.' }
+  if (input.deceased_name.length > 255 || input.family_name.length > 255) {
+    return { error: 'Names must be 255 characters or fewer.' }
+  }
   if (!['owner', 'fd'].includes(ctx.role)) return { error: 'Insufficient permissions.' }
   const serviceRole = ctx.serviceRole
   const profile = { funeral_home_id: ctx.funeralHomeId, role: ctx.role, full_name: ctx.fullName }
@@ -448,6 +454,33 @@ export async function applyTemplateToService(
   let added   = 0
   let skipped = 0
 
+  // Batch-fetch every template's subtasks and tags up front (session 10 #7) —
+  // previously two queries PER template inside the loop (N+1).
+  const templateIds = templates.map(t => t.id)
+  const [{ data: allSubtasks }, { data: allTplTags }] = await Promise.all([
+    serviceRole
+      .from('task_template_subtasks')
+      .select('template_id, title, sort_order')
+      .in('template_id', templateIds)
+      .order('sort_order', { ascending: true }),
+    serviceRole
+      .from('template_task_tags')
+      .select('template_task_id, tag_id')
+      .in('template_task_id', templateIds),
+  ])
+  const subtasksByTemplate = new Map<string, { title: string; sort_order: number }[]>()
+  for (const s of allSubtasks ?? []) {
+    const arr = subtasksByTemplate.get(s.template_id) ?? []
+    arr.push({ title: s.title, sort_order: s.sort_order })
+    subtasksByTemplate.set(s.template_id, arr)
+  }
+  const tagsByTemplate = new Map<string, string[]>()
+  for (const tt of allTplTags ?? []) {
+    const arr = tagsByTemplate.get(tt.template_task_id) ?? []
+    arr.push(tt.tag_id)
+    tagsByTemplate.set(tt.template_task_id, arr)
+  }
+
   for (const tpl of templates) {
     if (existingTitles.has(tpl.title.toLowerCase().trim())) {
       skipped++
@@ -471,14 +504,9 @@ export async function applyTemplateToService(
       added++
       existingTitles.add(tpl.title.toLowerCase().trim())
 
-      // Copy template subtasks to task subtasks
-      const { data: tplSubtasks } = await serviceRole
-        .from('task_template_subtasks')
-        .select('title, sort_order')
-        .eq('template_id', tpl.id)
-        .order('sort_order', { ascending: true })
-
-      if (tplSubtasks?.length) {
+      // Copy template subtasks to task subtasks (pre-fetched — no per-template query)
+      const tplSubtasks = subtasksByTemplate.get(tpl.id) ?? []
+      if (tplSubtasks.length) {
         await serviceRole.from('task_subtasks').insert(
           tplSubtasks.map(s => ({
             task_id:        insertedTask.id,
@@ -490,15 +518,11 @@ export async function applyTemplateToService(
         )
       }
 
-      // Carry the template task's tags onto the new task
-      const { data: tplTags } = await serviceRole
-        .from('template_task_tags')
-        .select('tag_id')
-        .eq('template_task_id', tpl.id)
-
-      if (tplTags?.length) {
+      // Carry the template task's tags onto the new task (pre-fetched)
+      const tplTagIds = tagsByTemplate.get(tpl.id) ?? []
+      if (tplTagIds.length) {
         await serviceRole.from('task_tags').upsert(
-          tplTags.map(tt => ({ task_id: insertedTask.id, tag_id: tt.tag_id })),
+          tplTagIds.map(tag_id => ({ task_id: insertedTask.id, tag_id })),
           { onConflict: 'task_id,tag_id', ignoreDuplicates: true },
         )
       }

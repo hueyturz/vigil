@@ -52,10 +52,9 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error || !data.user) {
-    return NextResponse.json(
-      { error: error?.message ?? 'Invalid credentials.' },
-      { status: 401 }
-    )
+    // Generic on purpose (audit): passing through Supabase's message enables
+    // account enumeration ("user not found" vs "invalid password").
+    return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
   }
 
   // Determine role-based redirect via service role (bypasses RLS)
