@@ -11,13 +11,19 @@ export interface SendEmailResult {
   error?: string
 }
 
-// FROM address for all outbound email.
-// PENDING DOMAIN VERIFICATION: once the getvigilight.com domain is verified in
-// Resend, set RESEND_FROM_EMAIL (e.g. "Vigilight <noreply@getvigilight.com>") and
-// this flips to the branded sender with no code change. Until then we fall back to
-// Resend's shared onboarding@resend.dev sender — it sends without domain
-// verification but shows an unbranded "from", which hurts deliverability/trust.
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'Vigilight <onboarding@resend.dev>'
+// FROM address for all outbound email (audit H9). RESEND_FROM_EMAIL must be a
+// Resend-verified sender (e.g. "Vigilight <noreply@getvigilight.com>"). The
+// fallback is deliberately an INVALID domain so a misconfigured deploy fails
+// visibly (email_log rows go 'failed' + Sentry events) instead of silently
+// sending from Resend's shared onboarding@resend.dev sandbox domain, which
+// funeral-home IT departments will flag as spam.
+if (!process.env.RESEND_FROM_EMAIL) {
+  console.warn(
+    '[email] RESEND_FROM_EMAIL is not set — outbound email will use an invalid sender and FAIL. ' +
+    'Verify the domain in Resend and set RESEND_FROM_EMAIL (see .env.example).',
+  )
+}
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'Vigilight <noreply@unconfigured.vigilight>'
 
 export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult> {
   try {
