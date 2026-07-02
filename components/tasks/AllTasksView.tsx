@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TaskRow } from './TaskRow'
-import { tint } from '@/components/tags/colors'
 import type { TaskForAllView, StaffOption } from '@/app/tasks/page'
 import type { TaskWithProfile, Tag } from '@/lib/types'
 
@@ -63,7 +62,7 @@ export function AllTasksView({
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [serviceFilter,  setServiceFilter]  = useState('all')
   const [urgencyFilter,  setUrgencyFilter]  = useState<'all' | UrgencyKey>('all')
-  const [activeTagIds,   setActiveTagIds]   = useState<Set<string>>(new Set())
+  const [tagFilter,      setTagFilter]      = useState('all')
 
   // Apply the ?filter= query param on mount (e.g. dashboard "Overdue Tasks" card).
   useEffect(() => {
@@ -81,16 +80,8 @@ export function AllTasksView({
   useEffect(() => {
     if (!initialTag) return
     const match = tagFilters.find(t => t.name.toLowerCase() === initialTag.toLowerCase())
-    if (match) setActiveTagIds(new Set([match.id]))
+    if (match) setTagFilter(match.id)
   }, [initialTag, tagFilters])
-
-  function toggleTag(id: string) {
-    setActiveTagIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
 
   const serviceOptions = useMemo(() => {
     const seen = new Map<string, string>()
@@ -106,11 +97,10 @@ export function AllTasksView({
       if (assigneeFilter !== 'all' && (t.assigned_to?.id ?? 'unassigned') !== assigneeFilter) return false
       if (serviceFilter  !== 'all' && t.service.id !== serviceFilter) return false
       if (urgencyFilter  !== 'all' && getUrgency(t) !== urgencyFilter) return false
-      // Tag filter — OR logic: keep tasks carrying ANY active tag.
-      if (activeTagIds.size > 0 && !(t.tags ?? []).some(tag => activeTagIds.has(tag.id))) return false
+      if (tagFilter      !== 'all' && !(t.tags ?? []).some(tag => tag.id === tagFilter)) return false
       return true
     })
-  }, [tasks, searchRaw, priorityFilter, assigneeFilter, serviceFilter, urgencyFilter, activeTagIds])
+  }, [tasks, searchRaw, priorityFilter, assigneeFilter, serviceFilter, urgencyFilter, tagFilter])
 
   const grouped = useMemo(() => {
     const buckets: Record<UrgencyKey, TaskForAllView[]> = {
@@ -218,40 +208,22 @@ export function AllTasksView({
             <option key={key} value={key}>{URGENCY_META[key].label}</option>
           ))}
         </select>
-      </div>
 
-      {/* Tag filter chips — hidden when no visible task has tags */}
-      {tagFilters.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
-          <button
-            type="button"
-            onClick={() => setActiveTagIds(new Set())}
-            className="flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold border transition"
-            style={activeTagIds.size === 0
-              ? { backgroundColor: '#0A2540', color: '#F4C95D', borderColor: '#0A2540' }
-              : { backgroundColor: '#FFFFFF', color: '#475569', borderColor: '#E2E8F0' }}
+        {/* Tags — hidden when no visible task has tags */}
+        {tagFilters.length > 0 && (
+          <select
+            value={tagFilter}
+            onChange={e => setTagFilter(e.target.value)}
+            className="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: '#E2E8F0', color: '#0F172A', backgroundColor: '#FFFFFF' }}
           >
-            All
-          </button>
-          {tagFilters.map(tag => {
-            const active = activeTagIds.has(tag.id)
-            return (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleTag(tag.id)}
-                className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border transition"
-                style={active
-                  ? { backgroundColor: tint(tag.color, 0.15), color: tag.color, borderColor: tag.color }
-                  : { backgroundColor: '#FFFFFF', color: '#475569', borderColor: '#E2E8F0' }}
-              >
-                <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                {tag.name}
-              </button>
-            )
-          })}
-        </div>
-      )}
+            <option value="all">All Tags</option>
+            {tagFilters.map(tag => (
+              <option key={tag.id} value={tag.id}>{tag.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {/* Empty state */}
       {totalVisible === 0 && (
