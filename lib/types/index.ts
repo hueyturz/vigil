@@ -6,12 +6,21 @@ export type TaskStatus = 'not-started' | 'complete'
 export type ComputedStatus = 'green' | 'yellow' | 'red'
 export type SmsStatus = 'pending' | 'sent' | 'failed'
 
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'suspended' | 'none'
+
 export interface FuneralHome {
   id: string
   name: string
   phone: string | null
   address: string | null
   created_at: string
+  // Stripe billing (migration 037)
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  subscription_status: SubscriptionStatus | null
+  billing_interval: 'month' | 'year' | null
+  trial_ends_at: string | null
+  current_period_end: string | null
 }
 
 export interface Profile {

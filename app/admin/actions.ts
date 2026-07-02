@@ -1,8 +1,12 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+import * as Sentry from '@sentry/nextjs'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { isSuperadmin } from '@/lib/utils/superadmin'
 import { sendSMS, normalizePhone } from '@/lib/utils/sms'
+import { getStripe } from '@/lib/stripe'
+import { getOrCreateStripeCustomer } from '@/lib/billing/customer'
 import type { Role } from '@/lib/types'
 
 const VALID_ROLES: Role[] = ['owner', 'fd', 'staff']
@@ -206,5 +210,73 @@ export async function deleteFuneralHome(funeralHomeId: string): Promise<{ error?
     return {}
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Delete failed.' }
+  }
+}
+
+// ── Billing ─────────────────────────────────────────────────────────────────────
+
+// Activate billing for a demo-converted funeral home: create (or reuse) the
+// Stripe customer, start a monthly subscription with a 14-day trial, and record
+// the subscription state on the tenant row. Replaces the old "just create the
+// account" manual workaround. Idempotency-keyed so a double-click can't create
+// two subscriptions.
+export async function activateBilling(funeralHomeId: string): Promise<{ error?: string }> {
+  const auth = await requireSuperadmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const priceId = process.env.STRIPE_PRICE_ID_MONTHLY
+  if (!priceId) return { error: 'STRIPE_PRICE_ID_MONTHLY is not set — create the price in Stripe and set the env var.' }
+
+  try {
+    const { data: home } = await auth.serviceRole
+      .from('funeral_homes')
+      .select('id, subscription_status, stripe_subscription_id')
+      .eq('id', funeralHomeId)
+      .single()
+    if (!home) return { error: 'Funeral home not found.' }
+    if (home.stripe_subscription_id) {
+      return { error: `Billing is already set up (status: ${home.subscription_status ?? 'unknown'}).` }
+    }
+
+    const customerId = await getOrCreateStripeCustomer(funeralHomeId)
+    const stripe = getStripe()
+
+    const sub = await stripe.subscriptions.create(
+      {
+        customer:          customerId,
+        items:             [{ price: priceId }],
+        trial_period_days: 14,
+        payment_settings:  { save_default_payment_method: 'on_subscription' },
+        // No card yet (demo-led activation): pause at trial end instead of
+        // generating failed invoices until the owner adds a payment method.
+        trial_settings:    { end_behavior: { missing_payment_method: 'pause' } },
+        metadata:          { funeral_home_id: funeralHomeId },
+      },
+      { idempotencyKey: `sub-create-${funeralHomeId}` },
+    )
+
+    // API 2025-03-31+ moved current_period_end from the subscription to its items.
+    const periodEnd = sub.items?.data?.[0]?.current_period_end ?? null
+
+    const { error } = await auth.serviceRole
+      .from('funeral_homes')
+      .update({
+        stripe_subscription_id: sub.id,
+        subscription_status:    'trialing',
+        billing_interval:       'month',
+        trial_ends_at:          sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+        current_period_end:     periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      })
+      .eq('id', funeralHomeId)
+    if (error) return { error: `Subscription ${sub.id} created but failed to persist: ${error.message}` }
+
+    revalidatePath(`/admin/funeral-homes/${funeralHomeId}`)
+    return {}
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags:  { domain: 'billing', op: 'activateBilling' },
+      extra: { funeralHomeId },
+    })
+    return { error: err instanceof Error ? err.message : 'Activation failed.' }
   }
 }
