@@ -56,7 +56,11 @@ export async function updateSession(request: NextRequest) {
     pathname === '/accept-invite' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/demo-request')
+    pathname.startsWith('/api/demo-request') ||
+    // Stripe webhooks carry no session cookie — authenticated by signature
+    // verification inside the route, not by middleware. (Only the webhook is
+    // public; other /api/stripe/* routes keep the default gate.)
+    pathname === '/api/stripe/webhook'
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
