@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 type CookieEntry = { name: string; value: string; options: Record<string, unknown> }
 
 export async function POST(request: NextRequest) {
+  // Brute-force guard: 5 attempts / 15 min per IP (audit C3).
+  const { success: allowed } = await rateLimit('login', clientIp(request.headers))
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Try again in 15 minutes.' },
+      { status: 429 },
+    )
+  }
+
   const { email, password } = await request.json()
 
   if (!email || !password) {

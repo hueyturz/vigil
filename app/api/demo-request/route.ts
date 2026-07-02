@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/utils/email'
 import { demoRequestEmail } from '@/lib/utils/email-templates'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
+    // Spam guard: 3 demo requests / hour per IP (audit C3). Log throttled hits
+    // so a real prospect stuck behind a shared IP is still discoverable.
+    const ip = clientIp(request.headers)
+    const { success: allowed } = await rateLimit('demo', ip)
+    if (!allowed) {
+      console.warn('[demo-request] rate-limited attempt from', ip)
+      return NextResponse.json(
+        { error: 'Too many requests — please try again in an hour, or email hello@getvigilight.com.' },
+        { status: 429 },
+      )
+    }
+
     const body = await request.json().catch(() => ({}))
 
     const name        = String(body.name ?? '').trim()

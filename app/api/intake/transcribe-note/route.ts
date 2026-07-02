@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActionContext } from '@/lib/utils/impersonation'
+import { rateLimit } from '@/lib/rate-limit'
 import { transcribeAudio } from '@/lib/utils/deepgram'
 
 // Transcribe-only endpoint for voice NOTES. Unlike /api/intake/transcribe, this
@@ -10,6 +11,13 @@ export async function POST(request: NextRequest) {
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
   if (!['owner', 'fd'].includes(ctx.role))
     return NextResponse.json({ error: 'Insufficient permissions.' }, { status: 403 })
+
+  // AI cost guard: 50 calls/day per funeral home across the intake AI routes
+  // (Deepgram + Anthropic spend) — audit C3.
+  const { success: aiAllowed } = await rateLimit('ai', ctx.funeralHomeId)
+  if (!aiAllowed) {
+    return NextResponse.json({ error: 'Daily AI usage limit reached. Resets at midnight UTC.' }, { status: 429 })
+  }
 
   let formData: FormData
   try {

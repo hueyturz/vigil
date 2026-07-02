@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getActiveProfile } from '@/lib/utils/impersonation'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 const EMPTY = { services: [], tasks: [], contacts: [], tags: [] }
 
@@ -13,6 +14,10 @@ function svcName(row: { service?: unknown }): string {
 export async function GET(request: NextRequest) {
   const ctx = await getActiveProfile()
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.', ...EMPTY }, { status: 401 })
+
+  // Runaway-loop guard: 60 searches/min per user (audit C3).
+  const { success: allowed } = await rateLimit('search', ctx.profile.id)
+  if (!allowed) return NextResponse.json({ error: 'Too many searches — slow down a moment.', ...EMPTY }, { status: 429 })
 
   const raw     = (request.nextUrl.searchParams.get('q') ?? '').trim()
   const tagName = (request.nextUrl.searchParams.get('tag') ?? '').trim()

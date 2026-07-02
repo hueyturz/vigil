@@ -18,6 +18,8 @@ export default function OnboardingPage() {
   // Step 1 fields
   const [homeName, setHomeName] = useState('')
   const [homeAddress, setHomeAddress] = useState('')
+  // Honeypot — hidden from humans; bots that auto-fill it are rejected server-side.
+  const [website, setWebsite] = useState('')
 
   // Step 2 fields
   const [fullName, setFullName] = useState('')
@@ -32,7 +34,7 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      const id = await createFuneralHome({ name: homeName, address: homeAddress })
+      const id = await createFuneralHome({ name: homeName, address: homeAddress, website })
       setFuneralHomeId(id)
       setStep(2)
     } catch (err) {
@@ -62,7 +64,7 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      await createOwnerAccount({ email, password, fullName, funeralHomeId, phone: ownerPhone })
+      await createOwnerAccount({ email, password, fullName, funeralHomeId, phone: ownerPhone, website })
 
       // Sign in immediately after account creation
       const supabase = createClient()
@@ -106,6 +108,18 @@ export default function OnboardingPage() {
                   Step 1 of 2 — Funeral Home Details
                 </p>
               </div>
+
+              {/* Honeypot — visually hidden, excluded from tab order; humans never fill it */}
+              <input
+                type="text"
+                name="website"
+                value={website}
+                onChange={e => setWebsite(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', height: 0, width: 0, opacity: 0 }}
+              />
 
               <Field
                 id="homeName"
