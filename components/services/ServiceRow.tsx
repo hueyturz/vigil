@@ -47,11 +47,14 @@ export function ServiceRow({ service }: { service: ServiceWithTasks }) {
   return (
     <Link
       href={`/services/${service.id}`}
-      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 rounded-xl border p-4 hover:shadow-md transition-shadow"
+      // Fixed grid tracks on sm+ so every row aligns regardless of content
+      // length (e.g. a wide "58d away" pill can't stretch the date column).
+      // Tracks: name (flex) | date+pill | progress | badge.
+      className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_12rem_11rem_9rem] sm:items-center sm:gap-5 rounded-xl border p-4 hover:shadow-md transition-shadow"
       style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
     >
       {/* Name + type label */}
-      <div className="min-w-0 sm:flex-1">
+      <div className="min-w-0">
         <h3 className="font-serif text-lg font-bold leading-tight truncate" style={{ color: '#0F172A' }}>
           {service.deceased_name}
         </h3>
@@ -63,11 +66,11 @@ export function ServiceRow({ service }: { service: ServiceWithTasks }) {
       </div>
 
       {/* Date + days chip */}
-      <div className="flex items-center gap-2 text-sm flex-shrink-0 sm:w-44" style={{ color: '#475569' }}>
-        <span>{serviceDate ? formatDate(serviceDate) : 'Date TBD'}</span>
+      <div className="flex items-center gap-2 text-sm min-w-0" style={{ color: '#475569' }}>
+        <span className="whitespace-nowrap">{serviceDate ? formatDate(serviceDate) : 'Date TBD'}</span>
         {!isCompleted && (
           <span
-            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            className="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold text-white"
             style={{ backgroundColor: dayChipColor }}
           >
             {dayLabel}
@@ -76,13 +79,13 @@ export function ServiceRow({ service }: { service: ServiceWithTasks }) {
       </div>
 
       {/* Task progress */}
-      <div className="flex-shrink-0 space-y-1.5 sm:w-44">
-        <div className="text-xs" style={{ color: '#475569' }}>{completed}/{total} tasks confirmed</div>
+      <div className="space-y-1.5 min-w-0">
+        <div className="text-xs whitespace-nowrap" style={{ color: '#475569' }}>{completed}/{total} tasks confirmed</div>
         <ProgressBar value={progressPct} status={status} />
       </div>
 
       {/* Status badge */}
-      <div className="flex-shrink-0">
+      <div className="min-w-0">
         <Badge status={isCompleted ? 'completed' : status} />
       </div>
     </Link>
