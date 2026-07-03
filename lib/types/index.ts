@@ -4,7 +4,9 @@ export type ServiceType = 'full-burial' | 'graveside' | 'cremation' | 'military'
 export type ServiceStatus = 'active' | 'completed' | 'archived'
 export type TaskStatus = 'not-started' | 'complete'
 export type ComputedStatus = 'green' | 'yellow' | 'red'
-export type SmsStatus = 'pending' | 'sent' | 'failed'
+// Mirrors the sms_log status CHECK widened in migration 038 (Twilio delivery
+// receipts + opt-out). Keep in sync with that constraint.
+export type SmsStatus = 'pending' | 'queued' | 'sent' | 'delivered' | 'failed' | 'undelivered' | 'opted_out'
 
 export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'suspended' | 'none'
 

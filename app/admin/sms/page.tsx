@@ -14,6 +14,21 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 8, border: '1px solid #E2E8F0', padding: '7px 10px', fontSize: 13, color: '#0F172A', backgroundColor: '#FFFFFF',
 }
 
+// Success = Twilio-confirmed send/delivery; failure = carrier reject or
+// not-delivered (migration 038 delivery receipts). Used for the summary stats.
+const SMS_SUCCESS = ['sent', 'delivered']
+const SMS_FAILURE = ['failed', 'undelivered']
+
+const SMS_BADGE: Record<SmsStatus, { bg: string; color: string }> = {
+  sent:        { bg: '#ECFDF5', color: '#15803D' },
+  delivered:   { bg: '#ECFDF5', color: '#15803D' },
+  failed:      { bg: '#FEF2F2', color: '#991B1B' },
+  undelivered: { bg: '#FEF2F2', color: '#991B1B' },
+  pending:     { bg: '#FFFBEB', color: '#92400E' },
+  queued:      { bg: '#FFFBEB', color: '#92400E' },
+  opted_out:   { bg: '#F1F5F9', color: '#475569' },
+}
+
 export default async function PlatformSmsPage({
   searchParams,
 }: {
@@ -51,8 +66,8 @@ export default async function PlatformSmsPage({
     rowsQuery,
     db.from('funeral_homes').select('id, name').order('name'),
     db.from('profiles').select('id, phone, full_name'),
-    db.from('sms_log').select('id', { count: 'exact', head: true }).eq('status', 'sent').gte('created_at', todayIso),
-    db.from('sms_log').select('id', { count: 'exact', head: true }).eq('status', 'failed').gte('created_at', todayIso),
+    db.from('sms_log').select('id', { count: 'exact', head: true }).in('status', SMS_SUCCESS).gte('created_at', todayIso),
+    db.from('sms_log').select('id', { count: 'exact', head: true }).in('status', SMS_FAILURE).gte('created_at', todayIso),
   ])
 
   const homeName = new Map((homes ?? []).map(h => [h.id, h.name]))
@@ -115,7 +130,9 @@ export default async function PlatformSmsPage({
             {(rows ?? []).length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center" style={{ color: '#94A3B8' }}>No messages match these filters.</td></tr>}
             {(rows ?? []).map(s => {
               const st = s.status as SmsStatus
-              const badge = { sent: { bg: '#ECFDF5', color: '#15803D' }, failed: { bg: '#FEF2F2', color: '#991B1B' }, pending: { bg: '#FFFBEB', color: '#92400E' } }[st]
+              // Full status set per migration 038; fallback prevents an unmapped
+              // status (e.g. a Twilio delivery receipt) from crashing the page.
+              const badge = SMS_BADGE[st] ?? { bg: '#F1F5F9', color: '#475569' }
               return (
                 <tr key={s.id} className="border-t" style={{ borderColor: '#E2E8F0' }}>
                   <td className="px-4 py-3" style={{ color: '#0F172A' }}>{homeName.get(s.funeral_home_id) ?? 'Unknown'}</td>
@@ -124,7 +141,7 @@ export default async function PlatformSmsPage({
                     <div className="text-xs" style={{ color: '#94A3B8' }}>{nameById.get(s.recipient_id) ?? ''}</div>
                   </td>
                   <td className="px-4 py-3 max-w-xs truncate" style={{ color: '#475569' }}>{s.message}</td>
-                  <td className="px-4 py-3"><span className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize" style={{ backgroundColor: badge.bg, color: badge.color }}>{st}</span></td>
+                  <td className="px-4 py-3"><span className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize" style={{ backgroundColor: badge.bg, color: badge.color }}>{st.replace('_', ' ')}</span></td>
                   <td className="px-4 py-3 max-w-[200px] truncate" style={{ color: st === 'failed' ? '#991B1B' : '#94A3B8' }} title={s.error_message ?? ''}>{st === 'failed' ? (s.error_message ?? '—') : '—'}</td>
                   <td className="px-4 py-3" style={{ color: '#475569' }}>{timeAgo(s.created_at)}</td>
                   <td className="px-4 py-3 text-center" style={{ color: '#475569' }}>{estimateSegments(s.message)}</td>

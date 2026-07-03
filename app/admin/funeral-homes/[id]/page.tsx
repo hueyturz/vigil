@@ -19,6 +19,11 @@ const SERVICE_STATUS_STYLE: Record<string, { label: string; bg: string; color: s
   completed: { label: 'Completed', bg: '#ECFDF5', color: '#15803D' },
   archived:  { label: 'Archived',  bg: '#F1F5F9', color: '#475569' },
 }
+// A message is a success once Twilio confirms send/delivery (migration 038
+// delivery receipts flip 'sent' → 'delivered'); a failure covers both the
+// carrier-reject 'failed' and the not-delivered 'undelivered' terminal states.
+const SMS_SUCCESS = new Set<string>(['sent', 'delivered'])
+const SMS_FAILURE = new Set<string>(['failed', 'undelivered'])
 export default async function FuneralHomeDetailPage({
   params, searchParams,
 }: {
@@ -86,8 +91,8 @@ export default async function FuneralHomeDetailPage({
     const sd = serviceDateById.get(t.service_id)
     return t.status === 'not-started' && !!sd && daysUntil(sd) < t.due_days_before
   }).length
-  const smsSent   = (sms ?? []).filter(s => s.status === 'sent').length
-  const smsFailed = (sms ?? []).filter(s => s.status === 'failed').length
+  const smsSent   = (sms ?? []).filter(s => SMS_SUCCESS.has(s.status)).length
+  const smsFailed = (sms ?? []).filter(s => SMS_FAILURE.has(s.status)).length
   const deliveryRate = smsSent + smsFailed > 0 ? Math.round((smsSent / (smsSent + smsFailed)) * 100) : 0
 
   // 30-day sparklines (oldest → newest).
@@ -100,7 +105,7 @@ export default async function FuneralHomeDetailPage({
   const svcSeries = new Array(DAYS).fill(0)
   for (const s of services ?? []) { const i = dayIndex(s.created_at); if (i >= 0 && i < DAYS) svcSeries[DAYS - 1 - i]++ }
   const smsSeries = new Array(DAYS).fill(0)
-  for (const s of sms ?? []) { if (s.status === 'sent') { const i = dayIndex(s.created_at); if (i >= 0 && i < DAYS) smsSeries[DAYS - 1 - i]++ } }
+  for (const s of sms ?? []) { if (SMS_SUCCESS.has(s.status)) { const i = dayIndex(s.created_at); if (i >= 0 && i < DAYS) smsSeries[DAYS - 1 - i]++ } }
 
   // SMS log filter + slice.
   const smsFilter = (searchParams.sms ?? 'all') as SmsStatus | 'all'
@@ -280,10 +285,15 @@ function SparkCard({ title, data, color }: { title: string; data: number[]; colo
 
 function SmsStatusBadge({ status }: { status: SmsStatus }) {
   const style: Record<SmsStatus, { bg: string; color: string }> = {
-    sent:    { bg: '#ECFDF5', color: '#15803D' },
-    failed:  { bg: '#FEF2F2', color: '#991B1B' },
-    pending: { bg: '#FFFBEB', color: '#92400E' },
+    sent:        { bg: '#ECFDF5', color: '#15803D' },
+    delivered:   { bg: '#ECFDF5', color: '#15803D' },
+    failed:      { bg: '#FEF2F2', color: '#991B1B' },
+    undelivered: { bg: '#FEF2F2', color: '#991B1B' },
+    pending:     { bg: '#FFFBEB', color: '#92400E' },
+    queued:      { bg: '#FFFBEB', color: '#92400E' },
+    opted_out:   { bg: '#F1F5F9', color: '#475569' },
   }
-  const s = style[status]
-  return <span className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize" style={{ backgroundColor: s.bg, color: s.color }}>{status}</span>
+  // Fallback keeps an unmapped/future status from crashing the whole page.
+  const s = style[status] ?? { bg: '#F1F5F9', color: '#475569' }
+  return <span className="rounded-full px-2 py-0.5 text-xs font-semibold capitalize" style={{ backgroundColor: s.bg, color: s.color }}>{status.replace('_', ' ')}</span>
 }
