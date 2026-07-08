@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { getActionContext } from '@/lib/utils/impersonation'
 import { sendAndLogSms } from '@/lib/utils/sms'
+import { sendAndLogEmail } from '@/lib/utils/email-notify'
+import { newServiceEmail } from '@/lib/utils/email-templates'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { Priority, ServiceType, ServiceNote } from '@/lib/types'
 
@@ -90,19 +92,21 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
     if (managerIds.length > 0) {
       const { data: prefRows } = await serviceRole
         .from('notification_preferences')
-        .select('user_id, sms_new_service_created')
+        .select('user_id, sms_new_service_created, email_new_service_created')
         .in('user_id', managerIds)
 
-      const optedIn = new Set((prefRows ?? []).filter(p => p.sms_new_service_created).map(p => p.user_id))
+      const smsOptedIn   = new Set((prefRows ?? []).filter(p => p.sms_new_service_created).map(p => p.user_id))
+      const emailOptedIn = new Set((prefRows ?? []).filter(p => p.email_new_service_created).map(p => p.user_id))
       const typeLabel = input.service_type
         ? (SERVICE_TYPE_LABELS[input.service_type] ?? input.service_type)
         : 'service type TBD'
       const dateStr = input.service_date ? formatDate(input.service_date) : 'date TBD'
       const message = `Vigilight: New service created — ${input.family_name} (${typeLabel}, ${dateStr}). Txt STOP to opt out.`
 
+      // SMS
       for (const m of managers ?? []) {
         if (m.id === userId) continue                 // don't notify the creator
-        if (!optedIn.has(m.id) || !m.phone) continue
+        if (!smsOptedIn.has(m.id) || !m.phone) continue
         await sendAndLogSms(serviceRole, {
           funeralHomeId: profile.funeral_home_id,
           serviceId:     service.id,
@@ -112,9 +116,35 @@ export async function createService(input: CreateServiceInput): Promise<{ data?:
           message,
         })
       }
+
+      // Email (item 6)
+      const { subject, html } = newServiceEmail({
+        familyName:    input.family_name,
+        typeLabel,
+        dateStr,
+        serviceId:     service.id,
+        createdByName: profile.full_name,
+      })
+      for (const m of managers ?? []) {
+        if (m.id === userId) continue                 // don't notify the creator
+        if (!emailOptedIn.has(m.id)) continue
+        const { data: authData } = await serviceRole.auth.admin.getUserById(m.id)
+        const recipientEmail = authData?.user?.email
+        if (!recipientEmail) continue
+        await sendAndLogEmail(serviceRole, {
+          funeralHomeId:  profile.funeral_home_id,
+          serviceId:      service.id,
+          taskId:         null,
+          recipientId:    m.id,
+          recipientEmail,
+          subject,
+          html,
+          stage:          'new-service',
+        })
+      }
     }
-  } catch (smsErr) {
-    console.error('[createService] new-service SMS failed:', smsErr instanceof Error ? smsErr.message : smsErr)
+  } catch (notifyErr) {
+    console.error('[createService] new-service notify failed:', notifyErr instanceof Error ? notifyErr.message : notifyErr)
   }
 
   revalidatePath('/dashboard')

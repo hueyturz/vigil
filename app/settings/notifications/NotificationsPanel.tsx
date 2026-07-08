@@ -38,16 +38,13 @@ const SMS_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean }[] 
   { key: 'sms_new_service_created',          label: 'A new service is created', managerOnly: true },
 ]
 
-// comingSoon (audit H6): these preferences save correctly but no email send path
-// exists for them yet — shown disabled so users aren't misled into thinking they
-// control live behavior. Only 'A task is assigned to me' sends email today.
 const EMAIL_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean; comingSoon?: boolean }[] = [
   { key: 'email_task_assigned',                label: 'A task is assigned to me' },
-  { key: 'email_task_completed_on_my_service', label: 'A task is completed on my service', comingSoon: true },
-  { key: 'email_my_tasks_overdue',             label: 'My tasks are overdue (daily reminder)', comingSoon: true },
-  { key: 'email_staff_tasks_overdue',          label: 'Staff tasks are overdue (daily reminder)', managerOnly: true, comingSoon: true },
-  { key: 'email_task_approaching_deadline',    label: 'A task is due tomorrow', comingSoon: true },
-  { key: 'email_new_service_created',          label: 'A new service is created', managerOnly: true, comingSoon: true },
+  { key: 'email_task_completed_on_my_service', label: 'A task is completed on my service' },
+  { key: 'email_my_tasks_overdue',             label: 'My tasks are overdue (daily reminder)' },
+  { key: 'email_staff_tasks_overdue',          label: 'Staff tasks are overdue (daily reminder)', managerOnly: true },
+  { key: 'email_task_approaching_deadline',    label: 'A task is due tomorrow' },
+  { key: 'email_new_service_created',          label: 'A new service is created', managerOnly: true },
 ]
 
 const REMINDER_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]

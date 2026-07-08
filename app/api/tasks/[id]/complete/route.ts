@@ -4,7 +4,8 @@ import * as Sentry from '@sentry/nextjs'
 import { getActionContext } from '@/lib/utils/impersonation'
 import { buildSmsMessage, sendSMS, normalizePhone, sendAndLogSms } from '@/lib/utils/sms'
 import { sendEmail } from '@/lib/utils/email'
-import { taskConfirmedEmail } from '@/lib/utils/email-templates'
+import { sendAndLogEmail } from '@/lib/utils/email-notify'
+import { taskConfirmedEmail, taskCompletedEmail } from '@/lib/utils/email-templates'
 import { formatDateTime, formatDate } from '@/lib/utils/date-helpers'
 
 const CompleteTaskSchema = z.object({
@@ -225,21 +226,26 @@ async function handleComplete(
       if (memberIds.length > 0) {
         const { data: prefRows } = await serviceRole
           .from('notification_preferences')
-          .select('user_id, sms_task_completed_on_my_service')
+          .select('user_id, sms_task_completed_on_my_service, email_task_completed_on_my_service')
           .in('user_id', memberIds)
 
-        const optedIn = new Set(
+        const smsOptedIn = new Set(
           (prefRows ?? []).filter(p => p.sms_task_completed_on_my_service).map(p => p.user_id)
+        )
+        const emailOptedIn = new Set(
+          (prefRows ?? []).filter(p => p.email_task_completed_on_my_service).map(p => p.user_id)
         )
         const message = `Vigilight: ${profile.full_name} confirmed '${task.title}' for the ${service.deceased_name} service (${formatDate(service.service_date)}). Txt STOP to opt out.`
 
-        for (const m of members ?? []) {
-          if (m.id === ctx.userId) continue                      // not the confirmer
-          if (!optedIn.has(m.id) || !m.phone) continue
-          const ownsOrAssigned =
-            m.role === 'owner' || m.role === 'fd' || m.id === service.assigned_staff_id
-          if (!ownsOrAssigned) continue
+        // A member is in scope if they own the funeral home or are the staff
+        // assigned to this service. Never notify the confirmer.
+        const inScope = (m: { id: string; role: string }) =>
+          m.id !== ctx.userId &&
+          (m.role === 'owner' || m.role === 'fd' || m.id === service.assigned_staff_id)
 
+        // SMS
+        for (const m of members ?? []) {
+          if (!inScope(m) || !smsOptedIn.has(m.id) || !m.phone) continue
           await sendAndLogSms(serviceRole, {
             funeralHomeId: profile.funeral_home_id,
             serviceId:     service.id,
@@ -249,14 +255,39 @@ async function handleComplete(
             message,
           })
         }
+
+        // Email (item 2): email the in-scope owner/manager/assignee.
+        const { subject, html } = taskCompletedEmail({
+          taskTitle:       task.title,
+          familyName:      service.deceased_name,
+          serviceId:       service.id,
+          completedByName: profile.full_name,
+          completedAt:     formatDateTime(new Date().toISOString()),
+        })
+        for (const m of members ?? []) {
+          if (!inScope(m) || !emailOptedIn.has(m.id)) continue
+          const { data: authData } = await serviceRole.auth.admin.getUserById(m.id)
+          const recipientEmail = authData?.user?.email
+          if (!recipientEmail) continue
+          await sendAndLogEmail(serviceRole, {
+            funeralHomeId:  profile.funeral_home_id,
+            serviceId:      service.id,
+            taskId:         task.id,
+            recipientId:    m.id,
+            recipientEmail,
+            subject,
+            html,
+            stage:          'task-completed',
+          })
+        }
       }
     }
-  } catch (smsErr) {
-    Sentry.captureException(smsErr, {
-      tags:  { route: 'tasks/complete', stage: 'task-completed-sms' },
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags:  { route: 'tasks/complete', stage: 'task-completed-notify' },
       extra: { taskId: task.id, funeralHomeId: profile.funeral_home_id },
     })
-    console.error('[task-completed-sms] error:', smsErr instanceof Error ? smsErr.message : smsErr)
+    console.error('[task-completed-notify] error:', notifyErr instanceof Error ? notifyErr.message : notifyErr)
   }
 
   // Activity log (use service role — no browser session in API route)

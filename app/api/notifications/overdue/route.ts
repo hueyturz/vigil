@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { sendAndLogSms } from '@/lib/utils/sms'
+import { sendAndLogEmail } from '@/lib/utils/email-notify'
+import { taskDigestEmail } from '@/lib/utils/email-templates'
+import { listAllAuthUsers } from '@/lib/utils/admin'
 import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
 // Daily cron. Every fire sends the reminder to all eligible users (no per-user
 // timezone/preferred-hour gate) — i.e. anyone with a phone and in-scope overdue
@@ -159,10 +164,13 @@ async function runOverdueReminders(): Promise<NextResponse> {
   // Active users + their preferences.
   const { data: profiles } = await db
     .from('profiles')
-    .select('id, role, phone, funeral_home_id')
+    .select('id, role, phone, full_name, funeral_home_id')
     .eq('is_active', true)
   const { data: allPrefs } = await db.from('notification_preferences').select('*')
   const prefsByUser = new Map((allPrefs ?? []).map(p => [p.user_id, p]))
+  const nameById    = new Map((profiles ?? []).map(pr => [pr.id, pr.full_name as string]))
+  // Email addresses live in auth.users, not profiles — one paged fetch, mapped.
+  const emailById   = new Map((await listAllAuthUsers(db)).map(u => [u.id, u.email ?? null]))
 
   const sent: string[]   = []
   const failed: string[] = []
@@ -235,18 +243,120 @@ async function runOverdueReminders(): Promise<NextResponse> {
     for (const r of results) (r.ok ? sent : failed).push(r.userId)
   }
 
-  // Surface per-recipient send failures (previously only visible as sms_log rows).
-  // One aggregated event per run — the per-row detail (error_message) is in sms_log.
-  if (failed.length > 0) {
-    Sentry.captureMessage(`[overdue-cron] ${failed.length} SMS send(s) failed`, {
+  // ── Email digests (items 3/4/5) ────────────────────────────────────────────
+  // A user can receive up to three distinct digests based on their prefs:
+  //   • My tasks overdue      (email_my_tasks_overdue, default on)  — own overdue/today
+  //   • A task is due tomorrow (email_task_approaching_deadline)     — own tomorrow
+  //   • Staff tasks overdue   (email_staff_tasks_overdue, managers)  — all overdue/today in home
+  interface EmailJob { userId: string; funeralHomeId: string; email: string; subject: string; html: string }
+  const emailJobs: EmailJob[] = []
+  const plural = (n: number) => (n !== 1 ? 's' : '')
+
+  for (const user of profiles ?? []) {
+    const email = emailById.get(user.id)
+    if (!email) continue
+    const p = prefsByUser.get(user.id)
+    const isManager = user.role === 'owner' || user.role === 'fd'
+    const home = enriched.filter(t => t.funeralHomeId === user.funeral_home_id)
+
+    // 3. My tasks overdue (own tasks, overdue or due today).
+    if (p ? !!p.email_my_tasks_overdue : true) {
+      const mine = home.filter(t => t.assignedToId === user.id && (t.timing === 'overdue' || t.timing === 'today'))
+      if (mine.length > 0) {
+        const { subject, html } = taskDigestEmail({
+          subject:  `Vigilight: ${mine.length} overdue task${plural(mine.length)}`,
+          eyebrow:  'Overdue tasks',
+          heading:  `You have ${mine.length} overdue task${plural(mine.length)}`,
+          intro:    'These tasks assigned to you are overdue or due today. Log in to Vigilight to take action.',
+          items:    mine.map(t => ({ title: t.title, sub: `${t.serviceName} · ${TIMING_LABEL[t.timing]}` })),
+          ctaHref:  `${APP_URL}/tasks`,
+          ctaLabel: 'View my tasks →',
+        })
+        emailJobs.push({ userId: user.id, funeralHomeId: user.funeral_home_id, email, subject, html })
+      }
+    }
+
+    // 5. A task is due tomorrow (own tasks).
+    if (p ? !!p.email_task_approaching_deadline : false) {
+      const tmr = home.filter(t => t.assignedToId === user.id && t.timing === 'tomorrow')
+      if (tmr.length > 0) {
+        const { subject, html } = taskDigestEmail({
+          subject:  `Vigilight: ${tmr.length} task${plural(tmr.length)} due tomorrow`,
+          eyebrow:  'Due tomorrow',
+          heading:  `${tmr.length} task${plural(tmr.length)} due tomorrow`,
+          intro:    'A heads-up on the tasks assigned to you that are due tomorrow.',
+          items:    tmr.map(t => ({ title: t.title, sub: t.serviceName })),
+          ctaHref:  `${APP_URL}/tasks`,
+          ctaLabel: 'View my tasks →',
+        })
+        emailJobs.push({ userId: user.id, funeralHomeId: user.funeral_home_id, email, subject, html })
+      }
+    }
+
+    // 4. Staff tasks overdue (managers): ALL overdue/today across the home.
+    if (isManager && (p ? !!p.email_staff_tasks_overdue : false)) {
+      const all = home.filter(t => t.timing === 'overdue' || t.timing === 'today')
+      if (all.length > 0) {
+        const { subject, html } = taskDigestEmail({
+          subject:  `Vigilight: ${all.length} overdue task${plural(all.length)} across your team`,
+          eyebrow:  'Team overdue tasks',
+          heading:  `${all.length} overdue task${plural(all.length)} across your team`,
+          intro:    'All tasks at your funeral home that are overdue or due today.',
+          items:    all.map(t => ({
+            title: t.title,
+            sub:   `${t.serviceName} · ${t.assignedToId ? (nameById.get(t.assignedToId) ?? 'Unknown') : 'Unassigned'} · ${TIMING_LABEL[t.timing]}`,
+          })),
+          ctaHref:  `${APP_URL}/tasks`,
+          ctaLabel: 'View all tasks →',
+        })
+        emailJobs.push({ userId: user.id, funeralHomeId: user.funeral_home_id, email, subject, html })
+      }
+    }
+  }
+
+  // Dispatch emails with the same bounded concurrency as the SMS batch.
+  const emailSent: string[]   = []
+  const emailFailed: string[] = []
+  for (let i = 0; i < emailJobs.length; i += CONCURRENCY) {
+    const batch = emailJobs.slice(i, i + CONCURRENCY)
+    const results = await Promise.all(
+      batch.map(async job => ({
+        userId: job.userId,
+        ok: await sendAndLogEmail(db, {
+          funeralHomeId:  job.funeralHomeId,
+          serviceId:      null,
+          taskId:         null,
+          recipientId:    job.userId,
+          recipientEmail: job.email,
+          subject:        job.subject,
+          html:           job.html,
+          stage:          'overdue-cron',
+        }),
+      })),
+    )
+    for (const r of results) (r.ok ? emailSent : emailFailed).push(r.userId)
+  }
+
+  // Surface per-recipient send failures (previously only visible as log rows).
+  // One aggregated event per run — the per-row detail (error_message) is in the logs.
+  if (failed.length > 0 || emailFailed.length > 0) {
+    Sentry.captureMessage(`[overdue-cron] ${failed.length} SMS + ${emailFailed.length} email send(s) failed`, {
       level: 'error',
-      extra: { failedUserIds: failed, sentCount: sent.length, skipped },
+      extra: {
+        failedSmsUserIds:   failed,
+        failedEmailUserIds: emailFailed,
+        smsSent:            sent.length,
+        emailSent:          emailSent.length,
+        skipped,
+      },
     })
   }
 
   return NextResponse.json({
-    sent:    sent.length,
-    failed:  failed.length,
+    sent:        sent.length,
+    failed:      failed.length,
+    emailsSent:  emailSent.length,
+    emailsFailed: emailFailed.length,
     skipped,
     runAtUtc: new Date().toISOString(),
   })
