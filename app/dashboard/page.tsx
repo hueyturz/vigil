@@ -11,10 +11,15 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { NewServiceButton } from '@/components/dashboard/NewServiceButton'
 import { GetStartedBanner } from '@/components/dashboard/GetStartedBanner'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
 import { computeServiceStatus, isTaskOverdue } from '@/lib/utils/service-status'
 import type { ServiceWithTasks, ActivityLog } from '@/lib/types'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { welcome?: string }
+}) {
   const ctx = await getActiveProfile()
   if (!ctx) redirect('/login')
   const { profile } = ctx
@@ -22,6 +27,18 @@ export default async function DashboardPage() {
   const db = createServiceRoleClient()
 
   if (profile.role === 'staff') redirect('/my-tasks')
+
+  // First-run welcome slideshow (shown once). Default to "seen" if the column
+  // read fails (e.g. migration 040 not yet applied) so it never nags or crashes.
+  // ?welcome=1 (sidebar "Getting started") force-opens it without re-marking.
+  const { data: welcomeRow } = await db
+    .from('profiles')
+    .select('has_seen_welcome')
+    .eq('id', profile.id)
+    .maybeSingle()
+  const hasSeenWelcome = welcomeRow?.has_seen_welcome ?? true
+  const forceWelcome   = searchParams.welcome === '1'
+  const showWelcome    = forceWelcome || !hasSeenWelcome
 
   const { data: servicesRaw, error: servicesErr } = await db
     .from('services')
@@ -61,6 +78,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell profile={profile} redAlert={needsAttentionCount > 0}>
+      <WelcomeModal initialOpen={showWelcome} firstTime={!hasSeenWelcome} />
       <div className="px-4 py-4 md:px-8 md:py-8 max-w-7xl mx-auto">
         <div className="mb-8 flex items-start justify-between gap-3">
           <div className="min-w-0">

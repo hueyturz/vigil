@@ -78,6 +78,20 @@ export function Sidebar({ profile, redAlert = false }: SidebarProps) {
             </Link>
           )
         })}
+
+        {/* Re-open the first-run welcome slideshow (owner/fd have the dashboard). */}
+        {profile.role !== 'staff' && (
+          <Link
+            href="/dashboard?welcome=1"
+            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-[rgba(244,201,93,0.08)]"
+            style={{ color: 'rgba(248,245,240,0.55)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Getting started
+          </Link>
+        )}
       </nav>
 
       {/* User info + sign out */}

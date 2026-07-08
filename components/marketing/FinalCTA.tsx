@@ -14,7 +14,7 @@ export default function FinalCTA() {
 
         <div className="flex gap-4 justify-center flex-wrap">
           <Link
-            href="/demo"
+            href="/onboarding"
             className="bg-[#E8B923] text-[#0A2540] font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial →

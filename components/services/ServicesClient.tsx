@@ -50,6 +50,12 @@ export function ServicesClient({ services }: { services: ServiceWithTasks[] }) {
     if (searchParams.get('filter') === 'needs-attention') setStatusFilter('needs-attention')
   }, [searchParams])
 
+  // Open the create-service modal when arriving with ?new=1 (welcome slideshow
+  // step 4 "Create my first service").
+  useEffect(() => {
+    if (searchParams.get('new') === '1') setModalOpen(true)
+  }, [searchParams])
+
   const search = useDebounce(searchRaw, 200)
 
   const filtered = useMemo(() => {

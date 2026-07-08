@@ -76,7 +76,7 @@ export function PricingClient() {
         <p className="text-sm mb-8" style={{ color: '#94A3B8' }}>per funeral home</p>
 
         <Link
-          href="/demo"
+          href="/onboarding"
           className="block w-full bg-[#E8B923] text-[#0A2540] font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
         >
           Start Free Trial

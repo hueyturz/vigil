@@ -46,7 +46,7 @@ export function MarketingNav() {
             Log in
           </Link>
           <Link
-            href="/demo"
+            href="/onboarding"
             className="bg-[#E8B923] text-[#0A2540] text-sm px-4 py-2 rounded-full hover:opacity-90 transition"
           >
             Start Free Trial
@@ -95,7 +95,7 @@ export function MarketingNav() {
               Log in
             </Link>
             <Link
-              href="/demo"
+              href="/onboarding"
               onClick={() => setOpen(false)}
               className="mt-3 mb-1 bg-[#E8B923] text-[#0A2540] text-sm px-4 py-2 rounded-full text-center hover:opacity-90 transition"
             >

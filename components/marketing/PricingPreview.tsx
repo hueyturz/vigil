@@ -69,7 +69,7 @@ export default function PricingPreview() {
 
           {/* CTA */}
           <Link
-            href="/demo"
+            href="/onboarding"
             className="mt-8 block w-full bg-[#E8B923] text-[#0A2540] font-semibold py-4 rounded-full text-lg hover:opacity-90 transition-opacity"
           >
             Start Free Trial
