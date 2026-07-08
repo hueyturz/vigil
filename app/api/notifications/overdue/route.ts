@@ -8,6 +8,13 @@ import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
 // timezone/preferred-hour gate) — i.e. anyone with a phone and in-scope overdue
 // tasks gets the digest each time the cron runs.
 
+// Give the run room to finish the (parallelized) send batch before Vercel kills
+// the function. A killed function never sends withMonitor's terminal check-in,
+// which is what surfaced as the "overdue-sms-cron timeout" in Sentry. Vercel
+// clamps this to the plan's max if lower.
+export const dynamic = 'force-dynamic'
+export const maxDuration = 300
+
 type Timing = 'overdue' | 'today' | 'tomorrow'
 
 const TIMING_LABEL: Record<Timing, string> = {
@@ -49,7 +56,13 @@ function buildReminderMessage(tasks: ReminderTask[]): string {
     return `Vigilight: ${n} task${n !== 1 ? 's' : ''} need attention for ${g.name} service (${fmtDate(g.date)}):\n${bullets(g.items)}\n${STOP}`
   }
 
-  const blocks = Array.from(groups.values()).map(g => `${g.name} (${fmtDate(g.date)}):\n${bullets(g.items)}`)
+  // Cap the number of service blocks so a manager overseeing many services can't
+  // produce a body over Twilio's 1600-char limit (error 21617 → failed send).
+  // The overflow line + STOP notice are always preserved.
+  const MAX_BLOCKS = 8
+  const all = Array.from(groups.values())
+  const blocks = all.slice(0, MAX_BLOCKS).map(g => `${g.name} (${fmtDate(g.date)}):\n${bullets(g.items)}`)
+  if (all.length > MAX_BLOCKS) blocks.push(`and ${all.length - MAX_BLOCKS} more service${all.length - MAX_BLOCKS !== 1 ? 's' : ''} — view at getvigilight.com`)
   return `Vigilight: Tasks need attention across ${groups.size} services:\n\n${blocks.join('\n\n')}\n\n${STOP}`
 }
 
@@ -155,6 +168,11 @@ async function runOverdueReminders(): Promise<NextResponse> {
   const failed: string[] = []
   const skipped = { noTasks: 0, noPhone: 0 }
 
+  // Build the send list first (cheap synchronous filtering) so the expensive
+  // per-user Twilio calls can be dispatched concurrently below.
+  interface SendJob { userId: string; funeralHomeId: string; phone: string; message: string }
+  const jobs: SendJob[] = []
+
   for (const user of profiles ?? []) {
     const p = prefsByUser.get(user.id)
     if (!user.phone) { skipped.noPhone++; continue }
@@ -186,16 +204,35 @@ async function runOverdueReminders(): Promise<NextResponse> {
 
     if (userTasks.length === 0) { skipped.noTasks++; continue }
 
-    const ok = await sendAndLogSms(db, {
+    jobs.push({
+      userId:        user.id,
       funeralHomeId: user.funeral_home_id,
-      serviceId:     null,
-      taskId:        null,
-      recipientId:   user.id,
       phone:         user.phone,
       message:       buildReminderMessage(userTasks),
     })
-    if (ok) sent.push(user.id)
-    else failed.push(user.id)
+  }
+
+  // Dispatch in bounded-concurrency batches. Sending serially (one awaited
+  // Twilio round-trip per user) ran the function past the Vercel time budget
+  // and got it killed mid-loop — the root cause of the cron "timeout". A cap
+  // keeps us clear of Twilio's per-account rate limit while cutting wall-clock.
+  const CONCURRENCY = 10
+  for (let i = 0; i < jobs.length; i += CONCURRENCY) {
+    const batch = jobs.slice(i, i + CONCURRENCY)
+    const results = await Promise.all(
+      batch.map(async job => ({
+        userId: job.userId,
+        ok: await sendAndLogSms(db, {
+          funeralHomeId: job.funeralHomeId,
+          serviceId:     null,
+          taskId:        null,
+          recipientId:   job.userId,
+          phone:         job.phone,
+          message:       job.message,
+        }),
+      })),
+    )
+    for (const r of results) (r.ok ? sent : failed).push(r.userId)
   }
 
   // Surface per-recipient send failures (previously only visible as sms_log rows).

@@ -31,6 +31,29 @@ export function normalizePhone(phone: string): string {
   return '+' + digits
 }
 
+// Twilio validates the statusCallback URL and rejects the ENTIRE send (error
+// 21609) if it isn't a well-formed public HTTPS URL. A misconfigured
+// NEXT_PUBLIC_APP_URL (bare domain, http://, localhost, trailing slash → //api)
+// would therefore fail every message. Only attach the callback when the URL is
+// valid https; otherwise skip it (we lose delivery receipts, not the send).
+function resolveStatusCallback(): string | undefined {
+  const raw = process.env.NEXT_PUBLIC_APP_URL
+  if (!raw) return undefined
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    console.warn(`[sms] NEXT_PUBLIC_APP_URL is not a valid URL (${raw}) — skipping Twilio statusCallback.`)
+    return undefined
+  }
+  if (url.protocol !== 'https:') {
+    console.warn(`[sms] NEXT_PUBLIC_APP_URL is not https (${raw}) — skipping Twilio statusCallback (Twilio would reject the send).`)
+    return undefined
+  }
+  // url.origin drops any path/trailing slash, so we never produce "//api".
+  return `${url.origin}/api/twilio/webhook`
+}
+
 // Sends via Twilio and returns the Message SID so callers can persist it
 // (sms_log.twilio_sid) for delivery-status webhook matching (session 8).
 export async function sendSMS(to: string, message: string): Promise<string> {
@@ -48,13 +71,13 @@ export async function sendSMS(to: string, message: string): Promise<string> {
   }
 
   const client = twilio(accountSid, authToken)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const statusCallback = resolveStatusCallback()
   const created = await client.messages.create({
     from: fromNumber,
     to,
     body: message,
     // Delivery receipts land on the inbound webhook (matched via twilio_sid).
-    ...(appUrl ? { statusCallback: `${appUrl}/api/twilio/webhook` } : {}),
+    ...(statusCallback ? { statusCallback } : {}),
   })
   return created.sid
 }
