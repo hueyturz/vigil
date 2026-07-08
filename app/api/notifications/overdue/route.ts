@@ -9,9 +9,11 @@ import { formatDate, daysUntil } from '@/lib/utils/date-helpers'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
-// Daily cron. Every fire sends the reminder to all eligible users (no per-user
-// timezone/preferred-hour gate) — i.e. anyone with a phone and in-scope overdue
-// tasks gets the digest each time the cron runs.
+// Hourly cron (Session C). Each run sends reminders only to users whose
+// preferred local reminder time (notification_preferences.preferred_sms_hour +
+// timezone; default 8 AM America/Denver) matches the current hour. A per-user,
+// per-local-date sent-guard (reminder_log) ensures no one is reminded twice in
+// one day, even across cron double-fires or a DST hour repeat.
 
 // Give the run room to finish the (parallelized) send batch before Vercel kills
 // the function. A killed function never sends withMonitor's terminal check-in,
@@ -19,6 +21,30 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? ''
 // clamps this to the plan's max if lower.
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
+
+// Default reminder slot for users with no saved preference.
+const DEFAULT_REMINDER_HOUR = 8
+const DEFAULT_TIMEZONE      = 'America/Denver'
+
+// The user's local hour (0–23) and calendar date (YYYY-MM-DD) in their timezone.
+// Falls back to the default timezone if theirs is missing/invalid.
+function localHourAndDate(timezone: string, now: Date): { hour: number; date: string } {
+  let parts: Intl.DateTimeFormatPart[]
+  try {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone, hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+    }).formatToParts(now)
+  } catch {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: DEFAULT_TIMEZONE, hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+    }).formatToParts(now)
+  }
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+  const hour = parseInt(get('hour'), 10) % 24   // guard the '24' midnight quirk
+  return { hour, date: `${get('year')}-${get('month')}-${get('day')}` }
+}
 
 type Timing = 'overdue' | 'today' | 'tomorrow'
 
@@ -104,8 +130,8 @@ async function handle(request: NextRequest) {
       MONITOR_SLUG,
       () => runOverdueReminders(),
       {
-        schedule:      { type: 'crontab', value: '0 14 * * *' }, // keep in sync with vercel.json
-        checkinMargin: 30, // minutes late before Sentry flags a missed run
+        schedule:      { type: 'crontab', value: '0 * * * *' }, // hourly — keep in sync with vercel.json
+        checkinMargin: 15, // minutes late before Sentry flags a missed hourly run
         maxRuntime:    10, // minutes before an in_progress run is flagged errored
         timezone:      'Etc/UTC',
       },
@@ -172,9 +198,37 @@ async function runOverdueReminders(): Promise<NextResponse> {
   // Email addresses live in auth.users, not profiles — one paged fetch, mapped.
   const emailById   = new Map((await listAllAuthUsers(db)).map(u => [u.id, u.email ?? null]))
 
+  // ── Per-user timing gate + sent-guard ───────────────────────────────────────
+  // Only remind users whose preferred local hour matches this run's hour, and
+  // claim a reminder_log row per (user, local date) so nobody is reminded twice
+  // in one day. Claiming here (once per user) covers both SMS and email below.
+  const now = new Date()
+  const dueRows: { user_id: string; reminder_date: string }[] = []
+  for (const user of profiles ?? []) {
+    const p = prefsByUser.get(user.id)
+    const hour = p?.preferred_sms_hour ?? DEFAULT_REMINDER_HOUR
+    const tz   = p?.timezone ?? DEFAULT_TIMEZONE
+    const local = localHourAndDate(tz, now)
+    if (local.hour === hour) dueRows.push({ user_id: user.id, reminder_date: local.date })
+  }
+
+  // Atomic claim: ignoreDuplicates → only rows that DIDN'T already exist are
+  // returned, so a same-day re-run (or DST hour repeat) sends to nobody.
+  let claimedIds = new Set<string>()
+  if (dueRows.length > 0) {
+    const { data: claimed, error: claimErr } = await db
+      .from('reminder_log')
+      .upsert(dueRows, { onConflict: 'user_id,reminder_date', ignoreDuplicates: true })
+      .select('user_id')
+    if (claimErr) throw new Error(`overdue-cron reminder_log claim failed: ${claimErr.message}`)
+    claimedIds = new Set((claimed ?? []).map(r => r.user_id))
+  }
+
   const sent: string[]   = []
   const failed: string[] = []
-  const skipped = { noTasks: 0, noPhone: 0 }
+  const skipped = { noTasks: 0, noPhone: 0, notDue: 0 }
+  // Users not due this hour (or already reminded today) are skipped up front.
+  skipped.notDue = (profiles ?? []).length - claimedIds.size
 
   // Build the send list first (cheap synchronous filtering) so the expensive
   // per-user Twilio calls can be dispatched concurrently below.
@@ -182,6 +236,7 @@ async function runOverdueReminders(): Promise<NextResponse> {
   const jobs: SendJob[] = []
 
   for (const user of profiles ?? []) {
+    if (!claimedIds.has(user.id)) continue   // not due this hour, or already sent today
     const p = prefsByUser.get(user.id)
     if (!user.phone) { skipped.noPhone++; continue }
 
@@ -253,6 +308,7 @@ async function runOverdueReminders(): Promise<NextResponse> {
   const plural = (n: number) => (n !== 1 ? 's' : '')
 
   for (const user of profiles ?? []) {
+    if (!claimedIds.has(user.id)) continue   // gated by the same timing + sent-guard
     const email = emailById.get(user.id)
     if (!email) continue
     const p = prefsByUser.get(user.id)

@@ -186,29 +186,22 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
         ))}
       </div>
 
-      {/* Reminder timing — disabled (audit H6): the per-user hour/timezone gate
-          was removed from the daily cron (it now sends to everyone each run), so
-          these selectors currently have no effect. Re-enable when per-timezone
-          scheduling returns (requires an hourly trigger). */}
-      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide mt-8 mb-3" style={{ color: '#64748B' }}>
+      {/* Reminder timing — the hourly cron sends each user's daily overdue /
+          due-tomorrow reminders in the hour matching their preferred local time. */}
+      <h2 className="text-sm font-semibold uppercase tracking-wide mt-8 mb-3" style={{ color: '#64748B' }}>
         Reminder timing
-        <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide normal-case" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>
-          Coming soon
-        </span>
       </h2>
       <div
         className="rounded-xl border p-5 space-y-4"
-        title="Coming soon — daily reminders currently send on a fixed schedule"
-        style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12, opacity: 0.55 }}
+        style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: 12 }}
       >
         <div className="flex items-center justify-between gap-4">
           <label htmlFor="reminder-hour" className="text-sm font-medium" style={{ color: '#0F172A' }}>Daily reminder time</label>
           <select
             id="reminder-hour"
             value={prefs.preferred_sms_hour}
-            disabled
             onChange={e => setField('preferred_sms_hour', Number(e.target.value))}
-            style={{ ...selectStyle, cursor: 'not-allowed' }}
+            style={selectStyle}
           >
             {REMINDER_HOURS.map(h => <option key={h} value={h}>{hourLabel(h)}</option>)}
           </select>
@@ -218,9 +211,8 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
           <select
             id="reminder-tz"
             value={prefs.timezone}
-            disabled
             onChange={e => setField('timezone', e.target.value)}
-            style={{ ...selectStyle, cursor: 'not-allowed' }}
+            style={selectStyle}
           >
             {TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
           </select>
@@ -228,7 +220,7 @@ export function NotificationsPanel({ initial, isManager }: { initial: Prefs; isM
       </div>
 
       <p className="mt-3 text-xs" style={{ color: '#94A3B8' }}>
-        SMS is sent to the phone number on your profile.
+        Daily reminders arrive around this time in your timezone. SMS is sent to the phone number on your profile.
       </p>
 
       {error && (
