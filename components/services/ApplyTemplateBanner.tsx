@@ -53,10 +53,10 @@ export function ApplyTemplateBanner({ serviceId }: ApplyTemplateBannerProps) {
         <span className="text-lg flex-shrink-0 mt-0.5">📋</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
-            No template applied yet
+            Add tasks to get started
           </p>
           <p className="text-xs mt-0.5 mb-3" style={{ color: '#B45309' }}>
-            Select a service type to generate the task checklist for this arrangement.
+            Apply a template to generate a task checklist, or add tasks manually with “+ Add Task”. Templates are optional.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-2">

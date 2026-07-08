@@ -4,7 +4,6 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { getActiveProfile, auditActorName } from '@/lib/utils/impersonation'
 import { AppShell }              from '@/components/layout/AppShell'
 import { ProgressBar }           from '@/components/ui/ProgressBar'
-import { ApplyTemplateBanner }   from '@/components/services/ApplyTemplateBanner'
 import { ServiceDetailTabs }     from '@/components/services/ServiceDetailTabs'
 import { ServiceCompletionFlow } from '@/components/services/ServiceCompletionFlow'
 import { EditServiceButton }     from '@/components/services/EditServiceButton'
@@ -243,7 +242,6 @@ export default async function ServiceDetailPage({
           tasks={tasks}
           serviceDate={service.service_date ?? ''}
           serviceId={params.id}
-          serviceType={service.service_type}
           funeralHomeId={profile.funeral_home_id}
           actorId={actorId}
           actorName={actorName}
@@ -252,16 +250,6 @@ export default async function ServiceDetailPage({
           notes={serviceNotes}
           canRecord={canRecord}
           canManage={canManage}
-          applyBanner={
-            !service.service_type && canManage
-              ? <ApplyTemplateBanner
-                  serviceId={params.id}
-                  funeralHomeId={profile.funeral_home_id}
-                  actorId={actorId}
-                  actorName={actorName}
-                />
-              : null
-          }
         />
       </div>
     </AppShell>

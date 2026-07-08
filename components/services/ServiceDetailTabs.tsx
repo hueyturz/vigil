@@ -18,7 +18,6 @@ interface ServiceDetailTabsProps {
   tasks:          TaskWithProfile[]
   serviceDate:    string
   serviceId:      string
-  serviceType:    string | null
   funeralHomeId:  string
   actorId:        string
   actorName:      string
@@ -27,14 +26,12 @@ interface ServiceDetailTabsProps {
   notes:          ServiceNote[]
   canRecord:      boolean
   canManage:      boolean
-  applyBanner:    React.ReactNode
 }
 
 export function ServiceDetailTabs({
   tasks,
   serviceDate,
   serviceId,
-  serviceType,
   funeralHomeId,
   actorId,
   actorName,
@@ -43,7 +40,6 @@ export function ServiceDetailTabs({
   notes,
   canRecord,
   canManage,
-  applyBanner,
 }: ServiceDetailTabsProps) {
   const router = useRouter()
   // Honor a ?tab= deep link (e.g. from the global search palette), else default to Meetings.
@@ -51,12 +47,6 @@ export function ServiceDetailTabs({
   const initialTab: TabKey = (VALID_TABS as string[]).includes(tabParam ?? '') ? (tabParam as TabKey) : 'meetings'
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [addOpen,   setAddOpen]   = useState(false)
-  const [showTemplate, setShowTemplate] = useState(false)
-
-  // The page passes applyBanner only when there's no service type yet (managers).
-  // When it's showing, it already serves as the "get started" guidance for an
-  // empty task list, so we don't also show the empty state below.
-  const showApplyBanner = !serviceType && canManage && !!applyBanner
 
   const tabs = [
     { key: 'meetings' as const, label: 'Meetings' },
@@ -111,33 +101,44 @@ export function ServiceDetailTabs({
       {/* Tasks tab */}
       {activeTab === 'tasks' && (
         <div>
-          {showApplyBanner && applyBanner}
+          {/* Manager toolbar — Add Task is always available, with or without a
+              template applied. */}
+          {canManage && (
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h3 className="text-sm font-semibold" style={{ color: '#0F172A' }}>
+                Tasks{tasks.length > 0 ? ` (${tasks.length})` : ''}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
+              >
+                + Add Task
+              </button>
+            </div>
+          )}
 
           {tasks.length > 0 ? (
-            <>
-              {canManage && (
-                <div className="flex justify-end mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setAddOpen(true)}
-                    className="rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:opacity-90"
-                    style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
-                  >
-                    + Add Task
-                  </button>
-                </div>
-              )}
-              <TaskList
-                tasks={tasks}
-                serviceDate={serviceDate}
-                serviceId={serviceId}
-                funeralHomeId={funeralHomeId}
-                actorId={actorId}
-                actorName={actorName}
-                canReorder={canManage}
-              />
-            </>
-          ) : showApplyBanner ? null : (
+            <TaskList
+              tasks={tasks}
+              serviceDate={serviceDate}
+              serviceId={serviceId}
+              funeralHomeId={funeralHomeId}
+              actorId={actorId}
+              actorName={actorName}
+              canReorder={canManage}
+            />
+          ) : canManage ? (
+            // No tasks yet: the (optional) template banner doubles as the empty
+            // state. Managers can apply a template here or use "+ Add Task" above.
+            <ApplyTemplateBanner
+              serviceId={serviceId}
+              funeralHomeId={funeralHomeId}
+              actorId={actorId}
+              actorName={actorName}
+            />
+          ) : (
             <div className="text-center py-12">
               <div
                 className="mx-auto mb-4 flex items-center justify-center rounded-full"
@@ -150,40 +151,8 @@ export function ServiceDetailTabs({
               </div>
               <h3 className="text-base font-semibold" style={{ color: '#0F172A' }}>No tasks yet</h3>
               <p className="mt-1 text-sm" style={{ color: '#94A3B8' }}>
-                Add tasks manually or apply a template to get started.
+                Tasks will appear here once a manager adds them.
               </p>
-
-              {canManage && (
-                <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setAddOpen(true)}
-                    className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
-                    style={{ backgroundColor: '#0A2540', color: '#F4C95D' }}
-                  >
-                    + Add Task
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTemplate(v => !v)}
-                    className="rounded-lg border px-4 py-2 text-sm font-semibold transition hover:opacity-90"
-                    style={{ borderColor: '#0A2540', color: '#0A2540' }}
-                  >
-                    Apply Template
-                  </button>
-                </div>
-              )}
-
-              {canManage && showTemplate && (
-                <div className="mt-5 text-left">
-                  <ApplyTemplateBanner
-                    serviceId={serviceId}
-                    funeralHomeId={funeralHomeId}
-                    actorId={actorId}
-                    actorName={actorName}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>
