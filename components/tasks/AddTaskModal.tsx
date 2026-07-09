@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { addTaskToService } from '@/app/services/task-actions'
 import { logActivity } from '@/lib/utils/activity'
 import type { TaskWithProfile, Profile } from '@/lib/types'
@@ -32,7 +33,7 @@ export function AddTaskModal({
     fetch('/api/profiles/active')
       .then(r => r.json())
       .then(d => setProfiles(d.profiles ?? []))
-      .catch(() => {})
+      .catch(() => toast.error('Could not load staff list.'))
   }, [open])
 
   function reset() {

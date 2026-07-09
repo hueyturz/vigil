@@ -14,10 +14,12 @@ export default async function TagsSettingsPage() {
   if (!['owner', 'fd'].includes(profile.role)) redirect('/settings')
 
   const db = createServiceRoleClient()
-  const { data } = await db
+  const { data, error } = await db
     .from('tags')
     .select('id, funeral_home_id, name, color, is_default, created_at')
     .or(`is_default.eq.true,funeral_home_id.eq.${profile.funeral_home_id}`)
+  // Throw (audit H4) so the settings error.tsx renders — never an empty tag list.
+  if (error) throw new Error(`Failed to load tags: ${error.message}`)
 
   const all = (data ?? []) as Tag[]
   const defaults = all.filter(t => t.is_default).sort((a, b) => a.name.localeCompare(b.name))

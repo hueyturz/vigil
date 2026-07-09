@@ -33,7 +33,7 @@ export default async function PrintServicePage({
 
   if (!service) notFound()
 
-  const { data: tasksRaw } = await db
+  const { data: tasksRaw, error: tasksErr } = await db
     .from('tasks')
     .select(`
       *,
@@ -42,6 +42,8 @@ export default async function PrintServicePage({
     `)
     .eq('service_id', params.id)
     .order('sort_order', { ascending: true })
+  // Throw (audit H4) so error.tsx renders — never a print view missing tasks.
+  if (tasksErr) throw new Error(`Failed to load tasks: ${tasksErr.message}`)
 
   const tasks: TaskWithProfile[] = (tasksRaw ?? []).map(t => ({
     ...t,
@@ -49,12 +51,14 @@ export default async function PrintServicePage({
     assigned_to:  t.assigned_to  ?? null,
   }))
 
-  const { data: contactsRaw } = await db
+  const { data: contactsRaw, error: contactsErr } = await db
     .from('service_contacts')
     .select('*')
     .eq('service_id', params.id)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: true })
+  // Throw (audit H4) so error.tsx renders — never a print view missing contacts.
+  if (contactsErr) throw new Error(`Failed to load contacts: ${contactsErr.message}`)
 
   const contacts: ServiceContact[] = (contactsRaw ?? []) as ServiceContact[]
 

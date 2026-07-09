@@ -57,11 +57,11 @@ export default async function PlatformSmsPage({
   if (to)   rowsQuery = rowsQuery.lte('created_at', `${to}T23:59:59`)
 
   const [
-    { data: rows },
-    { data: homes },
-    { data: profiles },
-    { count: sentToday },
-    { count: failedToday },
+    rowsRes,
+    homesRes,
+    profilesRes,
+    sentTodayRes,
+    failedTodayRes,
   ] = await Promise.all([
     rowsQuery,
     db.from('funeral_homes').select('id, name').order('name'),
@@ -69,6 +69,17 @@ export default async function PlatformSmsPage({
     db.from('sms_log').select('id', { count: 'exact', head: true }).in('status', SMS_SUCCESS).gte('created_at', todayIso),
     db.from('sms_log').select('id', { count: 'exact', head: true }).in('status', SMS_FAILURE).gte('created_at', todayIso),
   ])
+
+  // Throw on any query error (audit H4) so error.tsx renders — never an
+  // empty-but-200 SMS log or zeroed-out summary stats.
+  const firstError = [rowsRes, homesRes, profilesRes, sentTodayRes, failedTodayRes].find(r => r.error)?.error
+  if (firstError) throw new Error(`Failed to load SMS logs: ${firstError.message}`)
+
+  const { data: rows }         = rowsRes
+  const { data: homes }        = homesRes
+  const { data: profiles }     = profilesRes
+  const { count: sentToday }   = sentTodayRes
+  const { count: failedToday } = failedTodayRes
 
   const homeName = new Map((homes ?? []).map(h => [h.id, h.name]))
   const phoneById = new Map((profiles ?? []).map(p => [p.id, p.phone as string | null]))

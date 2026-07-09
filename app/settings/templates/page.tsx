@@ -21,18 +21,21 @@ export default async function TemplatesPage() {
   if (!['owner', 'fd'].includes(profile.role)) redirect('/dashboard')
 
   // Fetch this funeral home's custom templates
-  const { data: customRaw } = await serviceRole
+  const { data: customRaw, error: customErr } = await serviceRole
     .from('task_templates')
     .select('*')
     .eq('funeral_home_id', profile.funeral_home_id)
     .order('sort_order', { ascending: true })
+  // Throw (audit H4) so the settings error.tsx renders — never an empty list.
+  if (customErr) throw new Error(`Failed to load templates: ${customErr.message}`)
 
   // Fetch system defaults (funeral_home_id IS NULL)
-  const { data: systemRaw } = await serviceRole
+  const { data: systemRaw, error: systemErr } = await serviceRole
     .from('task_templates')
     .select('*')
     .is('funeral_home_id', null)
     .order('sort_order', { ascending: true })
+  if (systemErr) throw new Error(`Failed to load templates: ${systemErr.message}`)
 
   // Tags per custom template — fetched embed-free (two plain queries joined in JS),
   // so template tags survive a PostgREST relationship/schema-cache embed failure.

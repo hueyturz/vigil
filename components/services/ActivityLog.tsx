@@ -53,6 +53,7 @@ export function ActivityLog({ serviceId }: ActivityLogProps) {
   const [mounted,  setMounted]  = useState(false)
   const [entries,  setEntries]  = useState<ActivityLogType[]>([])
   const [loading,  setLoading]  = useState(true)
+  const [failed,   setFailed]   = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -67,13 +68,28 @@ export function ActivityLog({ serviceId }: ActivityLogProps) {
       .neq('action_type', 'billing_event')
       .order('created_at', { ascending: false })
       .limit(100)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // Surface the failure instead of silently showing an empty feed.
+        if (error) { setFailed(true); setLoading(false); return }
         setEntries((data ?? []) as ActivityLogType[])
         setLoading(false)
       })
   }, [serviceId])
 
   if (!mounted) return null
+
+  if (failed) {
+    return (
+      <div className="flex justify-center py-16">
+        <div
+          className="rounded-lg border px-4 py-3 text-sm text-center"
+          style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+        >
+          Couldn&rsquo;t load activity — refresh to try again.
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
