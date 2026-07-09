@@ -172,7 +172,6 @@ export function ServiceDetailTabs({
       {activeTab === 'contacts' && (
         <MultiContactCard
           serviceId={serviceId}
-          funeralHomeId={funeralHomeId}
           initialContacts={contacts}
         />
       )}

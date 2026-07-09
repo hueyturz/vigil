@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { createClient } from '@/lib/supabase/client'
+import { addContact, updateContact, makePrimaryContact, deleteContact } from '@/app/services/contact-actions'
 import { formatPhone, formatPhoneInput } from '@/lib/utils/phone'
 import type { ServiceContact } from '@/lib/types'
 
+// Writes go through server actions (audit #4) so the billing write gate and
+// tenant scoping are enforced server-side, not via browser-client RLS alone.
 interface MultiContactCardProps {
   serviceId:       string
-  funeralHomeId:   string
   initialContacts: ServiceContact[]
 }
 
@@ -29,7 +30,7 @@ type FormState = {
 
 const EMPTY_FORM: FormState = { name: '', relationship: '', phone: '', email: '' }
 
-export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: MultiContactCardProps) {
+export function MultiContactCard({ serviceId, initialContacts }: MultiContactCardProps) {
   const router = useRouter()
   const [contacts,   setContacts]   = useState<ServiceContact[]>(() => sortContacts(initialContacts))
   const [mode,       setMode]       = useState<'add' | 'edit' | null>(null)
@@ -38,8 +39,6 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
-
-  const supabase = createClient()
 
   function openAdd() {
     setMode('add')
@@ -80,27 +79,18 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
     }
 
     if (mode === 'edit' && editingId) {
-      const { data, error: updErr } = await supabase
-        .from('service_contacts')
-        .update(payload)
-        .eq('id', editingId)
-        .select('*')
-        .single()
+      const res = await updateContact(editingId, payload)
       setSaving(false)
-      if (updErr || !data) { setError(updErr?.message ?? 'Failed to save contact.'); return }
-      setContacts(prev => sortContacts(prev.map(c => c.id === editingId ? (data as ServiceContact) : c)))
+      if (res.error || !res.data) { setError(res.error ?? 'Failed to save contact.'); return }
+      const updated = res.data
+      setContacts(prev => sortContacts(prev.map(c => c.id === editingId ? updated : c)))
       toast.success('Contact updated')
     } else {
-      // First contact added becomes primary automatically.
-      const isPrimary = contacts.length === 0
-      const { data, error: insErr } = await supabase
-        .from('service_contacts')
-        .insert({ ...payload, service_id: serviceId, funeral_home_id: funeralHomeId, is_primary: isPrimary })
-        .select('*')
-        .single()
+      const res = await addContact(serviceId, payload)
       setSaving(false)
-      if (insErr || !data) { setError(insErr?.message ?? 'Failed to add contact.'); return }
-      setContacts(prev => sortContacts([...prev, data as ServiceContact]))
+      if (res.error || !res.data) { setError(res.error ?? 'Failed to add contact.'); return }
+      const added = res.data
+      setContacts(prev => sortContacts([...prev, added]))
       toast.success('Contact added')
     }
 
@@ -110,18 +100,8 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
 
   async function handleMakePrimary(id: string) {
     setMenuOpenId(null)
-    // Clear primary on all other contacts for this service, then set on the target.
-    const { error: clearErr } = await supabase
-      .from('service_contacts')
-      .update({ is_primary: false })
-      .eq('service_id', serviceId)
-    if (clearErr) { toast.error('Failed to update primary'); return }
-
-    const { error: setErr } = await supabase
-      .from('service_contacts')
-      .update({ is_primary: true })
-      .eq('id', id)
-    if (setErr) { toast.error('Failed to update primary'); return }
+    const res = await makePrimaryContact(id)
+    if (res.error) { toast.error('Failed to update primary'); return }
 
     setContacts(prev => sortContacts(prev.map(c => ({ ...c, is_primary: c.id === id }))))
     toast.success('Primary contact updated')
@@ -130,25 +110,14 @@ export function MultiContactCard({ serviceId, funeralHomeId, initialContacts }: 
 
   async function handleDelete(id: string) {
     setMenuOpenId(null)
-    const target = contacts.find(c => c.id === id)
-    const { error: delErr } = await supabase.from('service_contacts').delete().eq('id', id)
-    if (delErr) { toast.error('Failed to delete contact'); return }
+    const res = await deleteContact(id)
+    if (res.error) { toast.error('Failed to delete contact'); return }
 
-    let remaining = contacts.filter(c => c.id !== id)
-
-    // If we removed the primary and others remain, promote the first remaining contact.
-    if (target?.is_primary && remaining.length > 0) {
-      const next = sortContacts(remaining)[0]
-      const { error: promoteErr } = await supabase
-        .from('service_contacts')
-        .update({ is_primary: true })
-        .eq('id', next.id)
-      if (!promoteErr) {
-        remaining = remaining.map(c => c.id === next.id ? { ...c, is_primary: true } : c)
-      }
-    }
-
-    setContacts(sortContacts(remaining))
+    // Server promotes the oldest remaining contact when the primary is removed.
+    setContacts(prev => sortContacts(
+      prev.filter(c => c.id !== id)
+          .map(c => c.id === res.promotedId ? { ...c, is_primary: true } : c),
+    ))
     toast.success('Contact deleted')
     router.refresh()
   }

@@ -7,6 +7,11 @@ import { createClient } from '@/lib/supabase/server'
 export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
   const ctx = await getActiveProfile()
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  // Billing write gate (audit #4): suspended/canceled tenants are read-only.
+  // getActiveProfile forces access 'full' during superadmin impersonation.
+  if (ctx.billing.access === 'readonly') {
+    return NextResponse.json({ error: 'Account suspended — writes are disabled.' }, { status: 403 })
+  }
 
   // Cookie-based client → runs as `authenticated` under RLS (tags_delete policy,
   // which only permits the user's own non-default tags).

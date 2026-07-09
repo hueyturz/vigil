@@ -6,6 +6,11 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 export async function DELETE(_request: Request, { params }: { params: { id: string; tagId: string } }) {
   const ctx = await getActiveProfile()
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  // Billing write gate (audit #4): suspended/canceled tenants are read-only.
+  // getActiveProfile forces access 'full' during superadmin impersonation.
+  if (ctx.billing.access === 'readonly') {
+    return NextResponse.json({ error: 'Account suspended — writes are disabled.' }, { status: 403 })
+  }
 
   // Service-role client: `authenticated` isn't granted SELECT on `task_templates`,
   // which the template_task_tags RLS policy needs. Tenant scope enforced below.

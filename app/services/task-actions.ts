@@ -387,6 +387,112 @@ export async function reassignTask(
   return {}
 }
 
+// ── Subtask (checklist step) writes ────────────────────────────────────────
+// These used to be direct browser-client writes in TaskRow's SubtasksPanel —
+// no billing write gate (audit #4) and a client-supplied funeral_home_id.
+// NOTE: no role restriction — staff manage steps on their own tasks; tenant
+// scoping + the billing gate come from getActionContext.
+
+export async function addSubtask(
+  taskId: string,
+  title:  string,
+): Promise<{ data?: { id: string; task_id: string; funeral_home_id: string; title: string; is_complete: boolean; sort_order: number }; error?: string }> {
+  const trimmed = title.trim()
+  if (!trimmed) return { error: 'Step title is required.' }
+  if (trimmed.length > 255) return { error: 'Step title must be 255 characters or fewer.' }
+
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+  const serviceRole = ctx.serviceRole
+
+  const { data: task } = await serviceRole
+    .from('tasks')
+    .select('funeral_home_id')
+    .eq('id', taskId)
+    .single()
+  if (!task || task.funeral_home_id !== ctx.funeralHomeId) return { error: 'Task not found.' }
+
+  const { data: last } = await serviceRole
+    .from('task_subtasks')
+    .select('sort_order')
+    .eq('task_id', taskId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const { data, error } = await serviceRole
+    .from('task_subtasks')
+    .insert({
+      task_id:         taskId,
+      funeral_home_id: ctx.funeralHomeId,
+      title:           trimmed,
+      sort_order:      (last?.sort_order ?? -1) + 1,
+    })
+    .select('*')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'Failed to add step.' }
+  return { data }
+}
+
+export async function toggleSubtask(
+  subtaskId:  string,
+  isComplete: boolean,
+): Promise<{ error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+
+  const { data, error } = await ctx.serviceRole
+    .from('task_subtasks')
+    .update({ is_complete: isComplete })
+    .eq('id', subtaskId)
+    .eq('funeral_home_id', ctx.funeralHomeId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return { error: 'Step not found.' }
+  return {}
+}
+
+export async function renameSubtask(
+  subtaskId: string,
+  title:     string,
+): Promise<{ error?: string }> {
+  const trimmed = title.trim()
+  if (!trimmed) return { error: 'Step title is required.' }
+  if (trimmed.length > 255) return { error: 'Step title must be 255 characters or fewer.' }
+
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+
+  const { data, error } = await ctx.serviceRole
+    .from('task_subtasks')
+    .update({ title: trimmed })
+    .eq('id', subtaskId)
+    .eq('funeral_home_id', ctx.funeralHomeId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return { error: 'Step not found.' }
+  return {}
+}
+
+export async function deleteSubtask(subtaskId: string): Promise<{ error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
+
+  const { error } = await ctx.serviceRole
+    .from('task_subtasks')
+    .delete()
+    .eq('id', subtaskId)
+    .eq('funeral_home_id', ctx.funeralHomeId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
 // ── Update a task's sort_order (drag-to-reorder) ──────────────────────────
 
 export async function updateTaskOrder(

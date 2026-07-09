@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { ConfirmTaskModal } from './ConfirmTaskModal'
 import { formatDateTime } from '@/lib/utils/date-helpers'
 import { isTaskOverdue } from '@/lib/utils/service-status'
-import { deleteServiceTask, updateServiceTask, updateTaskNotes, reassignTask, updateTaskDueDays } from '@/app/services/task-actions'
+import { deleteServiceTask, updateServiceTask, updateTaskNotes, reassignTask, updateTaskDueDays, addSubtask, toggleSubtask, renameSubtask, deleteSubtask } from '@/app/services/task-actions'
 import { logActivity } from '@/lib/utils/activity'
 import { createClient } from '@/lib/supabase/client'
 import { TagPicker } from '@/components/tags/TagPicker'
@@ -170,7 +170,9 @@ function AssignDropdown({
 
 // ── Subtasks panel ─────────────────────────────────────────────────────────────
 
-function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeId: string }) {
+// Writes go through server actions (audit #4) so the billing write gate and
+// tenant scoping are enforced server-side; the read stays client-side (RLS).
+function SubtasksPanel({ taskId }: { taskId: string }) {
   const [subtasks,        setSubtasks]        = useState<TaskSubtask[]>([])
   const [loading,         setLoading]         = useState(true)
   const [newTitle,        setNewTitle]        = useState('')
@@ -194,9 +196,8 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
   }, [taskId])
 
   async function toggleComplete(id: string, current: boolean) {
-    const supabase = createClient()
-    const { error } = await supabase.from('task_subtasks').update({ is_complete: !current }).eq('id', id)
-    if (error) { console.error('[subtask toggle]', error.message); return }
+    const res = await toggleSubtask(id, !current)
+    if (res.error) { toast.error('Failed to update step'); return }
     setSubtasks(prev => prev.map(s => s.id === id ? { ...s, is_complete: !current } : s))
     if (!current) toast.success('Step completed')
   }
@@ -204,40 +205,32 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
   async function saveTitle(id: string) {
     const trimmed = editingTitle.trim()
     if (!trimmed) { setEditingId(null); return }
-    const supabase = createClient()
-    const { error } = await supabase.from('task_subtasks').update({ title: trimmed }).eq('id', id)
-    if (!error) setSubtasks(prev => prev.map(s => s.id === id ? { ...s, title: trimmed } : s))
+    const res = await renameSubtask(id, trimmed)
+    if (!res.error) setSubtasks(prev => prev.map(s => s.id === id ? { ...s, title: trimmed } : s))
+    else toast.error('Failed to rename step')
     setEditingId(null)
   }
 
-  async function deleteSubtask(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase.from('task_subtasks').delete().eq('id', id)
-    if (!error) setSubtasks(prev => prev.filter(s => s.id !== id))
+  async function handleDeleteSubtask(id: string) {
+    const res = await deleteSubtask(id)
+    if (res.error) { toast.error('Failed to delete step'); return }
+    setSubtasks(prev => prev.filter(s => s.id !== id))
   }
 
   async function addStep() {
     const trimmed = newTitle.trim()
     if (!trimmed) return
     setAddingStep(true)
-    const supabase = createClient()
-    const nextOrder = subtasks.length > 0 ? Math.max(...subtasks.map(s => s.sort_order)) + 1 : 0
-    const { data, error } = await supabase
-      .from('task_subtasks')
-      .insert({ task_id: taskId, funeral_home_id: funeralHomeId, title: trimmed, sort_order: nextOrder })
-      .select('*')
-      .single()
+    const res = await addSubtask(taskId, trimmed)
     setAddingStep(false)
-    if (error) {
-      console.error('[subtask insert]', error.message, error.details, error.hint)
+    if (res.error || !res.data) {
       toast.error('Failed to add step')
       return
     }
-    if (data) {
-      setSubtasks(prev => [...prev, data as TaskSubtask])
-      setNewTitle('')
-      toast.success('Step added')
-    }
+    const added = res.data as TaskSubtask
+    setSubtasks(prev => [...prev, added])
+    setNewTitle('')
+    toast.success('Step added')
   }
 
   if (loading) {
@@ -285,7 +278,7 @@ function SubtasksPanel({ taskId, funeralHomeId }: { taskId: string; funeralHomeI
           )}
 
           {hoveredId === s.id && editingId !== s.id && (
-            <button type="button" onClick={() => deleteSubtask(s.id)}
+            <button type="button" onClick={() => handleDeleteSubtask(s.id)}
               className="flex-shrink-0 opacity-40 hover:opacity-100 transition"
               style={{ color: '#EF4444' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -738,7 +731,7 @@ export function TaskRow({
             {funeralHomeId && (
               <div>
                 <p className="text-xs font-medium mb-2" style={{ color: '#94A3B8' }}>Steps</p>
-                <SubtasksPanel taskId={task.id} funeralHomeId={funeralHomeId} />
+                <SubtasksPanel taskId={task.id} />
               </div>
             )}
 

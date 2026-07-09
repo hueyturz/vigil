@@ -6,6 +6,11 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const ctx = await getActiveProfile()
   if (!ctx) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  // Billing write gate (audit #4): suspended/canceled tenants are read-only.
+  // getActiveProfile forces access 'full' during superadmin impersonation.
+  if (ctx.billing.access === 'readonly') {
+    return NextResponse.json({ error: 'Account suspended — writes are disabled.' }, { status: 403 })
+  }
 
   let body: { tagIds?: string[] }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }) }

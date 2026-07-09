@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { getActionContext } from '@/lib/utils/impersonation'
 import type { NotificationPreferences } from '@/lib/types'
 
 export async function saveNotificationPreferences(
@@ -19,26 +19,23 @@ export async function saveNotificationPreferences(
     | 'preferred_sms_hour' | 'timezone'
   >
 ): Promise<{ error?: string }> {
-  const supabase    = createClient()
-  const serviceRole = createServiceRoleClient()
+  // getActionContext = auth + tenant context + billing write gate (audit #4):
+  // suspended/canceled tenants get null and cannot mutate preferences.
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Not authenticated.' }
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated.' }
+  // The hourly reminder cron matches on this hour — keep it inside the range
+  // the UI offers (7 AM–9 PM) so a crafted call can't schedule 3 AM texts.
+  if (!Number.isInteger(input.preferred_sms_hour) || input.preferred_sms_hour < 7 || input.preferred_sms_hour > 21) {
+    return { error: 'Reminder time must be between 7 AM and 9 PM.' }
+  }
 
-  const { data: profile } = await serviceRole
-    .from('profiles')
-    .select('funeral_home_id')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!profile) return { error: 'Profile not found.' }
-
-  const { error } = await serviceRole
+  const { error } = await ctx.serviceRole
     .from('notification_preferences')
     .upsert(
       {
-        user_id:         session.user.id,
-        funeral_home_id: profile.funeral_home_id,
+        user_id:         ctx.userId,
+        funeral_home_id: ctx.funeralHomeId,
         ...input,
         updated_at:      new Date().toISOString(),
       },
