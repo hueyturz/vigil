@@ -63,7 +63,7 @@ export function UpcomingServices({ services }: { services: ServiceWithTasks[] })
                       {badge.text}
                     </span>
                   </div>
-                  <div className="flex-shrink-0 w-20 text-right text-xs" style={{ color: '#94A3B8' }}>
+                  <div className="hidden sm:block flex-shrink-0 w-20 text-right text-xs" style={{ color: '#94A3B8' }}>
                     {done}/{total} confirmed
                   </div>
                 </Link>

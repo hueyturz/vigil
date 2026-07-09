@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       .from('intake_sessions')
       .update({ status: 'failed', error_message: msg, updated_at: new Date().toISOString() })
       .eq('id', intake_session_id)
+      .eq('funeral_home_id', profile.funeral_home_id)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

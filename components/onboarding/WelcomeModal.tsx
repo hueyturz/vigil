@@ -23,7 +23,7 @@ const STEPS: WelcomeStep[] = [
   },
   {
     title: 'Tasks',
-    body: 'Tasks are the individual to-do items inside a service. Assign them to staff, set due dates, and mark them complete. The dashboard shows you everything overdue or due soon across all services.',
+    body: 'Tasks are the individual to-do items inside a service. Assign them to staff, set when each is due, and mark them complete. The dashboard shows you everything overdue or due soon across all services.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A7C8C" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -89,7 +89,7 @@ export function WelcomeModal({ initialOpen, firstTime }: { initialOpen: boolean;
       aria-labelledby="welcome-title"
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border shadow-xl"
+        className="relative w-full max-w-md rounded-2xl border shadow-xl max-h-[90dvh] overflow-y-auto"
         style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
       >
         {/* Close (X) */}

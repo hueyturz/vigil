@@ -176,7 +176,7 @@ export default async function ServiceDetailPage({
                 </p>
               )}
               <h1
-                className="font-serif text-3xl font-bold leading-tight"
+                className="font-serif text-3xl font-bold leading-tight break-words pr-10 md:pr-0"
                 style={{ color: '#0F172A' }}
               >
                 {service.deceased_name}

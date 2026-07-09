@@ -564,6 +564,7 @@ export async function applyTemplateToService(
     .from('services')
     .update({ service_type: serviceType })
     .eq('id', serviceId)
+    .eq('funeral_home_id', profile.funeral_home_id)
 
   revalidatePath(`/services/${serviceId}`)
   revalidatePath('/dashboard')
