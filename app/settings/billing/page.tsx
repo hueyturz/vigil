@@ -23,11 +23,14 @@ export default async function BillingPage() {
   if (profile.role !== 'owner') redirect('/settings')
 
   const db = createServiceRoleClient()
-  const { data: home } = await db
+  // Throw on error (audit H4 convention): a swallowed failure here showed a
+  // paying owner "No billing set up" instead of an error page.
+  const { data: home, error: homeErr } = await db
     .from('funeral_homes')
     .select('name, stripe_customer_id, subscription_status, billing_interval, trial_ends_at, current_period_end')
     .eq('id', profile.funeral_home_id)
     .maybeSingle()
+  if (homeErr) throw new Error(`Failed to load billing details: ${homeErr.message}`)
 
   const status   = home?.subscription_status ?? 'none'
   const interval = home?.billing_interval ?? null

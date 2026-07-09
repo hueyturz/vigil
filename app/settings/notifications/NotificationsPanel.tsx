@@ -22,11 +22,14 @@ export type Prefs = Pick<
 // Keys whose value is a boolean (toggleable).
 type BoolPrefKey = { [K in keyof Prefs]: Prefs[K] extends boolean ? K : never }[keyof Prefs]
 
+// NOTE: no "Overdue alerts" row here — overdue reminders are controlled by the
+// "My tasks are overdue" toggles in the Email/SMS sections below. The legacy
+// overdue_email/overdue_sms columns are read by no send path (pre-launch audit
+// #2): showing a toggle for them misled users into thinking it changed behavior.
 const ROWS: { label: string; dot: string; emailKey: BoolPrefKey; smsKey: BoolPrefKey }[] = [
   { label: 'Critical tasks',      dot: '#EF4444', emailKey: 'critical_email',      smsKey: 'critical_sms'      },
   { label: 'Standard tasks',      dot: '#F59E0B', emailKey: 'standard_email',      smsKey: 'standard_sms'      },
   { label: 'Informational tasks', dot: '#94A3B8', emailKey: 'informational_email', smsKey: 'informational_sms' },
-  { label: 'Overdue alerts',      dot: '#EF4444', emailKey: 'overdue_email',       smsKey: 'overdue_sms'       },
 ]
 
 const SMS_TOGGLES: { key: BoolPrefKey; label: string; managerOnly?: boolean }[] = [

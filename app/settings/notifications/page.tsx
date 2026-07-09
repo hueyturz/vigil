@@ -45,11 +45,15 @@ export default async function NotificationsPage() {
 
   if (!profile) redirect('/login')
 
-  const { data: prefs } = await serviceRole
+  // Throw on error (audit H4 convention): a swallowed failure here rendered
+  // DEFAULT toggles over the user's real saved prefs — pressing Save would then
+  // silently clobber their actual preferences.
+  const { data: prefs, error: prefsErr } = await serviceRole
     .from('notification_preferences')
     .select('*')
     .eq('user_id', session.user.id)
     .maybeSingle()
+  if (prefsErr) throw new Error(`Failed to load notification preferences: ${prefsErr.message}`)
 
   // Merge saved prefs over defaults so columns missing pre-migration fall back.
   const initial: Prefs = prefs

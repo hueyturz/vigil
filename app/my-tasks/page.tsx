@@ -26,8 +26,10 @@ export default async function MyTasksPage() {
   // Only staff use this page; fd/owner go to /dashboard
   if (profile.role !== 'staff') redirect('/dashboard')
 
-  // Fetch active services where this user is the assigned staff
-  const { data: servicesRaw } = await db
+  // Fetch active services where this user is the assigned staff.
+  // Throw on error (audit H4 convention) so error.tsx renders — a silent empty
+  // result here tells staff "you have no work" when the query simply failed.
+  const { data: servicesRaw, error: servicesErr } = await db
     .from('services')
     .select(`
       *,
@@ -40,9 +42,10 @@ export default async function MyTasksPage() {
     .eq('assigned_staff_id', session.user.id)
     .eq('status', 'active')
     .order('service_date', { ascending: true })
+  if (servicesErr) throw new Error(`Failed to load assigned services: ${servicesErr.message}`)
 
   // Also fetch active services that have tasks directly assigned to this user
-  const { data: directTaskServicesRaw } = await db
+  const { data: directTaskServicesRaw, error: directErr } = await db
     .from('services')
     .select(`
       *,
@@ -56,6 +59,7 @@ export default async function MyTasksPage() {
     .neq('assigned_staff_id', session.user.id)
     .eq('status', 'active')
     .order('service_date', { ascending: true })
+  if (directErr) throw new Error(`Failed to load assigned tasks: ${directErr.message}`)
 
   // Merge and deduplicate by service id
   const allServicesRaw = [...(servicesRaw ?? []), ...(directTaskServicesRaw ?? [])]
