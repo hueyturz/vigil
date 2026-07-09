@@ -21,11 +21,13 @@ export default async function UsersPage() {
   if (profile.role !== 'owner') redirect('/dashboard')
 
   // Fetch all profiles for this funeral home
-  const { data: profiles } = await serviceRole
+  const { data: profiles, error: profilesErr } = await serviceRole
     .from('profiles')
     .select('id, full_name, role, phone, is_active')
     .eq('funeral_home_id', profile.funeral_home_id)
     .order('created_at', { ascending: true })
+  // Throw (audit H4) so the settings error.tsx renders — never an empty user list.
+  if (profilesErr) throw new Error(`Failed to load users: ${profilesErr.message}`)
 
   // Fetch auth emails for each profile via admin API
   // listUsers returns all users; we filter to our set by id

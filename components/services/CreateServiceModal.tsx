@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { z } from 'zod'
+import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { createService } from '@/app/services/actions'
 import { formatPhoneInput } from '@/lib/utils/phone'
@@ -57,7 +58,10 @@ export function CreateServiceModal({ open, onClose }: CreateServiceModalProps) {
       .eq('role', 'staff')
       .eq('is_active', true)
       .order('full_name')
-      .then(({ data }) => setStaffOptions(data ?? []))
+      .then(({ data, error }) => {
+        if (error) { toast.error('Could not load staff list.'); return }
+        setStaffOptions(data ?? [])
+      })
   }, [open])
 
   function reset() {

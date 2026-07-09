@@ -29,11 +29,11 @@ export default async function FuneralHomesPage({
   const statusFilter = (searchParams.status ?? 'all') as (typeof BILLING_FILTERS)[number]
 
   const [
-    { data: homes },
-    { data: profiles },
-    { data: services },
-    { data: sms },
-    { data: activity },
+    homesRes,
+    profilesRes,
+    servicesRes,
+    smsRes,
+    activityRes,
     authUsers,
   ] = await Promise.all([
     db.from('funeral_homes').select('id, name, address, created_at, subscription_status, trial_ends_at, current_period_end'),
@@ -43,6 +43,17 @@ export default async function FuneralHomesPage({
     db.from('activity_log').select('funeral_home_id, created_at'),
     listAllAuthUsers(db),
   ])
+
+  // Throw on any query error (audit H4) so error.tsx renders — never a
+  // silently-empty funeral-homes list. (listAllAuthUsers throws on its own.)
+  const firstError = [homesRes, profilesRes, servicesRes, smsRes, activityRes].find(r => r.error)?.error
+  if (firstError) throw new Error(`Failed to load funeral homes: ${firstError.message}`)
+
+  const { data: homes }    = homesRes
+  const { data: profiles } = profilesRes
+  const { data: services } = servicesRes
+  const { data: sms }      = smsRes
+  const { data: activity } = activityRes
 
   // Most recent login (auth.users.last_sign_in_at) per user, for the "Last login"
   // per-home aggregate below.

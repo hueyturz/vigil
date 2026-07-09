@@ -63,7 +63,10 @@ export function EditServiceModal({ service, open, onClose }: EditServiceModalPro
       .eq('is_active', true)
       .in('role', ['owner', 'fd', 'staff'])
       .order('full_name')
-      .then(({ data }) => setStaffOptions(data ?? []))
+      .then(({ data, error }) => {
+        if (error) { toast.error('Could not load staff list.'); return }
+        setStaffOptions(data ?? [])
+      })
   }, [open])
 
   async function handleSubmit(e: React.FormEvent) {

@@ -41,13 +41,13 @@ export default async function FuneralHomeDetailPage({
   if (!home) notFound()
 
   const [
-    { data: profiles },
+    profilesRes,
     authUsers,
-    { data: services },
-    { data: tasks },
-    { data: sms },
-    { data: activity },
-    { data: billingActivity },
+    servicesRes,
+    tasksRes,
+    smsRes,
+    activityRes,
+    billingActivityRes,
   ] = await Promise.all([
     db.from('profiles').select('id, full_name, role, phone, is_active').eq('funeral_home_id', fhId),
     listAllAuthUsers(db),
@@ -59,6 +59,18 @@ export default async function FuneralHomeDetailPage({
     // Billing events, superadmin-only (filtered out of every customer feed).
     db.from('activity_log').select('id, actor_name, description, created_at').eq('funeral_home_id', fhId).eq('action_type', 'billing_event').order('created_at', { ascending: false }).limit(20),
   ])
+
+  // Throw on any query error (audit H4) so error.tsx renders — never a
+  // silently-empty detail page. (listAllAuthUsers throws on its own.)
+  const firstError = [profilesRes, servicesRes, tasksRes, smsRes, activityRes, billingActivityRes].find(r => r.error)?.error
+  if (firstError) throw new Error(`Failed to load funeral home detail: ${firstError.message}`)
+
+  const { data: profiles }        = profilesRes
+  const { data: services }        = servicesRes
+  const { data: tasks }           = tasksRes
+  const { data: sms }             = smsRes
+  const { data: activity }        = activityRes
+  const { data: billingActivity } = billingActivityRes
 
   const authById = new Map((authUsers ?? []).map(u => [u.id, u]))
   const profileName = new Map((profiles ?? []).map(p => [p.id, p.full_name]))

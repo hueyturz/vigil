@@ -27,7 +27,7 @@ export function TagPicker({ taskId, existingTags, mode, onChange }: TagPickerPro
     : `/api/template-tasks/${taskId}/tags`
 
   const loadTags = useCallback(() => {
-    fetch('/api/tags').then(r => r.json()).then(d => setAllTags(d.tags ?? [])).catch(() => {})
+    fetch('/api/tags').then(r => r.json()).then(d => setAllTags(d.tags ?? [])).catch(() => toast.error('Could not load tags.'))
   }, [])
 
   useEffect(() => { loadTags() }, [loadTags])
