@@ -62,6 +62,9 @@ export function ActivityLog({ serviceId }: ActivityLogProps) {
       .from('activity_log')
       .select('*')
       .eq('service_id', serviceId)
+      // Billing events are internal (and service_id is null on them anyway) —
+      // never surface them in this customer-facing feed.
+      .neq('action_type', 'billing_event')
       .order('created_at', { ascending: false })
       .limit(100)
       .then(({ data }) => {

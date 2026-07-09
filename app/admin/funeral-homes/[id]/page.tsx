@@ -47,13 +47,17 @@ export default async function FuneralHomeDetailPage({
     { data: tasks },
     { data: sms },
     { data: activity },
+    { data: billingActivity },
   ] = await Promise.all([
     db.from('profiles').select('id, full_name, role, phone, is_active').eq('funeral_home_id', fhId),
     listAllAuthUsers(db),
     db.from('services').select('id, family_name, deceased_name, service_type, service_date, status, created_at').eq('funeral_home_id', fhId),
     db.from('tasks').select('id, service_id, status, due_days_before').eq('funeral_home_id', fhId),
     db.from('sms_log').select('id, recipient_id, status, message, created_at').eq('funeral_home_id', fhId).order('created_at', { ascending: false }).limit(200),
-    db.from('activity_log').select('id, actor_name, description, action_type, created_at').eq('funeral_home_id', fhId).order('created_at', { ascending: false }).limit(20),
+    // General activity excludes billing events — they get their own section below.
+    db.from('activity_log').select('id, actor_name, description, action_type, created_at').eq('funeral_home_id', fhId).neq('action_type', 'billing_event').order('created_at', { ascending: false }).limit(20),
+    // Billing events, superadmin-only (filtered out of every customer feed).
+    db.from('activity_log').select('id, actor_name, description, created_at').eq('funeral_home_id', fhId).eq('action_type', 'billing_event').order('created_at', { ascending: false }).limit(20),
   ])
 
   const authById = new Map((authUsers ?? []).map(u => [u.id, u]))
@@ -218,6 +222,28 @@ export default async function FuneralHomeDetailPage({
                   <span style={{ color: '#475569' }}>{a.description}</span>
                   <span className="ml-auto text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
                     {ACTION_LABELS[a.action_type] ?? a.action_type} · {timeAgo(a.created_at)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Billing activity — superadmin-only; hidden from all customer feeds. */}
+      <div className="mb-10">
+        <h2 className="text-lg font-bold mb-3" style={{ color: '#0F172A' }}>Billing activity</h2>
+        <div className="rounded-xl border p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
+          {(billingActivity ?? []).length === 0 ? (
+            <p className="text-sm text-center py-4" style={{ color: '#94A3B8' }}>No billing events yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {(billingActivity ?? []).map(a => (
+                <div key={a.id} className="flex items-start gap-2 text-sm">
+                  <span className="flex-shrink-0 mt-1.5 rounded-full" style={{ width: 7, height: 7, backgroundColor: '#8B5CF6' }} />
+                  <span style={{ color: '#475569' }}>{a.description}</span>
+                  <span className="ml-auto text-xs flex-shrink-0" style={{ color: '#94A3B8' }}>
+                    {timeAgo(a.created_at)}
                   </span>
                 </div>
               ))}

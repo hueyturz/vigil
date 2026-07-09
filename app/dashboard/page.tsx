@@ -65,6 +65,9 @@ export default async function DashboardPage({
   const { data: activityRaw, error: activityErr } = await db
     .from('activity_log')
     .select('*')
+    // Billing events are internal — never surface them in the customer feed.
+    // They remain visible to superadmins on the admin funeral-home detail page.
+    .neq('action_type', 'billing_event')
     .eq('funeral_home_id', profile.funeral_home_id)
     .order('created_at', { ascending: false })
     .limit(10)
