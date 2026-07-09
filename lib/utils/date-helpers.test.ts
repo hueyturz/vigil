@@ -56,4 +56,11 @@ describe('formatDate', () => {
   it('formats an ISO date as a long US date', () => {
     expect(formatDate('2026-06-14')).toBe('June 14, 2026')
   })
+
+  // Regression: created_at is a timestamptz — appending T00:00:00 to a full
+  // timestamp produced "Invalid Date" on the admin funeral-home page.
+  it('formats a full ISO timestamp by its UTC calendar date', () => {
+    expect(formatDate('2026-07-08T21:13:09+00:00')).toBe('July 8, 2026')
+    expect(formatDate('2026-07-08T21:13:09.615729+00:00')).toBe('July 8, 2026')
+  })
 })

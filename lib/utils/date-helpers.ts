@@ -11,7 +11,12 @@ export function daysUntil(isoDate: string): number {
 
 /** e.g. "June 14, 2026" */
 export function formatDate(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+  // Accept both date-only strings ('2026-06-14') and full timestamps
+  // ('2026-06-14T21:13:09+00:00', e.g. a timestamptz column like created_at).
+  // Appending T00:00:00 to a timestamp produced Invalid Date; slice to the
+  // date part first. Note: for timestamps this shows the UTC calendar date.
+  const dateOnly = isoDate.slice(0, 10)
+  return new Date(dateOnly + 'T00:00:00').toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
